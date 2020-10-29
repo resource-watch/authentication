@@ -195,16 +195,6 @@ module.exports = async function init() {
             secret: process.env.JWT_SECRET
         },
     }).save();
-    await new Plugin({
-        name: 'fastlyCache',
-        description: 'Fastly Cache request',
-        mainFile: 'plugins/fastly-cache',
-        active: false,
-        config: {
-            key: process.env.FASTLY_APIKEY,
-            serviceId: process.env.FASTLY_SERVICEID,
-        },
-    }).save();
 
     await new Plugin({
         name: 'readOnly',

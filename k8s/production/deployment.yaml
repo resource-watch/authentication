@@ -187,16 +187,6 @@ spec:
             secretKeyRef:
               key: INSTAPUSH_SECRET
               name: authorization
-        - name: FASTLY_APIKEY
-          valueFrom:
-            secretKeyRef:
-              key: FASTLY_APIKEY
-              name: authorization
-        - name: FASTLY_SERVICEID
-          valueFrom:
-            secretKeyRef:
-              key: FASTLY_SERVICEID
-              name: authorization
         image: vizzuality/authorization
         imagePullPolicy: Always
         livenessProbe:
