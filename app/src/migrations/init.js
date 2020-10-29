@@ -50,13 +50,6 @@ module.exports = async function init() {
     }).save();
 
     await new Plugin({
-        name: 'statistics',
-        description: 'Add statistics info',
-        mainFile: 'plugins/sd-ct-statistics-plugin',
-        active: true,
-        cronFile: 'plugins/sd-ct-statistics-plugin/crons/cron',
-    }).save();
-    await new Plugin({
         name: 'sessionMongo',
         description: 'Add session support with mongodb',
         mainFile: 'plugins/sessionMongo',
