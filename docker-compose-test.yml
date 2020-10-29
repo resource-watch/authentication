@@ -1,0 +1,33 @@
+version: "3"
+services:
+  test:
+    build: .
+    ports:
+      - "9000:9000"
+    container_name: authorization-test
+    environment:
+      NODE_ENV: test
+      SESSION_KEY: test
+      PORT: 9000
+      LOGGER_TYPE: console
+      DEBUG: redis-cache-plugin
+      NODE_PATH: app/src
+      EXEC_MIGRATION: 'true'
+      JWT_SECRET: mysecret
+      COOKIE_DOMAIN: mymachine
+      PUBLIC_URL: http://localhost:9000
+      SPARKPOST_KEY: fakeSparkpostKey
+      MONGO_PORT_27017_TCP_ADDR: mongo
+      FASTLY_APIKEY: foo
+      FASTLY_SERVICEID: bar
+    command: test
+    depends_on:
+      - mongo
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  mongo:
+    image: mongo:3.6.13
+    command: --smallfiles
+    ports:
+      - "27017"

@@ -1,0 +1,28 @@
+{
+  "mongodb": {
+    "database": "MONGO_PORT_27017_TCP_DATABASE",
+    "host": "MONGO_PORT_27017_TCP_ADDR",
+    "port": "MONGO_PORT_27017_TCP_PORT"
+  },
+  "logger": {
+    "type": "LOGGER_TYPE",
+    "level": "LOGGER_LEVEL"
+  },
+  "server": {
+    "internalUrl": "INTERNAL_URL",
+    "publicUrl": "PUBLIC_URL"
+  },
+  "application": {
+    "name": "APP_NAME",
+    "logo": "APP_LOGO",
+    "principalColor": "APP_COLOR"
+  },
+  "instapush": {
+    "token": "INSTAPUSH_TOKEN",
+    "id": "INSTAPUSH_ID",
+    "secret": "INSTAPUSH_SECRET"
+  },
+  "jwt": {
+    "token": "JWT_SECRET"
+  }
+}

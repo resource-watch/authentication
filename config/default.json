@@ -1,0 +1,46 @@
+{
+  "mongodb": {
+    "database": "control_tower_db",
+    "host": "localhost",
+    "port": 27017
+  },
+  "logger": {
+    "name": "API-Gateway-DEV",
+    "level": "debug",
+    "type": "console",
+    "toFile": false,
+    "stackdriver": false
+  },
+  "server": {
+    "port": 9000,
+    "publicUrl": "http://control.tower.dev:9000",
+    "internalUrl": "http://localhost:9000",
+    "cookie": {
+      "domain": "control.tower.dev"
+    },
+    "sessionKey": "authorization-key"
+  },
+  "microservice": {
+    "pendingToErrorThreshold": 10,
+    "errorToDeleteThreshold": 360
+  },
+  "application": {
+    "name": "RW API",
+    "logo": "http://www.wri.org/sites/all/themes/wri/images/logo.png",
+    "principalColor": "#f1b319",
+    "sendNotifications": false,
+    "emailSenderName": "RW API"
+  },
+  "instapush": {
+    "token": "",
+    "id": "",
+    "secret": "",
+    "events": {
+      "microserviceDown": "microserviceDown",
+      "microserviceRestore": "microserviceRestore"
+    }
+  },
+  "jwt": {
+    "token": ""
+  }
+}

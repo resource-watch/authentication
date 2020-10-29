@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: gateway
+  labels:
+    name: authorization
+  name: authorization
+spec:
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 9000
+  selector:
+    name: authorization
