@@ -76,49 +76,6 @@ const USERS = {
 
 const testAppKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.sQOVoEtkQlgy8UwlPOi5YWSdGAkRn80JqT53RdktIms';
 
-const microserviceTest = {
-    swagger: {},
-    name: 'test-microservice-one',
-    tags: ['test'],
-    endpoints: [{
-        path: '/v1/testOne',
-        method: 'GET',
-        redirect: {
-            method: 'GET',
-            path: '/api/v1/testOne'
-        }
-    }, {
-        path: '/v1/testTwo',
-        method: 'GET',
-        redirect: {
-            method: 'GET',
-            path: '/api/v1/testTwo'
-        }
-    }]
-};
-
-const endpointTest = {
-    pathKeys: [],
-    authenticated: false,
-    applicationRequired: false,
-    binary: false,
-    cache: [],
-    uncache: [],
-    path: '/v1/dataset',
-    method: 'POST',
-    pathRegex: '',
-    redirect: [
-        {
-            microservice: 'dataset',
-            filters: null,
-            method: 'POST',
-            path: '/api/v1/dataset',
-            url: 'http://mymachine:6001'
-        }
-    ],
-    version: 1
-};
-
 const testFilter = (compareData, additionalData) => ({
     name: 'dataset',
     path: '/api/v1/test1/test',
@@ -131,8 +88,6 @@ const testFilter = (compareData, additionalData) => ({
 module.exports = {
     TOKENS,
     USERS,
-    microserviceTest,
-    endpointTest,
     testAppKey,
     testFilter
 };

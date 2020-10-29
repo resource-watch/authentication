@@ -2,16 +2,11 @@ const Plugin = require('models/plugin.model');
 const mongoose = require('mongoose');
 const config = require('config');
 const { ObjectId } = require('mongoose').Types;
-const MicroserviceModel = require('models/microservice.model');
-const EndpointModel = require('models/endpoint.model');
-const VersionModel = require('models/version.model');
-const appConstants = require('app.constants');
 const JWT = require('jsonwebtoken');
 const { promisify } = require('util');
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 const TempUserModel = require('plugins/sd-ct-oauth-plugin/models/user-temp.model');
 const PluginModel = require('models/plugin.model');
-const { endpointTest } = require('../test.constants');
 const mongooseOptions = require('../../../../config/mongoose');
 
 const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
@@ -96,42 +91,6 @@ const createTempUser = async (userData) => (TempUserModel({
     ...userData
 }).save());
 
-const createMicroservice = async (microserviceData) => (MicroserviceModel({
-    name: 'test microservice name',
-    url: 'http://microservice.com',
-    status: 'active',
-    version: 1,
-    endpoints: [],
-    ...microserviceData
-}).save());
-
-const createEndpoint = (endpoint) => new EndpointModel({ ...endpointTest, ...endpoint }).save();
-
-const createMicroserviceWithEndpoints = async (microserviceData) => {
-    const microservice = await createMicroservice(microserviceData);
-
-    const endpoints = [];
-
-    microserviceData.endpoints.forEach((endpointData) => {
-
-        endpointData.redirect = [endpointData.redirect];
-
-        if (!endpointData.redirect[0].url) {
-            endpointData.redirect[0].url = microservice.url;
-            endpointData.redirect[0].microservice = microservice.name;
-        }
-
-        if (!endpointData.redirect[0].url) {
-            endpointData.redirect[0].url = microservice.url;
-        }
-        endpoints.push(createEndpoint(endpointData));
-    });
-
-    await Promise.all(endpoints);
-
-    return { microservice, endpoints };
-};
-
 const isAdminOnly = async (requester, method, url) => {
     const { token: managerToken } = await createUserAndToken({ role: 'MANAGER' });
     const { token: userToken } = await createUserAndToken({ role: 'USER' });
@@ -177,14 +136,6 @@ const ensureHasPaginationElements = (response) => {
     response.body.links.should.have.property('next').and.be.a('string');
 };
 
-const updateVersion = () => VersionModel.updateOne({
-    name: appConstants.ENDPOINT_VERSION,
-}, {
-    $set: {
-        lastUpdated: new Date(),
-    }
-});
-
 async function setPluginSetting(pluginName, settingKey, settingValue) {
     return new Promise((resolve, reject) => {
         async function onDbReady(err) {
@@ -212,15 +163,11 @@ module.exports = {
     hexToString,
     createUser,
     setPluginSetting,
-    updateVersion,
     getUUID,
     ensureCorrectError,
-    createEndpoint,
     createUserAndToken,
     createUserInDB,
     createPlugin,
-    createMicroservice,
-    createMicroserviceWithEndpoints,
     createTempUser,
     getUserFromToken,
     isTokenRequired,
