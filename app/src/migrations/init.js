@@ -15,12 +15,7 @@ module.exports = async function init() {
     logger.info('Initializing migration');
     await Plugin.deleteMany({});
     logger.info('Creating new plugins');
-    await new Plugin({
-        name: 'timeRequest',
-        description: 'Show time of the request',
-        mainFile: 'plugins/timeRequest',
-        active: true,
-    }).save();
+
     await new Plugin({
         name: 'manageErrors',
         description: 'Manage Errors',
@@ -29,24 +24,6 @@ module.exports = async function init() {
         config: {
             jsonAPIErrors: true,
         },
-    }).save();
-    await new Plugin({
-        name: 'cors',
-        description: 'Add CORS Headers',
-        mainFile: 'plugins/cors',
-        active: true,
-    }).save();
-    await new Plugin({
-        name: 'invalidateCacheEndpoint',
-        description: 'Invalidate cache endpoints in varnish',
-        mainFile: 'plugins/invalidate-cache',
-        active: false,
-    }).save();
-    await new Plugin({
-        name: 'formatter',
-        description: 'Formatter response',
-        mainFile: 'plugins/formatter',
-        active: true,
     }).save();
 
     await new Plugin({
@@ -187,18 +164,6 @@ module.exports = async function init() {
             headerName: 'app_key',
             secret: process.env.JWT_SECRET
         },
-    }).save();
-
-    await new Plugin({
-        name: 'readOnly',
-        description: 'Turn on/off read-only mode for CT, blocking writes to the database.',
-        mainFile: 'plugins/read-only',
-        active: false,
-        config: {
-            blacklist: [],
-            whitelist: [],
-        },
-        ordering: 1
     }).save();
 
     await Microservice.deleteMany({});
