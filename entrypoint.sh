@@ -6,10 +6,6 @@ case "$1" in
         echo "Running Development Server"
         exec npm run dev
         ;;
-    startCron)
-        echo "Running Start Dev"
-        exec node app/index-crons
-        ;;
     test)
         echo "Running Test"
         exec npm test

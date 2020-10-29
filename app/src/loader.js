@@ -29,28 +29,6 @@ async function loadPlugins(app) {
     });
 }
 
-async function loadCronsPlugins() {
-    logger.info('Loading crons of plugins');
-    const generalConfig = getGeneralConfig();
-    const plugins = await Plugin.find({
-        active: true,
-        cronFile: {
-            $exists: true,
-        },
-    });
-    logger.debug('crons', plugins);
-    plugins.forEach((plugin) => {
-        try {
-            logger.info(`Loading ${plugin.name} plugin`);
-            require(plugin.cronFile)(plugin, generalConfig); // eslint-disable-line global-require
-        } catch (e) {
-            logger.error(e);
-            throw e;
-        }
-    });
-}
-
-
 function loadAPI(app, path, pathApi) {
     const routesFiles = fs.readdirSync(path);
     let existIndexRouter = false;
@@ -98,5 +76,4 @@ function loadRoutes(app) {
 module.exports = {
     loadPlugins,
     loadRoutes,
-    loadCronsPlugins,
 };

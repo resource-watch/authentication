@@ -19,15 +19,6 @@ module.exports = (grunt) => {
                     output: 'started',
                 },
             },
-            cron: {
-                options: {
-                    script: 'app/index-crons.js',
-                    debug: false,
-                    node_env: 'dev',
-                    port: process.env.PORT,
-                    output: 'started',
-                },
-            },
             test: {
                 options: {
                     script: 'app/index.js',
@@ -114,7 +105,6 @@ module.exports = (grunt) => {
     grunt.registerTask('test', ['e2eTest']);
 
     grunt.registerTask('serve', ['express:dev', 'watch']);
-    grunt.registerTask('crons', ['express:cron', 'watch']);
 
     grunt.registerTask('default', 'serve');
 
