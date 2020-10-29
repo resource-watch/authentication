@@ -1,18 +1,16 @@
-# Control Tower API Gateway - Resource Watch 
+# Authorization API - Resource Watch 
 
 [![Build Status](https://travis-ci.org/resource-watch/authorization.svg?branch=dev)](https://travis-ci.org/resource-watch/authorization)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/6998e7a532fb2d138ca3/test_coverage)](https://codeclimate.com/github/resource-watch/authorization/test_coverage)
 
 ## Dependencies
 
-Control Tower is built using [Node.js](https://nodejs.org/en/), and can be executed either natively or using Docker, each of which has its own set of requirements.
+This service is built using [Node.js](https://nodejs.org/en/), and can be executed either natively or using Docker, each of which has its own set of requirements.
 
 Native execution requires:
 - [Node.js](https://nodejs.org/en/)
 - [Yarn](https://yarnpkg.com/)
 - [MongoDB](https://www.mongodb.com/)
-- [Redis](https://redis.io/)
-
 
 Execution using Docker requires:
 - [Docker](https://www.docker.com/)
@@ -50,7 +48,7 @@ Control Tower should now be up and accessible. To confirm, open [http://localhos
 2 - Execute the following command to run Control tower:
 
 ```
-./controlTower.sh develop
+./authorization.sh develop
 ```
 
 
@@ -79,7 +77,7 @@ yarn test
 Follow the instruction above for setting up the runtime environment for Docker execution, then run:
 
 ```
-./controlTower.sh test
+./authorization.sh test
 ```
 
 ### OAuth tests
@@ -159,21 +157,10 @@ OAuth Variables
 - BASICAUTH_USERNAME		=> Basic authentication's username. Required if you activate basic auth.
 - BASICAUTH_PASSWORD		=> Basic authentication's password. Required if you activate basic auth.
 
-Redis Cache variables
-
-- REDIS_PORT_6379_TCP_ADDR => Redis DB host. Required if you activate the Redis cache plugin.
-- REDIS_PORT_6379_TCP_PORT => Redis DB port. Required if you activate the Redis cache plugin.
-
 Mongo session variables
 
 - COOKIE_DOMAIN => Session domain for cookies. Required field if you activate the sessionMongo plugin.
 - SESSION_KEY	=> Key to cipher the cookies.  Required field if you activate the sessionMongo plugin.
-
-Live cron variables
-
-- INSTAPUSH_TOKEN	=> Instapush token for sending alerts to mobile devices with the Live cron. It's required if you activate Live cron.
-- INSTAPUSH_ID		=> Instapush ID for sending alerts to mobile devices with the Live cron. It's required if you activate Live cron.
-- INSTAPUSH_SECRET	=> Instapush secret for sending alerts to mobile devices with the Live cron. It's required if you activate Live cron.
 
 Variables used for testing environments only:
 
@@ -226,10 +213,6 @@ Actions going through Control Tower are logged on the `statistics` (sorry about 
 There's currently no UI to review this data, but MongoDB queries are your friends. Keep in mind that this is a very large table, so expensive operations like sorting on unfiltered will take some time.
 
 ### Plugins
-
-TODO
-
-### Crons
 
 TODO
 
