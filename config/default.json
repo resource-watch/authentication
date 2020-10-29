@@ -31,15 +31,6 @@
     "sendNotifications": false,
     "emailSenderName": "RW API"
   },
-  "instapush": {
-    "token": "",
-    "id": "",
-    "secret": "",
-    "events": {
-      "microserviceDown": "microserviceDown",
-      "microserviceRestore": "microserviceRestore"
-    }
-  },
   "jwt": {
     "token": ""
   }

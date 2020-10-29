@@ -176,21 +176,6 @@ spec:
             secretKeyRef:
               key: SPARKPOST_KEY
               name: authorization
-        - name: INSTAPUSH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              key: INSTAPUSH_TOKEN
-              name: authorization
-        - name: INSTAPUSH_ID
-          valueFrom:
-            secretKeyRef:
-              key: INSTAPUSH_ID
-              name: authorization
-        - name: INSTAPUSH_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: INSTAPUSH_SECRET
-              name: authorization
         image: vizzuality/authorization
         imagePullPolicy: Always
         livenessProbe:
