@@ -10,10 +10,8 @@ const convert = require('koa-convert');
 const sleep = require('sleep');
 const cors = require('@koa/cors');
 const koaSimpleHealthCheck = require('koa-simple-healthcheck');
+const ctRegisterMicroservice = require('ct-register-microservice-node');
 const mongooseOptions = require('../../config/mongoose');
-
-// const nock = require('nock');
-// nock.recorder.rec();
 
 const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 
@@ -71,7 +69,24 @@ async function init() {
 
             loader.loadRoutes(app);
 
-            const server = app.listen(process.env.PORT);
+            const server = app.listen(process.env.PORT, () => {
+                ctRegisterMicroservice.register({
+                    info: require('../microservice/register.json'),
+                    swagger: require('../microservice/public-swagger.json'),
+                    mode: ctRegisterMicroservice.MODE_AUTOREGISTER,
+                    framework: ctRegisterMicroservice.KOA2,
+                    app,
+                    logger,
+                    name: config.get('service.name'),
+                    ctUrl: process.env.CT_URL,
+                    url: process.env.LOCAL_URL,
+                    token: process.env.CT_TOKEN,
+                    active: true,
+                }).then(() => {}, (err2) => {
+                    logger.error(err2);
+                    process.exit(1);
+                });
+            });
             logger.info('Server started in ', process.env.PORT);
             resolve({ app, server });
         }

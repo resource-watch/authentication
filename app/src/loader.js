@@ -18,7 +18,11 @@ async function loadPlugins(app) {
     logger.info('Loading plugins');
     const generalConfig = getGeneralConfig();
     const plugins = await Plugin.find({ active: true }).sort({ ordering: 1 });
-    plugins.forEach((plugin) => {
+
+    // Explicitly loading some plugins, since the remaining will be handled by CT
+    const filteredPlugins = plugins.filter((plg) => ['oauth', 'manageErrors', 'sessionMongo', 'appKey'].includes(plg.name));
+
+    filteredPlugins.forEach((plugin) => {
         try {
             logger.info(`Loading ${plugin.name} plugin`);
             require(plugin.mainFile).middleware(app, plugin, generalConfig);

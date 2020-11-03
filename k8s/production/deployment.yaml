@@ -38,7 +38,7 @@ spec:
         - start
         env:
         - name: PORT
-          value: "9000"
+          value: "9050"
         - name: LOGGER_TYPE
           value: console
         - name: NODE_ENV
@@ -172,13 +172,23 @@ spec:
             secretKeyRef:
               key: SPARKPOST_KEY
               name: authorization
+        - name: CT_URL
+          valueFrom:
+            secretKeyRef:
+              key: CT_URL
+              name: mssecrets
+        - name: CT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: CT_TOKEN
+              name: mssecrets
         image: vizzuality/authorization
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
           httpGet:
             path: /healthcheck
-            port: 9000
+            port: 9050
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 15
@@ -186,13 +196,13 @@ spec:
           timeoutSeconds: 5
         name: authorization
         ports:
-        - containerPort: 9000
+        - containerPort: 9050
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
           httpGet:
             path: /healthcheck
-            port: 9000
+            port: 9050
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 15

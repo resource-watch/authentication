@@ -12,13 +12,16 @@
     "stackdriver": false
   },
   "server": {
-    "port": 9000,
+    "port": 9050,
     "publicUrl": "http://control.tower.dev:9000",
-    "internalUrl": "http://localhost:9000",
+    "internalUrl": "http://localhost:9050",
     "cookie": {
       "domain": "control.tower.dev"
     },
     "sessionKey": "authorization-key"
+  },
+  "service": {
+    "name": "Authorization"
   },
   "application": {
     "name": "RW API",
