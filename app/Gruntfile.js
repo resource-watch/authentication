@@ -6,8 +6,6 @@ module.exports = (grunt) => {
     require('load-grunt-tasks')(grunt);
 
     grunt.initConfig({
-
-
         clean: {},
 
         express: {
@@ -97,15 +95,10 @@ module.exports = (grunt) => {
         }
     });
 
-
     grunt.registerTask('unitTest', ['mochaTest:unit']);
-
     grunt.registerTask('e2eTest', ['mochaTest:e2e']);
-
     grunt.registerTask('test', ['e2eTest']);
-
     grunt.registerTask('serve', ['express:dev', 'watch']);
-
     grunt.registerTask('default', 'serve');
 
     grunt.loadNpmTasks('grunt-simple-nyc');

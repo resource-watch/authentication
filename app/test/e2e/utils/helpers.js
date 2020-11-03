@@ -6,19 +6,10 @@ const JWT = require('jsonwebtoken');
 const { promisify } = require('util');
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 const TempUserModel = require('plugins/sd-ct-oauth-plugin/models/user-temp.model');
-const PluginModel = require('models/plugin.model');
 const mongooseOptions = require('../../../../config/mongoose');
 
 const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 const getUUID = () => Math.random().toString(36).substring(7);
-
-const hexToString = (hex) => {
-    let str = '';
-    for (let i = 0; i < hex.length; i += 2) {
-        str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
-    }
-    return str;
-};
 
 const createUser = (userData) => ({
     _id: new ObjectId(),
@@ -61,22 +52,6 @@ const createUserAndToken = async (userData) => {
     return { user, token };
 };
 
-const getUserFromToken = async (token, isString = true) => {
-    const userData = await promisify(JWT.verify)(token, process.env.JWT_SECRET);
-    return isString ? JSON.stringify(userData) : userData;
-};
-
-const createPlugin = async (pluginData) => (PluginModel({
-    name: 'test plugin name',
-    description: 'test plugin description',
-    mainFile: 'test plugin main file',
-    cronFile: 'test plugin cron file',
-    active: false,
-    config: {},
-    ...pluginData
-}).save());
-
-
 const createTempUser = async (userData) => (TempUserModel({
     _id: new ObjectId(),
     email: `${getUUID()}@authorization.com`,
@@ -90,37 +65,6 @@ const createTempUser = async (userData) => (TempUserModel({
     confirmationToken: getUUID(),
     ...userData
 }).save());
-
-const isAdminOnly = async (requester, method, url) => {
-    const { token: managerToken } = await createUserAndToken({ role: 'MANAGER' });
-    const { token: userToken } = await createUserAndToken({ role: 'USER' });
-
-
-    const request = (token) => requester[method](`/api/v1/${url}`)
-        .set('Authorization', `Bearer ${token}`);
-
-    const validate = (res) => {
-        res.status.should.equal(403);
-        res.body.errors[0].should.have.property('detail').and.equal('Not authorized');
-    };
-
-    const responses = await Promise.all([request(userToken), request(managerToken)]);
-    responses.map(validate);
-};
-
-const isTokenRequired = async (requester, method, url) => {
-    const response = await requester[method](`/api/v1/${url}`);
-
-    response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
-    response.status.should.equal(401);
-};
-
-
-const ensureCorrectError = ({ body }, errMessage, expectedStatus) => {
-    body.should.have.property('errors').and.be.an('array');
-    body.errors[0].should.have.property('detail').and.equal(errMessage);
-    body.errors[0].should.have.property('status').and.equal(expectedStatus);
-};
 
 const ensureHasPaginationElements = (response) => {
     response.body.should.have.property('meta').and.be.an('object');
@@ -160,17 +104,11 @@ async function setPluginSetting(pluginName, settingKey, settingValue) {
 }
 
 module.exports = {
-    hexToString,
     createUser,
     setPluginSetting,
     getUUID,
-    ensureCorrectError,
     createUserAndToken,
     createUserInDB,
-    createPlugin,
     createTempUser,
-    getUserFromToken,
-    isTokenRequired,
-    isAdminOnly,
     ensureHasPaginationElements
 };

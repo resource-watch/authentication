@@ -74,20 +74,4 @@ const USERS = {
     }
 };
 
-const testAppKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.sQOVoEtkQlgy8UwlPOi5YWSdGAkRn80JqT53RdktIms';
-
-const testFilter = (compareData, additionalData) => ({
-    name: 'dataset',
-    path: '/api/v1/test1/test',
-    pathRegex: new RegExp('/api/v1/test1/test'),
-    method: 'POST',
-    compare: { data: compareData },
-    ...additionalData,
-});
-
-module.exports = {
-    TOKENS,
-    USERS,
-    testAppKey,
-    testFilter
-};
+module.exports = { TOKENS, USERS };

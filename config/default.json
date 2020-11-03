@@ -20,10 +20,6 @@
     },
     "sessionKey": "authorization-key"
   },
-  "microservice": {
-    "pendingToErrorThreshold": 10,
-    "errorToDeleteThreshold": 360
-  },
   "application": {
     "name": "RW API",
     "logo": "http://www.wri.org/sites/all/themes/wri/images/logo.png",
