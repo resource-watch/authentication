@@ -39,7 +39,6 @@ class PluginRouter {
 
 }
 
-
 router.get('/', Utils.isLogged, Utils.isAdmin, PluginRouter.get);
 router.patch('/:id', Utils.isLogged, Utils.isAdmin, PluginRouter.update);
 

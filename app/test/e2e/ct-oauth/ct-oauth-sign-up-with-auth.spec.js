@@ -7,7 +7,7 @@ const UserTempModel = require('plugins/sd-ct-oauth-plugin/models/user-temp.model
 const { isEqual } = require('lodash');
 const { setPluginSetting, createUserAndToken, createTempUser } = require('../utils/helpers');
 
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 
 const should = chai.should();
 

@@ -4,7 +4,7 @@ const chai = require('chai');
 
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 const { createUserAndToken, createUserInDB, ensureHasPaginationElements } = require('../utils/helpers');
 
 chai.should();
@@ -24,7 +24,6 @@ describe('List users', () => {
         requester = await getTestAgent();
 
         UserModel.deleteMany({}).exec();
-
 
     });
 

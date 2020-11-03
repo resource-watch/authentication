@@ -6,7 +6,7 @@ const UserTempModel = require('plugins/sd-ct-oauth-plugin/models/user-temp.model
 const { isEqual } = require('lodash');
 
 const { setPluginSetting } = require('../utils/helpers');
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 
 const should = chai.should();
 
@@ -31,7 +31,6 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
 
         UserModel.deleteMany({}).exec();
         UserTempModel.deleteMany({}).exec();
-
 
     });
 

@@ -110,7 +110,6 @@ function authService(plugin, connection) {
 
             const filteredQuery = AuthService.getFilteredQuery({ ...query });
 
-
             if (app) {
                 filteredQuery['extraUserData.apps'] = {
                     $in: app

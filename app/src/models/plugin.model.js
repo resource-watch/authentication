@@ -12,5 +12,4 @@ const Plugin = new Schema({
     ordering: { type: Number, required: false, trim: true },
 });
 
-
 module.exports = mongoose.model('Plugin', Plugin);

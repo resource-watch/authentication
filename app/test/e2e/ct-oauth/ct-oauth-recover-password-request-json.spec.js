@@ -8,10 +8,9 @@ const { isEqual } = require('lodash');
 
 chai.should();
 
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 
 let requester;
-
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -35,14 +34,12 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
         await UserTempModel.deleteMany({}).exec();
         await RenewModel.deleteMany({}).exec();
 
-
     });
 
     it('Recover password request with no email should return an error - JSON format', async () => {
         const response = await requester
             .post(`/auth/reset-password`)
             .set('Content-Type', 'application/json');
-
 
         response.status.should.equal(422);
         response.should.be.json;

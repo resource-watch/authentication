@@ -44,7 +44,6 @@ function middleware(app, plugin) {
     });
 }
 
-
 module.exports = {
     middleware,
     init,

@@ -4,7 +4,7 @@ const chai = require('chai');
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 const UserTempModel = require('plugins/sd-ct-oauth-plugin/models/user-temp.model');
 
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 const { getUUID, setPluginSetting } = require('../utils/helpers');
 
 const should = chai.should();
@@ -39,7 +39,6 @@ describe('OAuth endpoints tests - Confirm account', () => {
             .get(`/auth/confirm/fakeToken`)
             .set('Content-Type', 'application/json');
 
-
         response.status.should.equal(400);
         response.should.be.json;
         response.body.should.have.property('errors').and.be.an('array');
@@ -59,7 +58,6 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const response = await requester
             .get(`/auth/confirm/${confirmationToken}`)
             .set('Content-Type', 'application/json');
-
 
         response.status.should.equal(200);
         response.should.be.json;
@@ -84,7 +82,6 @@ describe('OAuth endpoints tests - Confirm account', () => {
 
         const response = await requester
             .get(`/auth/confirm/${confirmationToken}`);
-
 
         response.status.should.equal(200);
         response.should.be.json;
@@ -124,7 +121,6 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const response = await requester
             .get(`/auth/confirm/${confirmationToken}`).redirects(0);
 
-
         response.should.redirect;
 
         response.headers.location.should.equal('http://www.google.com/');
@@ -160,7 +156,6 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const response = await requester
             .get(`/auth/confirm/${confirmationToken}`)
             .redirects(0);
-
 
         response.should.redirect;
 
@@ -198,7 +193,6 @@ describe('OAuth endpoints tests - Confirm account', () => {
             .get(`/auth/confirm/${confirmationToken}`)
             .redirects(0);
 
-
         response.should.redirect;
 
         response.redirects.should.be.an('array');
@@ -235,7 +229,6 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const response = await requester
             .get(`/auth/confirm/${confirmationToken}?callbackUrl=http://vizzuality.com/`)
             .redirects(0);
-
 
         response.should.redirect;
 

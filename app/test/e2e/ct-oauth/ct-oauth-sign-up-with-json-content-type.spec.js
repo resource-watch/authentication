@@ -6,7 +6,7 @@ const UserTempModel = require('plugins/sd-ct-oauth-plugin/models/user-temp.model
 const { isEqual } = require('lodash');
 
 const { setPluginSetting } = require('../utils/helpers');
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 
 const should = chai.should();
 
@@ -31,7 +31,6 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         UserModel.deleteMany({}).exec();
         UserTempModel.deleteMany({}).exec();
-
 
     });
 
@@ -297,7 +296,6 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         // eslint-disable-next-line
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
 
-
         const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
@@ -366,7 +364,6 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         responseUser.should.have.property('extraUserData').and.be.an('object');
         // eslint-disable-next-line
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
-
 
         const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);

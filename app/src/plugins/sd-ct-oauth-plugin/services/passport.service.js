@@ -10,7 +10,6 @@ const FacebookTokenStrategy = require('passport-facebook-token');
 const bcrypt = require('bcrypt');
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 
-
 function passportService(plugin) {
     async function registerUser(accessToken, refreshToken, profile, done) {
         logger.info('[passportService] Registering user', profile);
@@ -199,7 +198,6 @@ function passportService(plugin) {
             }
         }
     }
-
 
 }
 module.exports = passportService;

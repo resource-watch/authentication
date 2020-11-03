@@ -8,10 +8,9 @@ const { isEqual } = require('lodash');
 
 chai.should();
 
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 
 let requester;
-
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);

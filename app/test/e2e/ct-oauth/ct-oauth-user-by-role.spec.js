@@ -5,8 +5,8 @@ const chai = require('chai');
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 
 const { createUser, createUserAndToken } = require('../utils/helpers');
-const { getTestAgent, closeTestAgent } = require('./../test-server');
-const { TOKENS } = require('./../test.constants');
+const { getTestAgent, closeTestAgent } = require('../test-server');
+const { TOKENS } = require('../test.constants');
 
 chai.should();
 
@@ -25,7 +25,6 @@ describe('GET users ids by role', () => {
         requester = await getTestAgent();
 
         UserModel.deleteMany({}).exec();
-
 
     });
 

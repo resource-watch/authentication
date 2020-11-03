@@ -1,4 +1,3 @@
-
 class UnprocessableEntityError extends Error {
 
     constructor(message) {

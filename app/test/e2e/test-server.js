@@ -5,7 +5,6 @@ let requester;
 
 chai.use(chaiHttp);
 
-
 exports.getTestAgent = async function getTestAgent(forceNew = false) {
     if (forceNew && requester) {
         await new Promise((resolve) => {

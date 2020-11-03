@@ -14,7 +14,6 @@ const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
     return a;
 }, []).join('&');
 
-
 module.exports = (plugin, connection, generalConfig) => {
     const ApiRouter = new Router({
         prefix: '/auth',
@@ -39,9 +38,7 @@ module.exports = (plugin, connection, generalConfig) => {
 
     const getApplicationsConfig = (ctx, pluginData) => {
         const app = getOriginApp(ctx, pluginData);
-        const applicationConfig = pluginData.config.applications && pluginData.config.applications[app];
-
-        return applicationConfig;
+        return pluginData.config.applications && pluginData.config.applications[app];
     };
 
     const API = (function api() {

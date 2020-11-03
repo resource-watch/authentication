@@ -5,8 +5,8 @@ const chai = require('chai');
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 const UserSerializer = require('plugins/sd-ct-oauth-plugin/serializers/user.serializer');
 
-const { getTestAgent, closeTestAgent } = require('./../test-server');
-const { createUserAndToken } = require('./../utils/helpers');
+const { getTestAgent, closeTestAgent } = require('../test-server');
+const { createUserAndToken } = require('../utils/helpers');
 
 chai.should();
 chai.use(require('chai-datetime'));
@@ -26,7 +26,6 @@ describe('Auth endpoints tests - Update user', () => {
         requester = await getTestAgent();
 
         UserModel.deleteMany({}).exec();
-
 
     });
 

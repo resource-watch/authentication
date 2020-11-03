@@ -26,7 +26,6 @@ function middleware(app, plugin) {
     app.use(convert(session(configSession)));
 }
 
-
 module.exports = {
     middleware,
     init,

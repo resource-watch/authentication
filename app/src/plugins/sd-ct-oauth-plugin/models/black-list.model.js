@@ -7,5 +7,4 @@ const BlackList = new Schema({
     createdAt: { type: Date, required: true, default: Date.now },
 });
 
-
 module.exports = mongoose.model('BlackList', BlackList);

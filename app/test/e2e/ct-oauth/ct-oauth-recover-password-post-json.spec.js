@@ -9,10 +9,9 @@ const RenewModel = require('plugins/sd-ct-oauth-plugin/models/renew.model');
 
 chai.should();
 
-const { getTestAgent, closeTestAgent } = require('./../test-server');
+const { getTestAgent, closeTestAgent } = require('../test-server');
 
 let requester;
-
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -164,7 +163,6 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
         });
 
     });
-
 
     after(closeTestAgent);
 

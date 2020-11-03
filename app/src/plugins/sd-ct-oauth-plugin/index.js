@@ -76,7 +76,6 @@ function middleware(app, plugin, generalConfig) {
 
 }
 
-
 module.exports = {
     middleware,
     init,
