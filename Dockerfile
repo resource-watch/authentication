@@ -2,7 +2,7 @@ FROM node:12-alpine
 MAINTAINER info@vizzuality.com
 
 ENV NAME authorization
-ENV USER control_tower
+ENV USER authorization
 
 RUN apk update && apk upgrade && \
     apk add --no-cache --update bash git openssh python alpine-sdk

@@ -1,6 +1,6 @@
 {
   "mongodb": {
-    "database": "control_tower_db_test",
+    "database": "authorization_db_test",
     "host": "localhost",
     "port": 27017
   }
