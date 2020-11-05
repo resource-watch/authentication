@@ -3,7 +3,7 @@ const mongooseOptions = {
     useFindAndModify: false,
     useCreateIndex: true,
     useUnifiedTopology: true,
-    appname: 'Control Tower', // Displays the app name in MongoDB logs, for ease of debug
+    appname: 'Authorization', // Displays the app name in MongoDB logs, for ease of debug
 };
 
 module.exports = mongooseOptions;
