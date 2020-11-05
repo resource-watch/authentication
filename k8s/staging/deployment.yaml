@@ -5,7 +5,7 @@ metadata:
   labels:
     name: authorization
   name: authorization
-  namespace: gateway
+  namespace: core
 spec:
   progressDeadlineSeconds: 2147483647
   replicas: 1
@@ -32,7 +32,7 @@ spec:
               - key: type
                 operator: In
                 values:
-                - gateway
+                - core
       containers:
       - args:
         - start

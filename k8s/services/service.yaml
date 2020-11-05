@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  namespace: gateway
+  namespace: core
   labels:
     name: authorization
   name: authorization
