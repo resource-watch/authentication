@@ -1,7 +1,10 @@
+const chai = require('chai');
 const nock = require('nock');
-const { getTestAgent, closeTestAgent } = require('./test-server');
+const { getTestAgent } = require('./test-server');
 
 let requester;
+
+chai.should();
 
 describe('GET healthcheck', () => {
     before(async () => {
@@ -25,6 +28,4 @@ describe('GET healthcheck', () => {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
     });
-
-    after(closeTestAgent);
 });

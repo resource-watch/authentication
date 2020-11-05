@@ -53,7 +53,6 @@
     "bcrypt": "^5.0.0",
     "bunyan": "^1.8.14",
     "config": "^3.3.2",
-    "ct-register-microservice-node": "^2.1.7",
     "dotenv": "^8.2.0",
     "ejs": "^3.1.5",
     "jsonwebtoken": "^8.5.1",
