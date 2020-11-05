@@ -61,127 +61,117 @@ spec:
           valueFrom:
             secretKeyRef:
               key: CT_MONGO_URI
-              name: authorization
+              name: control-tower
         - name: SESSION_KEY
           valueFrom:
             secretKeyRef:
               key: SESSION_KEY
-              name: authorization
+              name: control-tower
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef:
               key: JWT_SECRET
-              name: authorization
+              name: control-tower
         - name: GFW_TWITTER_CONSUMER_KEY
           valueFrom:
             secretKeyRef:
               key: GFW_TWITTER_CONSUMER_KEY
-              name: authorization
+              name: control-tower
         - name: GFW_TWITTER_CONSUMER_SECRET
           valueFrom:
             secretKeyRef:
               key: GFW_TWITTER_CONSUMER_SECRET
-              name: authorization
+              name: control-tower
         - name: GFW_FACEBOOK_CLIENT_ID
           valueFrom:
             secretKeyRef:
               key: GFW_FACEBOOK_CLIENT_ID
-              name: authorization
+              name: control-tower
         - name: GFW_FACEBOOK_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               key: GFW_FACEBOOK_CLIENT_SECRET
-              name: authorization
+              name: control-tower
         - name: GFW_GOOGLE_CLIENT_ID
           valueFrom:
             secretKeyRef:
               key: GFW_GOOGLE_CLIENT_ID
-              name: authorization
+              name: control-tower
         - name: GFW_GOOGLE_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               key: GFW_GOOGLE_CLIENT_SECRET
-              name: authorization
+              name: control-tower
         - name: RW_TWITTER_CONSUMER_KEY
           valueFrom:
             secretKeyRef:
               key: RW_TWITTER_CONSUMER_KEY
-              name: authorization
+              name: control-tower
         - name: RW_TWITTER_CONSUMER_SECRET
           valueFrom:
             secretKeyRef:
               key: RW_TWITTER_CONSUMER_SECRET
-              name: authorization
+              name: control-tower
         - name: RW_FACEBOOK_CLIENT_ID
           valueFrom:
             secretKeyRef:
               key: RW_FACEBOOK_CLIENT_ID
-              name: authorization
+              name: control-tower
         - name: RW_FACEBOOK_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               key: RW_FACEBOOK_CLIENT_SECRET
-              name: authorization
+              name: control-tower
         - name: RW_GOOGLE_CLIENT_ID
           valueFrom:
             secretKeyRef:
               key: RW_GOOGLE_CLIENT_ID
-              name: authorization
+              name: control-tower
         - name: RW_GOOGLE_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               key: RW_GOOGLE_CLIENT_SECRET
-              name: authorization
+              name: control-tower
         - name: PREP_TWITTER_CONSUMER_KEY
           valueFrom:
             secretKeyRef:
               key: PREP_TWITTER_CONSUMER_KEY
-              name: authorization
+              name: control-tower
         - name: PREP_TWITTER_CONSUMER_SECRET
           valueFrom:
             secretKeyRef:
               key: PREP_TWITTER_CONSUMER_SECRET
-              name: authorization
+              name: control-tower
         - name: PREP_FACEBOOK_CLIENT_ID
           valueFrom:
             secretKeyRef:
               key: PREP_FACEBOOK_CLIENT_ID
-              name: authorization
+              name: control-tower
         - name: PREP_FACEBOOK_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               key: PREP_FACEBOOK_CLIENT_SECRET
-              name: authorization
+              name: control-tower
         - name: PREP_GOOGLE_CLIENT_ID
           valueFrom:
             secretKeyRef:
               key: PREP_GOOGLE_CLIENT_ID
-              name: authorization
+              name: control-tower
         - name: PREP_GOOGLE_CLIENT_SECRET
           valueFrom:
             secretKeyRef:
               key: PREP_GOOGLE_CLIENT_SECRET
-              name: authorization
+              name: control-tower
         - name: BASICAUTH_PASSWORD
           valueFrom:
             secretKeyRef:
               key: BASICAUTH_PASSWORD
-              name: authorization
+              name: control-tower
         - name: SPARKPOST_KEY
           valueFrom:
             secretKeyRef:
               key: SPARKPOST_KEY
-              name: authorization
-        - name: CT_URL
-          valueFrom:
-            secretKeyRef:
-              key: CT_URL
-              name: mssecrets
-        - name: CT_TOKEN
-          valueFrom:
-            secretKeyRef:
-              key: CT_TOKEN
-              name: mssecrets
+              name: control-tower
         image: vizzuality/authorization
         imagePullPolicy: Always
         livenessProbe:
