@@ -4,13 +4,10 @@ const mongoose = require('mongoose');
 const jwt = require('koa-jwt');
 const views = require('koa-views');
 const passportService = require('./services/passport.service');
-const apiRouter = require('./auth.router');
 const authServiceFunc = require('./services/auth.service');
 const mongooseOptions = require('../../../../config/mongoose');
 
-function init() {
-
-}
+function init() {}
 
 function middleware(app, plugin, generalConfig) {
     logger.info('Loading oauth-plugin');
@@ -71,9 +68,6 @@ function middleware(app, plugin, generalConfig) {
             await next();
         });
     }
-
-    app.use(apiRouter(plugin, connection, generalConfig).middleware());
-
 }
 
 module.exports = {
