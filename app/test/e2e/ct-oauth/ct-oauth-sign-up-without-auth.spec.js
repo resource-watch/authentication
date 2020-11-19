@@ -29,8 +29,8 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
 
         requester = await getTestAgent(true);
 
-        UserModel.deleteMany({}).exec();
-        UserTempModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
+        await UserTempModel.deleteMany({}).exec();
 
     });
 
@@ -277,8 +277,8 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
     });
 
     after(async () => {
-        UserModel.deleteMany({}).exec();
-        UserTempModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
+        await UserTempModel.deleteMany({}).exec();
 
         closeTestAgent();
     });

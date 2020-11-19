@@ -29,8 +29,8 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         requester = await getTestAgent(true);
 
-        UserModel.deleteMany({}).exec();
-        UserTempModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
+        await UserTempModel.deleteMany({}).exec();
 
     });
 

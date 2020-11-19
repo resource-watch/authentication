@@ -41,7 +41,7 @@ describe('Facebook auth endpoint tests', () => {
 
         requester = await getTestAgent(true);
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
     });
 
     beforeEach(async () => {

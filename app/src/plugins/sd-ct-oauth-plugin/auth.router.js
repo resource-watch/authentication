@@ -633,7 +633,7 @@ async function updateApplications(ctx) {
             }
             delete ctx.session.applications;
             if (user) {
-                ctx.login({
+                await ctx.login({
                     id: user._id,
                     provider: user.provider,
                     providerId: user.providerId,

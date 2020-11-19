@@ -27,7 +27,7 @@ describe('Find users by id', () => {
 
         requester = await getTestAgent();
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
     });
 
     it('Find users without being logged in returns a 401', async () => {
@@ -163,7 +163,7 @@ describe('Find users by id', () => {
     });
 
     after(async () => {
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
         closeTestAgent();
     });

@@ -25,7 +25,7 @@ describe('Auth endpoints tests - Update user', () => {
 
         requester = await getTestAgent();
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
     });
 

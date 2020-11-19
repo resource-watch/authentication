@@ -23,7 +23,7 @@ describe('List users', () => {
 
         requester = await getTestAgent();
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
     });
 

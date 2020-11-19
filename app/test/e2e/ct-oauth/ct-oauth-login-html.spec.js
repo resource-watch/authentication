@@ -20,7 +20,7 @@ describe('Auth endpoints tests - HTML', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
     });
 

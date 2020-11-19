@@ -30,8 +30,8 @@ describe('OAuth endpoints tests - Confirm account', () => {
 
         requester = await getTestAgent(true);
 
-        UserModel.deleteMany({}).exec();
-        UserTempModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
+        await UserTempModel.deleteMany({}).exec();
     });
 
     it('Confirm account request with invalid token should return an error', async () => {
@@ -246,8 +246,8 @@ describe('OAuth endpoints tests - Confirm account', () => {
     });
 
     after(async () => {
-        UserModel.deleteMany({}).exec();
-        UserTempModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
+        await UserTempModel.deleteMany({}).exec();
 
         closeTestAgent();
     });

@@ -24,7 +24,7 @@ describe('GET users ids by role', () => {
 
         requester = await getTestAgent();
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
     });
 

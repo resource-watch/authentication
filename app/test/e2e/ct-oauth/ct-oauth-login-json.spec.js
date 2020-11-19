@@ -23,7 +23,7 @@ describe('Auth endpoints tests - JSON', () => {
 
         requester = await getTestAgent();
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
     });
 

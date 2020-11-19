@@ -71,7 +71,7 @@ function authService(plugin, connection) {
                 }
 
                 const userData = await UserModel.findById(user.id);
-                let token = null;
+                let token;
 
                 if (userData) {
                     const dataToken = {
@@ -325,8 +325,7 @@ function authService(plugin, connection) {
 
         static async getRenewModel(token) {
             logger.info('[AuthService]obtaining renew model of token', token);
-            const renew = await RenewModel.findOne({ token });
-            return renew;
+            return RenewModel.findOne({ token });
         }
 
         static async sendResetMail(email, generalConfig, originApp) {

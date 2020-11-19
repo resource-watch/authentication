@@ -48,7 +48,7 @@ describe('Google auth endpoint tests', () => {
 
         requester = await getTestAgent(true);
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
         nock.cleanAll();
 
