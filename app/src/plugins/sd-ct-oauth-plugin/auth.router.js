@@ -1,9 +1,9 @@
-/* eslint-disable no-underscore-dangle */
-const config = require('config');
 const passport = require('koa-passport');
 const { omit } = require('lodash');
 const logger = require('logger');
 const mongoose = require('mongoose');
+
+const Utils = require('utils');
 
 const Plugin = require('models/plugin.model');
 const authServiceFunc = require('./services/auth.service');
@@ -13,34 +13,8 @@ const UserTempSerializer = require('./serializers/user-temp.serializer');
 const UserSerializer = require('./serializers/user.serializer');
 const mongooseOptions = require('../../../../config/mongoose');
 
-const getUser = (ctx) => ctx.req.user || ctx.state.user || ctx.state.microservice;
-
-const serializeObjToQuery = (obj) => Object.keys(obj).reduce((a, k) => {
-    a.push(`${k}=${encodeURIComponent(obj[k])}`);
-    return a;
-}, []).join('&');
-
-function getGeneralConfig() {
-    return {
-        mongoUri: process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`,
-        application: config.get('application'),
-    };
-}
-
-const getOriginApp = (ctx, pluginData) => {
-    if (ctx.query.origin) {
-        return ctx.query.origin;
-    }
-
-    if (ctx.session && ctx.session.originApplication) {
-        return ctx.session.originApplication;
-    }
-
-    return pluginData.config.defaultApp;
-};
-
 const getAuthService = async () => {
-    const generalConfig = getGeneralConfig();
+    const generalConfig = Utils.getGeneralConfig();
     const plugin = await Plugin.findOne({ name: 'oauth' });
     const connection = mongoose.createConnection(`${generalConfig.mongoUri}`, mongooseOptions);
     return authServiceFunc(plugin, connection);
@@ -48,13 +22,13 @@ const getAuthService = async () => {
 
 const twitter = async (ctx) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`twitter:${app}`)(ctx);
 };
 
 const twitterCallback = async (ctx, next) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`twitter:${app}`, {
         failureRedirect: '/auth/fail',
     })(ctx, next);
@@ -62,7 +36,7 @@ const twitterCallback = async (ctx, next) => {
 
 const facebook = async (ctx) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`facebook:${app}`, {
         scope: plugin.config.thirdParty[app] ? plugin.config.thirdParty[app].facebook.scope : [],
     })(ctx);
@@ -70,13 +44,13 @@ const facebook = async (ctx) => {
 
 const facebookToken = async (ctx, next) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`facebook-token:${app}`)(ctx, next);
 };
 
 const facebookCallback = async (ctx, next) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`facebook:${app}`, {
         failureRedirect: '/auth/fail',
     })(ctx, next);
@@ -84,7 +58,7 @@ const facebookCallback = async (ctx, next) => {
 
 const google = async (ctx) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`google:${app}`, {
         scope: (plugin.config.thirdParty[app] && plugin.config.thirdParty[app].google.scope) ? plugin.config.thirdParty[app].google.scope : ['openid'],
     })(ctx);
@@ -92,13 +66,13 @@ const google = async (ctx) => {
 
 const googleToken = async (ctx, next) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`google-token:${app}`)(ctx, next);
 };
 
 const googleCallback = async (ctx, next) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx, plugin);
     await passport.authenticate(`google:${app}`, {
         failureRedirect: '/auth/fail',
     })(ctx, next);
@@ -138,7 +112,7 @@ const localCallback = async (ctx) => passport.authenticate('local', async (user)
 async function createToken(ctx, saveInUser) {
     logger.info('Generating token');
     const AuthService = await getAuthService();
-    return AuthService.createToken(getUser(ctx), saveInUser);
+    return AuthService.createToken(Utils.getUser(ctx), saveInUser);
 }
 
 async function generateJWT(ctx) {
@@ -154,8 +128,8 @@ async function generateJWT(ctx) {
 }
 
 async function checkLogged(ctx) {
-    if (getUser(ctx)) {
-        const userToken = getUser(ctx);
+    if (Utils.getUser(ctx)) {
+        const userToken = Utils.getUser(ctx);
         const AuthService = await getAuthService();
         const user = await AuthService.getUserById(userToken.id);
 
@@ -179,7 +153,7 @@ async function checkLogged(ctx) {
 
 async function getUsers(ctx) {
     logger.info('Get Users');
-    const user = getUser(ctx);
+    const user = Utils.getUser(ctx);
     if (!user.extraUserData || !user.extraUserData.apps) {
         ctx.throw(403, 'Not authorized');
         return;
@@ -193,7 +167,7 @@ async function getUsers(ctx) {
     delete clonedQuery['page[number]'];
     delete clonedQuery.ids;
     delete clonedQuery.loggedUser;
-    const serializedQuery = serializeObjToQuery(clonedQuery) ? `?${serializeObjToQuery(clonedQuery)}&` : '?';
+    const serializedQuery = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
     const link = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
     const AuthService = await getAuthService();
@@ -211,7 +185,7 @@ async function getUsers(ctx) {
 }
 
 async function getCurrentUser(ctx) {
-    const requestUser = getUser(ctx);
+    const requestUser = Utils.getUser(ctx);
 
     logger.info('Get current user: ', requestUser.id);
 
@@ -261,7 +235,7 @@ async function updateUser(ctx) {
     logger.info(`Update user with id ${ctx.params.id}`);
     ctx.assert(ctx.params.id, 'Id param required');
 
-    const user = getUser(ctx);
+    const user = Utils.getUser(ctx);
     const AuthService = await getAuthService();
     const userUpdate = await AuthService.updateUser(ctx.params.id, ctx.request.body, user);
     if (!userUpdate) {
@@ -274,7 +248,7 @@ async function updateUser(ctx) {
 async function updateMe(ctx) {
     logger.info(`Update user me`);
 
-    const user = getUser(ctx);
+    const user = Utils.getUser(ctx);
     const AuthService = await getAuthService();
     const userUpdate = await AuthService.updateUser(user.id, ctx.request.body, user);
     if (!userUpdate) {
@@ -300,7 +274,7 @@ async function deleteUser(ctx) {
 async function createUser(ctx) {
     logger.info(`Create user with body ${ctx.request.body}`);
     const { body } = ctx.request;
-    const user = getUser(ctx);
+    const user = Utils.getUser(ctx);
     if (!user) {
         ctx.throw(401, 'Not logged');
         return;
@@ -380,7 +354,7 @@ async function success(ctx) {
 async function failAuth(ctx) {
     logger.info('Not authenticated');
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const originApp = getOriginApp(ctx, plugin);
+    const originApp = Utils.getOriginApp(ctx, plugin);
     const appConfig = plugin.config.thirdParty[originApp];
 
     const thirdParty = {
@@ -511,7 +485,7 @@ async function confirmUser(ctx) {
 
 async function loginView(ctx) {
     // check if the user has session
-    const user = getUser(ctx);
+    const user = Utils.getUser(ctx);
     if (user) {
         logger.info('User has session');
 
@@ -528,7 +502,7 @@ async function loginView(ctx) {
     }
 
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const originApp = getOriginApp(ctx, plugin);
+    const originApp = Utils.getOriginApp(ctx, plugin);
     const thirdParty = {
         twitter: false,
         google: false,
@@ -568,7 +542,7 @@ async function requestEmailResetView(ctx) {
         error: null,
         info: null,
         email: null,
-        app: getOriginApp(ctx, plugin),
+        app: Utils.getOriginApp(ctx, plugin),
         generalConfig: ctx.state.generalConfig,
     });
 }
@@ -588,7 +562,7 @@ async function resetPasswordView(ctx) {
     const plugin = await Plugin.findOne({ name: 'oauth' });
     await ctx.render('reset-password', {
         error,
-        app: getOriginApp(ctx, plugin),
+        app: Utils.getOriginApp(ctx, plugin),
         token: renew ? renew.token : null,
         generalConfig: ctx.state.generalConfig,
     });
@@ -606,7 +580,7 @@ async function sendResetMail(ctx) {
                 error: 'Mail required',
                 info: null,
                 email: ctx.request.body.email,
-                app: getOriginApp(ctx, plugin),
+                app: Utils.getOriginApp(ctx, plugin),
                 generalConfig: ctx.state.generalConfig,
             });
 
@@ -614,7 +588,7 @@ async function sendResetMail(ctx) {
         }
     }
 
-    const originApp = getOriginApp(ctx, plugin);
+    const originApp = Utils.getOriginApp(ctx, plugin);
 
     const AuthService = await getAuthService();
     const renew = await AuthService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
@@ -626,7 +600,7 @@ async function sendResetMail(ctx) {
                 error: 'User not found',
                 info: null,
                 email: ctx.request.body.email,
-                app: getOriginApp(ctx, plugin),
+                app: Utils.getOriginApp(ctx, plugin),
                 generalConfig: ctx.state.generalConfig,
             });
 
@@ -641,7 +615,7 @@ async function sendResetMail(ctx) {
             info: 'Email sent!!',
             error: null,
             email: ctx.request.body.email,
-            app: getOriginApp(ctx, plugin),
+            app: Utils.getOriginApp(ctx, plugin),
             generalConfig: ctx.state.generalConfig,
         });
     }
@@ -650,7 +624,7 @@ async function sendResetMail(ctx) {
 async function updateApplications(ctx) {
     try {
         if (ctx.session && ctx.session.applications) {
-            let user = getUser(ctx);
+            let user = Utils.getUser(ctx);
             const AuthService = await getAuthService();
             if (user.role === 'USER') {
                 user = await AuthService.updateApplicationsUser(user.id, ctx.session.applications);
@@ -702,7 +676,7 @@ async function resetPassword(ctx) {
         } else {
             await ctx.render('reset-password', {
                 error,
-                app: getOriginApp(ctx, plugin),
+                app: Utils.getOriginApp(ctx, plugin),
                 token: ctx.params.token,
                 generalConfig: ctx.state.generalConfig,
             });
@@ -716,7 +690,7 @@ async function resetPassword(ctx) {
             ctx.response.type = 'application/json';
             ctx.body = UserTempSerializer.serialize(user);
         } else {
-            const app = getOriginApp(ctx, plugin);
+            const app = Utils.getOriginApp(ctx, plugin);
             const applicationConfig = plugin.config.applications && plugin.config.applications[app];
 
             if (applicationConfig && applicationConfig.confirmUrlRedirect) {
@@ -731,7 +705,7 @@ async function resetPassword(ctx) {
         }
     } else {
         await ctx.render('reset-password', {
-            app: getOriginApp(ctx, plugin),
+            app: Utils.getOriginApp(ctx, plugin),
             error: 'Error updating user',
             token: ctx.params.token,
             generalConfig: ctx.state.generalConfig,

@@ -5,18 +5,11 @@ const fs = require('fs');
 
 const routersPath = `${__dirname}/routes`;
 const mount = require('koa-mount');
-const config = require('config');
-
-function getGeneralConfig() {
-    return {
-        mongoUri: process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`,
-        application: config.get('application'),
-    };
-}
+const Utils = require('utils');
 
 async function loadPlugins(app) {
     logger.info('Loading plugins');
-    const generalConfig = getGeneralConfig();
+    const generalConfig = Utils.getGeneralConfig();
     const plugins = await Plugin.find({ active: true }).sort({ ordering: 1 });
 
     // Explicitly loading some plugins, since the remaining will be handled by CT
