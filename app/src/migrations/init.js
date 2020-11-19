@@ -14,27 +14,6 @@ module.exports = async function init() {
     logger.info('Creating new plugins');
 
     await new Plugin({
-        name: 'manageErrors',
-        description: 'Manage Errors',
-        mainFile: 'plugins/manageErrors',
-        active: true,
-        config: {
-            jsonAPIErrors: true,
-        },
-    }).save();
-
-    await new Plugin({
-        name: 'sessionMongo',
-        description: 'Add session support with mongodb',
-        mainFile: 'plugins/sessionMongo',
-        active: true,
-        config: {
-            cookieDomain: process.env.COOKIE_DOMAIN,
-            sessionKey: process.env.SESSION_KEY || 'authorization',
-        },
-    }).save();
-
-    await new Plugin({
         name: 'oauth',
         description: 'Plugin oauth with passport',
         mainFile: 'plugins/sd-ct-oauth-plugin',
@@ -150,17 +129,6 @@ module.exports = async function init() {
             allowPublicRegistration: true
         },
         ordering: 2,
-    }).save();
-
-    await new Plugin({
-        name: 'appKey',
-        description: 'Application key authorization',
-        mainFile: 'plugins/app-key',
-        active: true,
-        config: {
-            headerName: 'app_key',
-            secret: process.env.JWT_SECRET
-        },
     }).save();
 
     const ENDPOINT_VERSION = 'ENDPOINT_VERSION';

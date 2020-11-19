@@ -1,23 +1,18 @@
 const passport = require('koa-passport');
 const { omit } = require('lodash');
 const logger = require('logger');
-const mongoose = require('mongoose');
 
 const Utils = require('utils');
-
 const Plugin = require('models/plugin.model');
 const authServiceFunc = require('./services/auth.service');
 const UnprocessableEntityError = require('./errors/unprocessableEntity.error');
 const UnauthorizedError = require('./errors/unauthorized.error');
 const UserTempSerializer = require('./serializers/user-temp.serializer');
 const UserSerializer = require('./serializers/user.serializer');
-const mongooseOptions = require('../../../../config/mongoose');
 
 const getAuthService = async () => {
-    const generalConfig = Utils.getGeneralConfig();
     const plugin = await Plugin.findOne({ name: 'oauth' });
-    const connection = mongoose.createConnection(`${generalConfig.mongoUri}`, mongooseOptions);
-    return authServiceFunc(plugin, connection);
+    return authServiceFunc(plugin);
 };
 
 const twitter = async (ctx) => {

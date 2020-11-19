@@ -13,7 +13,7 @@ async function loadPlugins(app) {
     const plugins = await Plugin.find({ active: true }).sort({ ordering: 1 });
 
     // Explicitly loading some plugins, since the remaining will be handled by CT
-    const filteredPlugins = plugins.filter((plg) => ['oauth', 'manageErrors', 'sessionMongo', 'appKey'].includes(plg.name));
+    const filteredPlugins = plugins.filter((plg) => ['oauth'].includes(plg.name));
 
     filteredPlugins.forEach((plugin) => {
         try {

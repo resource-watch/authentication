@@ -8,19 +8,16 @@ const { promisify } = require('util');
 
 const { ObjectId } = mongoose.Types;
 
-const whiteListModelFunc = require('plugins/sd-ct-oauth-plugin/models/white-list.model');
 const mailServiceFunc = require('plugins/sd-ct-oauth-plugin/services/mail.service');
 const UnprocessableEntityError = require('plugins/sd-ct-oauth-plugin/errors/unprocessableEntity.error');
 
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
 const RenewModel = require('plugins/sd-ct-oauth-plugin/models/renew.model');
 const UserTempModel = require('plugins/sd-ct-oauth-plugin/models/user-temp.model');
-const BlackListModel = require('plugins/sd-ct-oauth-plugin/models/black-list.model');
 
-function authService(plugin, connection) {
+function authService(plugin) {
 
     const MailService = mailServiceFunc(plugin);
-    const WhiteListModel = whiteListModelFunc(connection, plugin);
 
     class AuthService {
 
@@ -86,7 +83,6 @@ function authService(plugin, connection) {
                     };
                     token = await promisify(JWT.sign)(dataToken, plugin.config.jwt.secret, options);
                     if (saveInUser) {
-                        await WhiteListModel.deleteOne({ token: userData.userToken });
                         userData.userToken = token;
                         await userData.save();
                     }
@@ -96,7 +92,6 @@ function authService(plugin, connection) {
                     dataToken.createdAt = Date.now();
                     token = await promisify(JWT.sign)(dataToken, plugin.config.jwt.secret, options);
                 }
-                await new WhiteListModel({ token }).save();
 
                 return token;
             } catch (e) {
@@ -217,10 +212,6 @@ function authService(plugin, connection) {
             if (!user) {
                 logger.info(`[Auth Service - deleteUser] No user found with id '${id}'`);
                 return null;
-            }
-
-            if (user && user.userToken) {
-                await WhiteListModel.deleteOne({ token: user.userToken });
             }
 
             return user.deleteOne();
@@ -374,14 +365,8 @@ function authService(plugin, connection) {
             return user;
         }
 
-        static async checkRevokedToken(ctx, payload, token) {
+        static async checkRevokedToken(ctx, payload) {
             logger.info('Checking if token is revoked');
-            const blacklistedToken = await BlackListModel.findOne({ token });
-
-            if (blacklistedToken) {
-                logger.info('[AuthService] Token blacklisted!');
-                return true;
-            }
 
             let isRevoked = false;
             if (payload.id !== 'microservice') {

@@ -1,8 +1,6 @@
 const nock = require('nock');
 const chai = require('chai');
 const JWT = require('jsonwebtoken');
-const config = require('config');
-const mongoose = require('mongoose');
 
 const PluginModel = require('models/plugin.model');
 const UserModel = require('plugins/sd-ct-oauth-plugin/models/user.model');
@@ -10,7 +8,6 @@ const authServiceFunc = require('plugins/sd-ct-oauth-plugin/services/auth.servic
 
 const { getTestAgent, closeTestAgent } = require('../test-server');
 const { setPluginSetting } = require('../utils/helpers');
-const mongooseOptions = require('../../../../config/mongoose');
 
 const should = chai.should();
 chai.use(require('chai-string'));
@@ -52,12 +49,8 @@ describe('Google auth endpoint tests', () => {
 
         nock.cleanAll();
 
-        const plugin = await PluginModel.findOne({
-            name: 'oauth',
-        });
-        const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
-        const connection = mongoose.createConnection(mongoUri, mongooseOptions);
-        AuthService = authServiceFunc(plugin, connection);
+        const plugin = await PluginModel.findOne({ name: 'oauth' });
+        AuthService = authServiceFunc(plugin);
     });
 
     beforeEach(async () => {
@@ -338,7 +331,7 @@ describe('Google auth endpoint tests', () => {
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
         const decodedTokenData = JWT.decode(response.body.token, process.env.JWT_SECRET);
-        const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData, response.body.token);
+        const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
         const userWithToken = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
@@ -396,7 +389,7 @@ describe('Google auth endpoint tests', () => {
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
         const decodedTokenData = JWT.decode(response.body.token, process.env.JWT_SECRET);
-        const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData, response.body.token);
+        const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
         const userWithToken = await UserModel.findOne({ _id: savedUser.id }).exec();

@@ -10,7 +10,13 @@ const convert = require('koa-convert');
 const sleep = require('sleep');
 const cors = require('@koa/cors');
 const koaSimpleHealthCheck = require('koa-simple-healthcheck');
+const session = require('koa-generic-session');
+const MongoStore = require('koa-generic-session-mongo');
+
+const ErrorSerializer = require('serializers/errorSerializer');
 const mongooseOptions = require('../../config/mongoose');
+
+const SESSION_KEY = 'authorization';
 
 const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 
@@ -39,7 +45,7 @@ async function init() {
                     retries--;
                     logger.error(`Failed to connect to MongoDB uri ${mongoUri}, retrying...`);
                     sleep.sleep(5);
-                    mongoose.connect(mongoUri, mongooseOptions, onDbReady);
+                    await mongoose.connect(mongoUri, mongooseOptions, onDbReady);
                 } else {
                     logger.error('MongoURI', mongoUri);
                     logger.error(err);
@@ -62,6 +68,38 @@ async function init() {
             }));
 
             app.use(convert(koaBodyMiddleware));
+
+            // Manage errors middleware
+            app.use(async (ctx, next) => {
+                try {
+                    await next();
+                } catch (error) {
+
+                    ctx.status = error.status || 500;
+
+                    if (ctx.status >= 500) {
+                        logger.error(error);
+                    } else {
+                        logger.info(error);
+                    }
+
+                    if (process.env.NODE_ENV === 'prod' && ctx.status === 500) {
+                        ctx.response.type = 'application/vnd.api+json';
+                        ctx.body = ErrorSerializer.serializeError(ctx.status, 'Unexpected error');
+                        return;
+                    }
+
+                    ctx.response.type = 'application/vnd.api+json';
+                    ctx.body = ErrorSerializer.serializeError(ctx.status, error.message);
+                }
+            });
+
+            // Mongo session middleware
+            app.keys = [SESSION_KEY];
+            const configSession = { store: new MongoStore({ url: mongoUri }), cookie: {} };
+            app.use(convert(session(configSession)));
+
+            // Load other stuff
             await loader.loadPlugins(app);
             app.use(koaLogger());
             app.use(koaSimpleHealthCheck());
