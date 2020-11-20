@@ -109,6 +109,7 @@ router.get('/generate-token', Utils.isLogged, CTAuthRouter.generateJWT);
 
 router.get('/user', Utils.isLogged, Utils.isAdmin, CTAuthRouter.getUsers);
 router.get('/user/me', Utils.isLogged, CTAuthRouter.getCurrentUser);
+router.get('/user/from-token', Utils.isLogged, CTAuthRouter.getCurrentUser);
 router.get('/user/:id', Utils.isLogged, Utils.isAdmin, CTAuthRouter.getUserById);
 router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, CTAuthRouter.findByIds);
 router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, CTAuthRouter.getIdsByRole);
