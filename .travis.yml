@@ -10,7 +10,7 @@ env:
   global:
     - CC_TEST_REPORTER_ID=9f1173797b3aca65254ee1d50b06d0ad27f81eeeb9db3b0567ece66eefbb1b9f
     - NODE_ENV=test
-    - PORT=9050
+    - PORT=9000
     - LOGGER_TYPE=console
     - HOST_IP=127.0.0.1
     - DEBUG=redis-cache-plugin

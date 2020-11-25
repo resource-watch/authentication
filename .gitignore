@@ -9,3 +9,4 @@ IMPORTANT.txt
 processes.json
 .nyc_output
 coverage
+dist

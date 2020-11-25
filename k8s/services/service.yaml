@@ -10,6 +10,6 @@ spec:
     - name: http
       protocol: TCP
       port: 80
-      targetPort: 9050
+      targetPort: 9000
   selector:
     name: authorization

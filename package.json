@@ -2,15 +2,16 @@
   "name": "authorization",
   "version": "1.0.0",
   "description": "Authorization service for the RW API.",
+  "repository": "https://github.com/resource-watch/authorization",
   "main": "index.js",
   "scripts": {
-    "dev": "NODE_PATH=app/src grunt --gruntfile app/Gruntfile.js | bunyan",
-    "run": "NODE_PATH=app/src node app/index.js | bunyan",
-    "test": "NODE_PATH=app/src node $NODE_DEBUG_OPTION ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js e2eTest",
-    "coverage": "NODE_PATH=app/src node $NODE_DEBUG_OPTION ./node_modules/.bin/grunt --gruntfile app/Gruntfile.js nyc",
-    "start": "NODE_PATH=app/src node $NODE_DEBUG_OPTION app/index"
+    "coverage": "nyc ts-mocha -b --project tsconfig.json -r tsconfig-paths/register --timeout 20000 'test/**/*.ts' --exit",
+    "test": "ts-mocha -b --project tsconfig.json -r tsconfig-paths/register --timeout 20000 'test/**/*.ts' --exit",
+    "start": "ts-node --files --project tsconfig.json -r tsconfig-paths/register src/index.ts"
   },
-  "keywords": [],
+  "keywords": [
+    "authorization"
+  ],
   "author": {
     "name": "Vizzuality",
     "email": "hello@vizzuality.com",
@@ -20,7 +21,53 @@
   "engines": {
     "node": "~12"
   },
+  "nyc": {
+    "extension": [
+      ".ts",
+      ".tsx"
+    ],
+    "exclude": [
+      "**/*.d.ts",
+      "*.test.*"
+    ],
+    "include": [
+      "src/**"
+    ],
+    "reporter": [
+      "text-summary",
+      "lcov"
+    ],
+    "reportDir": "coverage",
+    "all": true
+  },
   "devDependencies": {
+    "@types/bcrypt": "^3.0.0",
+    "@types/bunyan": "^1.8.6",
+    "@types/chai": "^4.2.14",
+    "@types/chai-datetime": "^0.0.36",
+    "@types/chai-http": "^4.2.0",
+    "@types/chai-string": "^1.4.2",
+    "@types/config": "^0.0.37",
+    "@types/jsonwebtoken": "^8.5.0",
+    "@types/koa-convert": "^1.2.3",
+    "@types/koa-generic-session": "^1.0.5",
+    "@types/koa-logger": "^3.1.1",
+    "@types/koa-mount": "^4.0.0",
+    "@types/koa-passport": "^4.0.2",
+    "@types/koa-router": "^7.4.1",
+    "@types/koa-views": "^2.0.4",
+    "@types/lodash": "^4.14.165",
+    "@types/mocha": "^8.0.4",
+    "@types/mongoose": "^5.10.1",
+    "@types/mongoose-paginate": "^5.0.8",
+    "@types/passport-facebook": "^2.1.10",
+    "@types/passport-facebook-token": "^0.4.34",
+    "@types/passport-google-oauth20": "^2.0.4",
+    "@types/passport-http": "^0.3.8",
+    "@types/passport-local": "^1.0.33",
+    "@types/passport-twitter": "^1.0.36",
+    "@types/sleep": "^0.0.8",
+    "@types/sparkpost": "^2.1.4",
     "chai": "^4.2.0",
     "chai-datetime": "^1.7.0",
     "chai-http": "^4.3.0",
@@ -46,7 +93,9 @@
     "mocha": "^8.2.1",
     "nock": "^13.0.4",
     "nyc": "^15.1.0",
-    "should": "^13.2.3"
+    "should": "^13.2.3",
+    "ts-mocha": "^8.0.0",
+    "ts-node": "^9.0.0"
   },
   "dependencies": {
     "@koa/cors": "^3.1.0",
@@ -80,16 +129,7 @@
     "passport-local": "^1.0.0",
     "passport-twitter": "^1.0.4",
     "sleep": "^6.3.0",
-    "sparkpost": "^2.1.4"
-  },
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*.js": [
-      "eslint --fix"
-    ]
+    "sparkpost": "^2.1.4",
+    "typescript": "^4.1.2"
   }
 }

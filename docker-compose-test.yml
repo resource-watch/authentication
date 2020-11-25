@@ -3,12 +3,12 @@ services:
   test:
     build: .
     ports:
-      - "9050:9050"
+      - "9000:9000"
     container_name: authorization-test
     environment:
       NODE_ENV: test
       SESSION_KEY: test
-      PORT: 9050
+      PORT: 9000
       LOGGER_TYPE: console
       DEBUG: redis-cache-plugin
       NODE_PATH: app/src

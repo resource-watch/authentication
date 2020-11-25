@@ -38,7 +38,7 @@ spec:
         - start
         env:
         - name: PORT
-          value: "9050"
+          value: "9000"
         - name: LOGGER_TYPE
           value: console
         - name: LOGGER_LEVEL
@@ -182,7 +182,7 @@ spec:
           failureThreshold: 3
           httpGet:
             path: /healthcheck
-            port: 9050
+            port: 9000
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 15
@@ -190,13 +190,13 @@ spec:
           timeoutSeconds: 5
         name: authorization
         ports:
-        - containerPort: 9050
+        - containerPort: 9000
           protocol: TCP
         readinessProbe:
           failureThreshold: 3
           httpGet:
             path: /healthcheck
-            port: 9050
+            port: 9000
             scheme: HTTP
           initialDelaySeconds: 30
           periodSeconds: 15

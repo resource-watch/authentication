@@ -39,7 +39,7 @@ yarn install
 ```
 yarn start
 ```
-Authorization API should now be up and accessible. To confirm, open [http://localhost:9050/auth](http://localhost:9050/auth) (assuming the default settings) on your browser, which should show you the authorization sign-in page.
+Authorization API should now be up and accessible. To confirm, open [http://localhost:9000/auth](http://localhost:9000/auth) (assuming the default settings) on your browser, which should show you the authorization sign-in page.
 
 ### Using Docker
 
@@ -57,7 +57,7 @@ Authorization API should now be up and accessible. To confirm, open [http://loca
 mymachine   <yourIP>
 ```
 
-Authorization API should now be up and accessible. To confirm, open [http://mymachine:9050/auth](http://mymachine:9050/auth) on your browser, which should show you the authorization sign-in page.
+Authorization API should now be up and accessible. To confirm, open [http://mymachine:9000/auth](http://mymachine:9000/auth) on your browser, which should show you the authorization sign-in page.
 
 ## Testing
 
@@ -83,7 +83,7 @@ Follow the instruction above for setting up the runtime environment for Docker e
 
 Some tests require real OAuth credentials to be set as environment variables, as it's currently not possible to mock all requests using the mocking library this project employs. The test code is built to detect the presence of these configuration values, and bypass these tests should the variables below not be present.
 
-Additionally, as these tests cause external services to use the callback URLs, the `PUBLIC_URL` env variable needs to be set to `http://localhost:9050`, otherwise the external services will refuse to callback, and the tests will fail.
+Additionally, as these tests cause external services to use the callback URLs, the `PUBLIC_URL` env variable needs to be set to `http://localhost:9000`, otherwise the external services will refuse to callback, and the tests will fail.
 
 #### Google OAuth tests
 
@@ -137,7 +137,7 @@ Token: `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im1pY3Jvc2VydmljZSIsInJvbGU
 
 Core Variables
 
-- PORT => The port where authorization listens for requests. Defaults to 9050 when not set.
+- PORT => The port where authorization listens for requests. Defaults to 9000 when not set.
 - NODE_ENV => Environment variable of nodejs. Required.
 - NODE_PATH => Required value. Always set it to 'app/src'.
 
