@@ -66,6 +66,7 @@
     "@types/passport-http": "^0.3.8",
     "@types/passport-local": "^1.0.33",
     "@types/passport-twitter": "^1.0.36",
+    "@types/sinon": "^9.0.9",
     "@types/sleep": "^0.0.8",
     "@types/sparkpost": "^2.1.4",
     "chai": "^4.2.0",
@@ -94,6 +95,7 @@
     "nock": "^13.0.4",
     "nyc": "^15.1.0",
     "should": "^13.2.3",
+    "sinon": "^9.2.1",
     "ts-mocha": "^8.0.0",
     "ts-node": "^9.0.0"
   },

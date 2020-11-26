@@ -6,7 +6,6 @@ import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import AuthService from 'plugins/sd-ct-oauth-plugin/services/auth.service';
 
 import { getTestAgent, closeTestAgent } from '../test-server';
-import { setPluginSetting } from '../utils/helpers';
 
 const should = chai.should();
 chai.use(require('chai-string'));
@@ -26,22 +25,9 @@ describe('Google auth endpoint tests', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        // We need to force-start the server, to ensure mongo has plugin info we can manipulate in the next instruction
-        await getTestAgent(true);
-
-        await setPluginSetting('oauth', 'defaultApp', 'rw');
-        await setPluginSetting('oauth', 'thirdParty.rw.google.active', true);
-        await setPluginSetting('oauth', 'thirdParty.rw.google.clientSecret', 'TEST_GOOGLE_OAUTH2_CLIENT_SECRET');
-
         if (!process.env.TEST_GOOGLE_OAUTH2_CLIENT_ID) {
             skipTests = true;
-            await setPluginSetting('oauth', 'thirdParty.rw.google.clientID', 'TEST_GOOGLE_OAUTH2_CLIENT_ID');
-        } else {
-            nock.enableNetConnect(new RegExp(`(${process.env.HOST_IP}|accounts.google.com)`));
-            await setPluginSetting('oauth', 'thirdParty.rw.google.clientID', process.env.TEST_GOOGLE_OAUTH2_CLIENT_ID);
         }
-
-        requester = await getTestAgent(true);
 
         await UserModel.deleteMany({}).exec();
 
@@ -325,7 +311,7 @@ describe('Google auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData = JWT.decode(response.body.token, process.env.JWT_SECRET);
+        const decodedTokenData = JWT.decode(response.body.token);
         const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
@@ -383,7 +369,7 @@ describe('Google auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData = JWT.decode(response.body.token, process.env.JWT_SECRET);
+        const decodedTokenData = JWT.decode(response.body.token);
         const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 

@@ -3,14 +3,15 @@ import passport from 'koa-passport';
 import { omit } from 'lodash';
 
 import Plugin from 'models/plugin.model';
-import logger from '../../logger';
-import Utils from '../../utils';
+import logger from 'logger';
+import Utils from 'utils';
 
-import AuthService from './services/auth.service';
-import UnprocessableEntityError from './errors/unprocessableEntity.error';
-import UnauthorizedError from './errors/unauthorized.error';
-import UserTempSerializer from './serializers/user-temp.serializer';
-import UserSerializer from './serializers/user.serializer';
+import AuthService from 'plugins/sd-ct-oauth-plugin/services/auth.service';
+import UnprocessableEntityError from 'plugins/sd-ct-oauth-plugin/errors/unprocessableEntity.error';
+import UnauthorizedError from 'plugins/sd-ct-oauth-plugin/errors/unauthorized.error';
+import UserTempSerializer from 'plugins/sd-ct-oauth-plugin/serializers/user-temp.serializer';
+import UserSerializer from 'plugins/sd-ct-oauth-plugin/serializers/user.serializer';
+import Settings from "services/settings.service";
 
 const twitter = async (ctx: Context, next: () => Promise<any>) => {
     const plugin = await Plugin.findOne({ name: 'oauth' });
@@ -35,17 +36,16 @@ const facebook = async (ctx: Context, next: () => Promise<any>) => {
 };
 
 const facebookToken = async (ctx: Context, next: () => Promise<any>) => {
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = Utils.getOriginApp(ctx, plugin);
+    const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`facebook-token:${app}`)(ctx, next);
 };
 
 const facebookCallback = async (ctx: Context, next: () => Promise<any>) => {
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-    const app = Utils.getOriginApp(ctx, plugin);
-    await passport.authenticate(`facebook:${app}`, {
-        failureRedirect: '/auth/fail',
-    })(ctx, next);
+    const app = Utils.getOriginApp(ctx);
+    await passport.authenticate(
+        `facebook:${app}`,
+        { failureRedirect: '/auth/fail' }
+    )(ctx, next);
 };
 
 const google = async (ctx: Context, next: () => Promise<any>) => {
@@ -444,16 +444,15 @@ async function confirmUser(ctx: Context) {
         return;
     }
 
-    const userFirstApp = (user && user.extraUserData && user.extraUserData.apps && user.extraUserData.apps.length > 0) ? user.extraUserData.apps[0] : null;
+    const userFirstApp: string = (user && user.extraUserData && user.extraUserData.apps && user.extraUserData.apps.length > 0) ? user.extraUserData.apps[0] : null;
 
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-    if (userFirstApp && plugin.config.local[userFirstApp] && plugin.config.local[userFirstApp].confirmUrlRedirect) {
-        ctx.redirect(plugin.config.local[userFirstApp].confirmUrlRedirect);
+    if (userFirstApp && Settings.getSettings().local[userFirstApp] && Settings.getSettings().local[userFirstApp].confirmUrlRedirect) {
+        ctx.redirect(Settings.getSettings().local[userFirstApp].confirmUrlRedirect);
         return;
     }
 
-    if (plugin.config.local.confirmUrlRedirect) {
-        ctx.redirect(plugin.config.local.confirmUrlRedirect);
+    if (Settings.getSettings().local.confirmUrlRedirect) {
+        ctx.redirect(Settings.getSettings().local.confirmUrlRedirect);
         return;
     }
     ctx.body = UserSerializer.serialize(user);

@@ -1,16 +1,13 @@
-import config from 'config';
+import config from "config";
 import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
+import { SinonSandbox } from "sinon";
 import { promisify } from 'util';
 
-import Plugin from 'models/plugin.model';
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import TempUserModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
-import mongooseOptions from '../../../config/mongoose';
 
 const { ObjectId } = mongoose.Types;
-
-const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 
 export const getUUID = () => Math.random().toString(36).substring(7);
 
@@ -83,24 +80,7 @@ export const ensureHasPaginationElements = (response) => {
     response.body.links.should.have.property('next').and.be.a('string');
 };
 
-export async function setPluginSetting(pluginName: string, settingKey: string, settingValue: any) {
-    return new Promise((resolve, reject) => {
-        async function onDbReady(err: Error) {
-            if (err) reject(err);
-
-            const plugin = await Plugin.findOne({ name: pluginName }).exec();
-            if (!plugin) {
-                reject(new Error(`Plugin '${pluginName}' could not be found.`));
-            }
-
-            const newConfig = {};
-            const pluginObjectKey = `config.${settingKey}`;
-            // @ts-ignore
-            newConfig[pluginObjectKey] = settingValue;
-
-            return Plugin.updateOne({ name: pluginName }, { $set: newConfig }).exec().then(resolve);
-        }
-
-        mongoose.connect(mongoUri, mongooseOptions, onDbReady);
-    });
+export const stubConfigValue = (sandbox: SinonSandbox, stubMap: Record<string, any>): void => {
+    const stub = sandbox.stub(config, 'get');
+    Object.keys(stubMap).forEach(key => { stub.withArgs(key).returns(stubMap[key]); });
 }

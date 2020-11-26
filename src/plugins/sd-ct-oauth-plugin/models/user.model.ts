@@ -12,7 +12,7 @@ export interface IUser extends Document {
     role: string;
     createdAt: Date;
     updatedAt: Date;
-    extraUserData: Object;
+    extraUserData: { apps: string[]; };
     userToken?: string;
 }
 

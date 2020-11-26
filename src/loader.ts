@@ -3,14 +3,16 @@ import logger from './logger';
 
 import AuthRouter from './routes/auth.router';
 import { middleware } from './plugins/sd-ct-oauth-plugin';
-import Plugin from "./models/plugin.model";
 
 export async function loadRoutes(app: Application) {
     logger.debug('Loading routes...');
 
-    // Load OAuth plugin middleware
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-    await middleware(app, plugin);
+    // Load OAuth middleware
+    try {
+        await middleware(app);
+    } catch (e) {
+        console.log(e);
+    }
 
     // Load auth routes
     app.use(AuthRouter.routes());

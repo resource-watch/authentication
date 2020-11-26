@@ -1,14 +1,16 @@
-import nock  from 'nock';
 import chai from 'chai';
+import nock  from 'nock';
+import sinon, {SinonSandbox} from 'sinon';
 
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
 import { getTestAgent, closeTestAgent } from '../test-server';
-import { getUUID, setPluginSetting } from '../utils/helpers';
+import { getUUID, stubConfigValue } from '../utils/helpers';
 
 const should = chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -20,18 +22,13 @@ describe('OAuth endpoints tests - Confirm account', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        await getTestAgent(true);
-
-        await setPluginSetting('oauth', 'local.confirmUrlRedirect', null);
-        await setPluginSetting('oauth', 'local.gfw.confirmUrlRedirect', null);
-        await setPluginSetting('oauth', 'local.rw.confirmUrlRedirect', null);
-        await setPluginSetting('oauth', 'local.prep.confirmUrlRedirect', null);
-
         requester = await getTestAgent(true);
 
         await UserModel.deleteMany({}).exec();
         await UserTempModel.deleteMany({}).exec();
     });
+
+    beforeEach(() => { sandbox = sinon.createSandbox(); });
 
     it('Confirm account request with invalid token should return an error', async () => {
         const response = await requester
@@ -102,9 +99,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
     });
 
     it('Confirm account request with valid token and a configured global redirect should return HTTP 200 and the redirect URL', async () => {
-        await setPluginSetting('oauth', 'local.confirmUrlRedirect', 'http://www.google.com/');
-
-        requester = await getTestAgent(true);
+        stubConfigValue(sandbox, { 'settings.local.confirmUrlRedirect' : 'http://www.google.com/' });
 
         const confirmationToken = getUUID();
         await new UserTempModel({
@@ -116,9 +111,8 @@ describe('OAuth endpoints tests - Confirm account', () => {
         }).save();
 
         const response = await requester.get(`/auth/confirm/${confirmationToken}`).redirects(0);
-
         response.should.redirect;
-        response.headers.location.should.equal('http://www.google.com/');
+        response.header.location.should.equal('http://www.google.com/');
 
         const missingTempUser = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
@@ -132,10 +126,12 @@ describe('OAuth endpoints tests - Confirm account', () => {
     });
 
     it('Confirm account request with valid token and a configured redirect per app should return HTTP 200 and the matching redirect URL', async () => {
-        await setPluginSetting('oauth', 'local.gfw.confirmUrlRedirect', 'https://www.globalforestwatch.org/');
-        await setPluginSetting('oauth', 'local.rw.confirmUrlRedirect', 'https://resourcewatch.org/myrw/areas');
-        await setPluginSetting('oauth', 'local.prep.confirmUrlRedirect', 'https://www.prepdata.org/');
-        await setPluginSetting('oauth', 'local.confirmUrlRedirect', 'http://www.google.com/');
+        stubConfigValue(sandbox,  {
+            'settings.local.gfw.confirmUrlRedirect': 'https://www.globalforestwatch.org/',
+            'settings.local.rw.confirmUrlRedirect': 'https://resourcewatch.org/myrw/areas',
+            'settings.local.prep.confirmUrlRedirect': 'https://www.prepdata.org/',
+            'settings.local.confirmUrlRedirect': 'http://www.google.com/',
+        });
 
         requester = await getTestAgent(true);
 
@@ -154,7 +150,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
 
         response.should.redirect;
 
-        response.headers.location.should.equal('https://resourcewatch.org/myrw/areas');
+        response.header.location.should.equal('https://resourcewatch.org/myrw/areas');
 
         const missingTempUser = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
@@ -168,10 +164,12 @@ describe('OAuth endpoints tests - Confirm account', () => {
     });
 
     it('Confirm account request with valid token and a configured redirect per app should return HTTP 200 and the use the fallback redirect URL', async () => {
-        await setPluginSetting('oauth', 'local.gfw.confirmUrlRedirect', 'https://www.globalforestwatch.org/');
-        await setPluginSetting('oauth', 'local.rw.confirmUrlRedirect', 'https://resourcewatch.org/myrw/areas');
-        await setPluginSetting('oauth', 'local.prep.confirmUrlRedirect', 'https://www.prepdata.org/');
-        await setPluginSetting('oauth', 'local.confirmUrlRedirect', 'http://www.google.com/');
+        stubConfigValue(sandbox,  {
+            'settings.local.gfw.confirmUrlRedirect': 'https://www.globalforestwatch.org/',
+            'settings.local.rw.confirmUrlRedirect': 'https://resourcewatch.org/myrw/areas',
+            'settings.local.prep.confirmUrlRedirect': 'https://www.prepdata.org/',
+            'settings.local.confirmUrlRedirect': 'http://www.google.com/',
+        });
 
         requester = await getTestAgent(true);
 
@@ -191,7 +189,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
         response.should.redirect;
 
         response.redirects.should.be.an('array');
-        response.headers.location.should.equal('http://www.google.com/');
+        response.header.location.should.equal('http://www.google.com/');
 
         const missingTempUser = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
@@ -205,10 +203,12 @@ describe('OAuth endpoints tests - Confirm account', () => {
     });
 
     it('Confirm account request with valid token and a redirect query param should return HTTP 200 and the use the query param redirect', async () => {
-        await setPluginSetting('oauth', 'local.gfw.confirmUrlRedirect', 'https://www.globalforestwatch.org/');
-        await setPluginSetting('oauth', 'local.rw.confirmUrlRedirect', 'https://resourcewatch.org/myrw/areas');
-        await setPluginSetting('oauth', 'local.prep.confirmUrlRedirect', 'https://www.prepdata.org/');
-        await setPluginSetting('oauth', 'local.confirmUrlRedirect', 'http://www.google.com/');
+        stubConfigValue(sandbox,  {
+            'settings.local.gfw.confirmUrlRedirect': 'https://www.globalforestwatch.org/',
+            'settings.local.rw.confirmUrlRedirect': 'https://resourcewatch.org/myrw/areas',
+            'settings.local.prep.confirmUrlRedirect': 'https://www.prepdata.org/',
+            'settings.local.confirmUrlRedirect': 'http://www.google.com/',
+        });
 
         requester = await getTestAgent(true);
 
@@ -227,7 +227,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
 
         response.should.redirect;
 
-        response.headers.location.should.equal('http://vizzuality.com/');
+        response.header.location.should.equal('http://vizzuality.com/');
 
         const missingTempUser = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
@@ -251,5 +251,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        sandbox.restore();
     });
 });

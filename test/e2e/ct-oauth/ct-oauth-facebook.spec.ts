@@ -4,7 +4,6 @@ import JWT from 'jsonwebtoken';
 import crypto from 'crypto';
 
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import { setPluginSetting } from '../utils/helpers';
 import { getTestAgent, closeTestAgent } from '../test-server';
 
 const should = chai.should();
@@ -24,22 +23,10 @@ describe('Facebook auth endpoint tests', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        // We need to force-start the server, to ensure mongo has plugin info we can manipulate in the next instruction
-        await getTestAgent(true);
-
-        await setPluginSetting('oauth', 'defaultApp', 'rw');
-        await setPluginSetting('oauth', 'thirdParty.rw.facebook.active', true);
-
+        // Skip tests if correct env vars are not provided
         if (!process.env.TEST_FACEBOOK_OAUTH2_APP_ID || !process.env.TEST_FACEBOOK_OAUTH2_APP_SECRET) {
             skipTests = true;
-            await setPluginSetting('oauth', 'thirdParty.rw.facebook.clientID', 'TEST_FACEBOOK_OAUTH2_APP_ID');
-            await setPluginSetting('oauth', 'thirdParty.rw.facebook.clientSecret', 'TEST_FACEBOOK_OAUTH2_APP_SECRET');
-        } else {
-            await setPluginSetting('oauth', 'thirdParty.rw.facebook.clientID', process.env.TEST_FACEBOOK_OAUTH2_APP_ID);
-            await setPluginSetting('oauth', 'thirdParty.rw.facebook.clientSecret', process.env.TEST_FACEBOOK_OAUTH2_APP_SECRET);
         }
-
-        requester = await getTestAgent(true);
 
         await UserModel.deleteMany({}).exec();
     });
@@ -325,13 +312,13 @@ describe('Facebook auth endpoint tests', () => {
         userWithToken.should.have.property('userToken').and.equal(response.body.token);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
-        closeTestAgent();
+        await closeTestAgent();
     });
 });

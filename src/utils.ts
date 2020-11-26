@@ -1,11 +1,13 @@
 import config from 'config';
-import logger from './logger';
 import { Context } from "koa";
-import {IPlugin} from "./models/plugin.model";
+
+import logger from './logger';
+import Settings, { IApplication } from "./services/settings.service";
 
 export default class Utils {
 
     static getUser(ctx: Context) {
+        // @ts-ignore
         return ctx.req.user || ctx.state.user || ctx.state.microservice;
     }
 
@@ -68,7 +70,7 @@ export default class Utils {
         }
     }
 
-    static getOriginApp(ctx: Context, plugin: IPlugin) {
+    static getOriginApp(ctx: Context): string {
         if (ctx.query.origin) {
             return ctx.query.origin;
         }
@@ -77,10 +79,10 @@ export default class Utils {
             return ctx.session.originApplication;
         }
 
-        return plugin.config.defaultApp;
+        return Settings.getSettings().defaultApp;
     }
 
-    static serializeObjToQuery(obj: Object) {
+    static serializeObjToQuery(obj: Record<string, any>) {
         return Object.keys(obj).reduce((a, k) => {
             a.push(`${k}=${encodeURIComponent(obj[k])}`);
             return a;
@@ -94,9 +96,9 @@ export default class Utils {
         };
     }
 
-    static getApplicationsConfig(ctx: Context, plugin: IPlugin) {
-        const app = Utils.getOriginApp(ctx, plugin);
-        return plugin.config.applications && plugin.config.applications[app];
+    static getApplicationsConfig(ctx: Context): IApplication {
+        const app = Utils.getOriginApp(ctx);
+        return Settings.getSettings().applications && Settings.getSettings().applications[app];
     }
 
 }

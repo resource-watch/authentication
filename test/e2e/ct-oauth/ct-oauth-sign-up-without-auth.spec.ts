@@ -4,7 +4,6 @@ import { isEqual } from 'lodash';
 
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
-import { setPluginSetting } from '../utils/helpers';
 import { getTestAgent, closeTestAgent } from '../test-server';
 
 const should = chai.should();
@@ -20,11 +19,6 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        // We need to force-start the server, to ensure mongo has plugin info we can manipulate in the next instruction
-        await getTestAgent(true);
-
-        await setPluginSetting('oauth', 'allowPublicRegistration', true);
 
         requester = await getTestAgent(true);
 
@@ -96,7 +90,7 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
                     ],
                     substitution_data: {
                         fromEmail: 'noreply@resourcewatch.org',
-                        fromName: 'RW API',
+                        fromName: 'Resource Watch',
                         appName: 'RW API',
                         logo: 'https://resourcewatch.org/static/images/logo-embed.png'
                     }
@@ -160,11 +154,8 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
     it('Confirming a user\'s account using the email token should be successful (user without app)', async () => {
         const tempUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
 
-        const response = await requester
-            .get(`/auth/confirm/${tempUser.confirmationToken}`)
-            .redirects(0);
-
-        response.should.redirect;
+        const response = await requester.get(`/auth/confirm/${tempUser.confirmationToken}`);
+        response.status.should.equal(200);
 
         const missingTempUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
@@ -211,7 +202,7 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
                     ],
                     substitution_data: {
                         fromEmail: 'noreply@resourcewatch.org',
-                        fromName: 'RW API',
+                        fromName: 'Resource Watch',
                         appName: 'RW API',
                         logo: 'https://resourcewatch.org/static/images/logo-embed.png'
                     }
@@ -258,11 +249,8 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
     it('Confirming a user\'s account using the email token should be successful (user with app)', async () => {
         const tempUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
 
-        const response = await requester
-            .get(`/auth/confirm/${tempUser.confirmationToken}`)
-            .redirects(0);
-
-        response.should.redirect;
+        const response = await requester.get(`/auth/confirm/${tempUser.confirmationToken}`);
+        response.status.should.equal(200);
 
         const missingTempUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingTempUser);

@@ -9,7 +9,7 @@ export interface IUserTemp extends Document {
     role: string;
     createdAt: Date;
     confirmationToken: string;
-    extraUserData: Object;
+    extraUserData: { apps: string[]; };
 }
 
 const UserTempSchema: Schema = new Schema({

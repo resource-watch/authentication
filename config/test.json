@@ -3,5 +3,14 @@
     "database": "authorization_db_test",
     "host": "localhost",
     "port": 27017
+  },
+  "settings": {
+    "defaultApp": "rw",
+    "local": {
+      "confirmUrlRedirect": null,
+      "gfw": { "confirmUrlRedirect": null },
+      "rw": { "confirmUrlRedirect": null },
+      "prep": { "confirmUrlRedirect": null }
+    }
   }
 }

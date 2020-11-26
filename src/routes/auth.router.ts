@@ -4,13 +4,11 @@ import Router from 'koa-router';
 import { cloneDeep } from 'lodash';
 
 import CTAuthRouter from 'plugins/sd-ct-oauth-plugin/auth.router';
-import Plugin from 'models/plugin.model';
-import logger from '../logger';
-import Utils from '../utils';
+import logger from 'logger';
+import Utils from 'utils';
+import Settings from "services/settings.service";
 
 async function setCallbackUrl(ctx: Context, next: () => Promise<any>) {
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-
     logger.info('Setting callbackUrl');
     if (!ctx.session.callbackUrl && !ctx.query.callbackUrl) {
         ctx.session.callbackUrl = ctx.headers.referer;
@@ -26,18 +24,17 @@ async function setCallbackUrl(ctx: Context, next: () => Promise<any>) {
         ctx.session.generateToken = ctx.query.token === 'true';
     }
     if (!ctx.session.originApplication || ctx.query.origin) {
-        ctx.session.originApplication = ctx.query.origin || plugin.config.defaultApp;
+        ctx.session.originApplication = ctx.query.origin || Settings.getSettings().defaultApp;
     }
 
     await next();
 }
 
 async function loadApplicationGeneralConfig(ctx: Context, next: () => Promise<any>) {
-    const plugin = await Plugin.findOne({ name: 'oauth' });
     const generalConfig = Utils.getGeneralConfig();
 
     ctx.state.generalConfig = cloneDeep(generalConfig); // avoiding a bug when changes in DB are not applied
-    const applicationConfig = Utils.getApplicationsConfig(ctx, plugin);
+    const applicationConfig = Utils.getApplicationsConfig(ctx);
 
     if (applicationConfig) {
         ctx.state.generalConfig.application = { ...ctx.state.generalConfig.application, ...applicationConfig };
@@ -47,8 +44,6 @@ async function loadApplicationGeneralConfig(ctx: Context, next: () => Promise<an
 }
 
 async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: () => Promise<any>) {
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-
     logger.info('Setting callbackUrl');
     if (ctx.query.callbackUrl) {
         ctx.session.callbackUrl = ctx.query.callbackUrl;
@@ -57,16 +52,14 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: () => Promis
         ctx.session.generateToken = ctx.query.token === 'true';
     }
     if (ctx.query.origin) {
-        ctx.session.originApplication = ctx.query.origin || plugin.config.defaultApp;
+        ctx.session.originApplication = ctx.query.origin || Settings.getSettings().defaultApp;
     }
 
     await next();
 }
 
 async function hasSignUpPermissions(ctx: Context, next: () => Promise<any>) {
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-
-    if (!plugin.config.allowPublicRegistration) {
+    if (!Settings.getSettings().allowPublicRegistration) {
         await Utils.isLogged(ctx, () => {});
         await Utils.isAdmin(ctx, () => {});
     }

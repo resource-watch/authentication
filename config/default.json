@@ -32,5 +32,15 @@
   },
   "jwt": {
     "token": ""
+  },
+  "settings": {
+    "defaultApp": "gfw",
+    "allowPublicRegistration": true,
+    "local": {
+      "confirmUrlRedirect": "http://www.globalforestwatch.org",
+      "gfw": { "confirmUrlRedirect": "http://www.globalforestwatch.org" },
+      "rw": { "confirmUrlRedirect": "https://resourcewatch.org/myrw/areas" },
+      "prep": { "confirmUrlRedirect": null }
+    }
   }
 }

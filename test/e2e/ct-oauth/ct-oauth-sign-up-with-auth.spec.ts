@@ -1,15 +1,17 @@
 import nock from 'nock';
 import chai from 'chai';
 import { isEqual } from 'lodash';
+import sinon, { SinonSandbox } from "sinon";
 
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
-import { setPluginSetting, createUserAndToken, createTempUser } from '../utils/helpers';
+import { createUserAndToken, createTempUser, stubConfigValue } from '../utils/helpers';
 import { getTestAgent, closeTestAgent } from '../test-server';
 
 const should = chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -21,21 +23,17 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        // We need to force-start the server, to ensure mongo has plugin info we can manipulate in the next instruction
-        await getTestAgent(true);
-
-        await setPluginSetting('oauth', 'allowPublicRegistration', false);
-
         requester = await getTestAgent(true);
+
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'settings.allowPublicRegistration' : false });
 
         await UserModel.deleteMany({}).exec();
         await UserTempModel.deleteMany({}).exec();
     });
 
     it('Registering a user without being logged in returns an 401 error (JSON format)', async () => {
-        const response = await requester
-            .post(`/auth/sign-up`);
-
+        const response = await requester.post(`/auth/sign-up`);
         response.status.should.equal(401);
         response.should.be.json;
         response.body.should.have.property('errors').and.be.an('array');
@@ -104,7 +102,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
                     ],
                     substitution_data: {
                         fromEmail: 'noreply@resourcewatch.org',
-                        fromName: 'RW API',
+                        fromName: 'Resource Watch',
                         appName: 'RW API',
                         logo: 'https://resourcewatch.org/static/images/logo-embed.png'
                     }
@@ -142,10 +140,8 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         should.exist(user);
         user.should.have.property('email').and.equal('someemail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         user.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
     });
 
@@ -172,11 +168,8 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
     it('Confirming a user\'s account using the email token should be successful', async () => {
         const tempUser = await createTempUser({ email: 'someemail@gmail.com' });
 
-        const response = await requester
-            .get(`/auth/confirm/${tempUser.confirmationToken}`)
-            .redirects(0);
-
-        response.should.redirect;
+        const response = await requester.get(`/auth/confirm/${tempUser.confirmationToken}`);
+        response.status.should.equal(200);
 
         const missingTempUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
@@ -186,7 +179,6 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');
         confirmedUser.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         confirmedUser.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
     });
 
@@ -228,7 +220,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
                     ],
                     substitution_data: {
                         fromEmail: 'noreply@resourcewatch.org',
-                        fromName: 'RW API',
+                        fromName: 'Resource Watch',
                         appName: 'RW API',
                         logo: 'https://resourcewatch.org/static/images/logo-embed.png'
                     }
@@ -346,5 +338,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        sandbox.restore();
     });
 });

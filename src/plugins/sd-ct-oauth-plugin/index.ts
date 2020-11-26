@@ -1,21 +1,21 @@
 import Application, { Context } from "koa";
 import passport from 'koa-passport';
-import jwt from 'koa-jwt';
+import jwt, { Options } from 'koa-jwt';
 import views from 'koa-views';
 
-import { IPlugin } from "../../models/plugin.model";
 import logger from '../../logger';
 import registerStrategies from './services/passport.service';
 import AuthService from './services/auth.service';
+import Settings from "../../services/settings.service";
 
-export async function middleware(app: Application, plugin: IPlugin) {
+export async function middleware(app: Application) {
     logger.info('Loading oauth-plugin');
     app.use(views(`${__dirname}/views`, { extension: 'ejs' }));
     await registerStrategies();
     app.use(passport.initialize());
     app.use(passport.session());
 
-    const getToken = (ctx, opts) => {
+    const getToken = (ctx: Context, opts: Options) => {
         // External requests use the standard 'authorization' header, but internal requests use 'authentication' instead
         // so we need a custom function to load the token. Why don't we use authorization on both will always elude me...
 
@@ -45,8 +45,8 @@ export async function middleware(app: Application, plugin: IPlugin) {
 
     logger.info('JWT active');
     app.use(jwt({
-        secret: plugin.config.jwt.secret,
-        passthrough: plugin.config.jwt.passthrough,
+        secret: Settings.getSettings().jwt.secret,
+        passthrough: Settings.getSettings().jwt.passthrough,
         isRevoked: AuthService.checkRevokedToken,
         getToken
     }));

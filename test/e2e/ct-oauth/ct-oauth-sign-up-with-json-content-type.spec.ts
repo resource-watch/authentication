@@ -4,12 +4,11 @@ import { isEqual } from 'lodash';
 
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
-const { setPluginSetting } = require('../utils/helpers');
 import { getTestAgent, closeTestAgent } from '../test-server';
 
 const should = chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -20,11 +19,6 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        // We need to force-start the server, to ensure mongo has plugin info we can manipulate in the next instruction
-        await getTestAgent(true);
-
-        await setPluginSetting('oauth', 'allowPublicRegistration', true);
 
         requester = await getTestAgent(true);
 
@@ -109,7 +103,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
                     ],
                     substitution_data: {
                         fromEmail: 'noreply@resourcewatch.org',
-                        fromName: 'RW API',
+                        fromName: 'Resource Watch',
                         appName: 'RW API',
                         logo: 'https://resourcewatch.org/static/images/logo-embed.png'
                     }
@@ -140,14 +134,12 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         response.status.should.equal(200);
         response.should.be.json;
-        // eslint-disable-next-line
         response.body.should.have.property('data').and.not.be.empty;
 
         const responseUser = response.body.data;
         responseUser.should.have.property('email').and.equal('someemail@gmail.com');
         responseUser.should.have.property('role').and.equal('USER');
         responseUser.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
 
         const user = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
@@ -155,10 +147,8 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         user.should.have.property('email').and.equal('someemail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         user.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
     });
 
@@ -195,10 +185,8 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         const response = await requester
             .get(`/auth/confirm/${tempUser.confirmationToken}`)
-            .set('Content-Type', 'application/json')
-            .redirects(0);
-
-        response.should.redirect;
+            .set('Content-Type', 'application/json');
+        response.status.should.equal(200);
 
         const missingTempUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
@@ -208,7 +196,6 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');
         confirmedUser.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         confirmedUser.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
     });
 
@@ -253,7 +240,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
                     ],
                     substitution_data: {
                         fromEmail: 'noreply@resourcewatch.org',
-                        fromName: 'RW API',
+                        fromName: 'Resource Watch',
                         appName: 'RW API',
                         logo: 'https://resourcewatch.org/static/images/logo-embed.png'
                     }
@@ -285,21 +272,18 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         response.status.should.equal(200);
         response.should.be.json;
-        // eslint-disable-next-line
         response.body.should.have.property('data').and.not.be.empty;
 
         const responseUser = response.body.data;
         responseUser.should.have.property('email').and.equal('someotheremail@gmail.com');
         responseUser.should.have.property('role').and.equal('USER');
         responseUser.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
 
         const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
         user.extraUserData.apps.should.be.an('array').and.contain('rw');
@@ -321,7 +305,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
                     ],
                     substitution_data: {
                         fromEmail: 'noreply@resourcewatch.org',
-                        fromName: 'RW API',
+                        fromName: 'Resource Watch',
                         appName: 'RW API',
                         logo: 'https://resourcewatch.org/static/images/logo-embed.png'
                     }
@@ -354,21 +338,18 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         response.status.should.equal(200);
         response.should.be.json;
-        // eslint-disable-next-line
         response.body.should.have.property('data').and.not.be.empty;
 
         const responseUser = response.body.data;
         responseUser.should.have.property('email').and.equal('someotheremail@gmail.com');
         responseUser.should.have.property('role').and.equal('USER');
         responseUser.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
 
         const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
         user.extraUserData.apps.should.be.an('array').and.contain('rw');
@@ -383,10 +364,8 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         const response = await requester
             .get(`/auth/confirm/${tempUser.confirmationToken}`)
-            .set('Content-Type', 'application/json')
-            .redirects(0);
-
-        response.should.redirect;
+            .set('Content-Type', 'application/json');
+        response.status.should.equal(200);
 
         const missingTempUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
