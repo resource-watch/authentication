@@ -57,13 +57,6 @@ const init = async ():Promise<IInit> => {
                 return;
             }
 
-            logger.info('Executing migration...');
-            try {
-                await require('./migrations/init')(); // eslint-disable-line global-require
-            } catch (Err) {
-                logger.error(Err);
-            }
-
             const app = new Koa();
             app.use(cors({
                 credentials: true

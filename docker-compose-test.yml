@@ -12,7 +12,6 @@ services:
       LOGGER_TYPE: console
       DEBUG: redis-cache-plugin
       NODE_PATH: app/src
-      EXEC_MIGRATION: 'true'
       JWT_SECRET: mysecret
       COOKIE_DOMAIN: mymachine
       PUBLIC_URL: http://localhost:9000

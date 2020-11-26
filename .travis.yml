@@ -15,7 +15,6 @@ env:
     - HOST_IP=127.0.0.1
     - DEBUG=redis-cache-plugin
     - NODE_PATH=app/src
-    - EXEC_MIGRATION=true
     - JWT_SECRET=mysecret
     - COOKIE_DOMAIN=mymachine
     - SESSION_KEY=test
