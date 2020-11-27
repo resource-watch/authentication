@@ -2,7 +2,6 @@ import config from 'config';
 import { Server } from "http";
 import Koa from 'koa';
 import koaBody from 'koa-body';
-import convert from 'koa-convert';
 import koaLogger from 'koa-logger';
 import mongoose from 'mongoose';
 import sleep from 'sleep';
@@ -12,7 +11,6 @@ import cors from '@koa/cors';
 import koaSimpleHealthCheck from 'koa-simple-healthcheck';
 import session from 'koa-generic-session';
 // @ts-ignore
-import MongoStore from 'koa-generic-session-mongo';
 import redisStore from 'koa-redis';
 import views from 'koa-views';
 
@@ -113,11 +111,6 @@ const init = async ():Promise<IInit> => {
                     ctx.body = ErrorSerializer.serializeError(ctx.status, error.message);
                 }
             });
-
-            // Mongo session middleware
-            app.keys = ['authorization'];
-            const configSession = { store: new MongoStore({ url: mongoUri }), cookie: {} };
-            app.use(convert(session(configSession)));
 
             // Load other stuff
             app.use(koaLogger());
