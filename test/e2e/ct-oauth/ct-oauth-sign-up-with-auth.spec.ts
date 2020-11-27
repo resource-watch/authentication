@@ -6,7 +6,7 @@ import sinon, { SinonSandbox } from "sinon";
 import UserModel from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import { createUserAndToken, createTempUser, stubConfigValue } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../test-server';
+import { getTestAgent, closeTestAgent } from '../utils/test-server';
 
 const should = chai.should();
 

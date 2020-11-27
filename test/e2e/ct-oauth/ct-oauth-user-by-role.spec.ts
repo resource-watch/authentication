@@ -3,8 +3,8 @@ import chai from 'chai';
 
 import UserModel from 'models/user.model';
 import { createUser, createUserAndToken } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../test-server';
-import { TOKENS } from '../test.constants';
+import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { TOKENS } from '../utils/test.constants';
 
 chai.should();
 

@@ -3,7 +3,7 @@ import chai from 'chai';
 
 import UserModel from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
-import { getTestAgent, closeTestAgent } from '../test-server';
+import { getTestAgent, closeTestAgent } from '../utils/test-server';
 import { createUserAndToken } from '../utils/helpers';
 
 chai.should();

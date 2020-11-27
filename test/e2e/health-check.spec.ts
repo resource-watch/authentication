@@ -1,7 +1,7 @@
 import chai from 'chai';
 import nock from 'nock';
 
-import { getTestAgent } from './test-server';
+import { getTestAgent } from './utils/test-server';
 
 let requester:ChaiHttp.Agent;
 

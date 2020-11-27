@@ -8,7 +8,7 @@ import RenewModel from 'models/renew.model';
 
 chai.should();
 
-import { getTestAgent, closeTestAgent } from '../test-server';
+import { getTestAgent, closeTestAgent } from '../utils/test-server';
 
 let requester:ChaiHttp.Agent;
 
