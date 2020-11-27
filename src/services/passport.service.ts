@@ -10,8 +10,10 @@ import { Strategy as GoogleTokenStrategy } from 'passport-google-token';
 import FacebookTokenStrategy from 'passport-facebook-token';
 
 import logger from 'logger';
+import NoTwitterAccountError from "errors/noTwitterAccount.error";
 import UserModel from 'models/user.model';
 import Settings from "services/settings.service";
+import UserService from 'services/user.service';
 
 async function registerUser(accessToken: string, refreshToken: string, profile: any, done: Function) {
     logger.info('[passportService] Registering user', profile);
@@ -71,7 +73,7 @@ async function registerUser(accessToken: string, refreshToken: string, profile: 
     });
 }
 
-async function registerUserBasic(userId, password, done) {
+async function registerUserBasic(userId: string, password: string, done: Function) {
     try {
         logger.info('[passportService] Verifying basic auth');
         if (userId === Settings.getSettings().basic.userId && password === Settings.getSettings().basic.password) {
@@ -89,6 +91,48 @@ async function registerUserBasic(userId, password, done) {
 }
 
 export default async function registerStrategies() {
+    async function registerUserBasicTwitter(
+        accessToken: string,
+        refreshToken: string,
+        profile: Record<string, any>,
+        done: (error: any, user?: any) => void
+    ) {
+        logger.info('[passportService] Registering user', profile);
+
+        const user = await UserService.findOne({
+            provider: 'twitter',
+            providerId: profile.id,
+        });
+
+        logger.info(user);
+
+        if (!user) {
+            done(new NoTwitterAccountError());
+        } else {
+            let email = null;
+            if (profile && profile.emails && profile.emails.length > 0) {
+                email = profile.emails[0].value;
+            }
+            if (email && email !== user.email) {
+                logger.info('[passportService] Updating email');
+                user.email = email;
+                await user.save();
+            }
+        }
+        logger.info('[passportService] Returning user');
+        done(null, {
+            id: user._id,
+            provider: user.provider,
+            providerId: user.providerId,
+            role: user.role,
+            createdAt: user.createdAt,
+            extraUserData: user.extraUserData,
+            name: user.name,
+            photo: user.photo,
+            email: user.email
+        });
+    }
+
     passport.serializeUser((user, done) => {
         done(null, user);
     });
@@ -99,7 +143,7 @@ export default async function registerStrategies() {
 
     if (Settings.getSettings().local && Settings.getSettings().local.active) {
         logger.info('[passportService] Loading local strategy');
-        const login = async function login(username, password, done) {
+        const login = async function login(username: string, password: string, done: Function) {
             const user = await UserModel.findOne({
                 email: username,
                 provider: 'local'
@@ -148,7 +192,7 @@ export default async function registerStrategies() {
                     userProfileURL: 'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true',
                     callbackURL: `${Settings.getSettings().publicUrl}/auth/twitter/callback`
                 };
-                const twitterStrategy = new TwitterStrategy(configTwitter, registerUser);
+                const twitterStrategy = new TwitterStrategy(configTwitter, registerUserBasicTwitter);
                 twitterStrategy.name += `:${apps[i]}`;
                 passport.use(twitterStrategy);
             }

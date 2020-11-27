@@ -25,19 +25,31 @@
           "active": true
         },
         "apple": { "active": false },
-        "twitter": { "active": false }
+        "twitter": {
+          "consumerSecret": "test",
+          "consumerKey": "test",
+          "active": true
+        }
       },
       "gfw": {
         "facebook": { "active": false },
         "google": { "active": false },
         "apple": { "active": false },
-        "twitter": { "active": false }
+        "twitter": {
+          "consumerSecret": "test",
+          "consumerKey": "test",
+          "active": true
+        }
       },
       "prep": {
         "facebook": { "active": false },
         "google": { "active": false },
         "apple": { "active": false },
-        "twitter": { "active": false }
+        "twitter": {
+          "consumerSecret": "test",
+          "consumerKey": "test",
+          "active": true
+        }
       }
     }
   }

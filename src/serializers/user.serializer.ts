@@ -1,6 +1,28 @@
+import { IUser } from "models/user.model";
+
+interface ILinks {
+    self: string;
+    first: string;
+    last: string;
+    prev: string;
+    next: string;
+}
+
+interface IMeta {
+    'total-pages': number;
+    'total-items': number;
+    size: number;
+}
+
+interface ISerializedResponse {
+    data: Record<string, any>;
+    links?: ILinks;
+    meta?: IMeta;
+}
+
 export default class UserSerializer {
 
-    static serializeElement(el) {
+    static serializeElement(el: Record<string, any>) {
         return {
             id: el.id,
             email: el.email,
@@ -13,8 +35,11 @@ export default class UserSerializer {
         };
     }
 
-    static serialize(data, link = null) {
-        const result = {};
+    static serialize(data: any, link: string = null) {
+        const result: ISerializedResponse = {
+            data: undefined,
+        };
+
         if (data && Array.isArray(data) && data.length === 0) {
             result.data = [];
             return result;
@@ -24,7 +49,7 @@ export default class UserSerializer {
                 while (data.docs.indexOf(undefined) >= 0) {
                     data.docs.splice(data.docs.indexOf(undefined), 1);
                 }
-                result.data = data.docs.map((el) => UserSerializer.serializeElement(el));
+                result.data = data.docs.map((el: IUser) => UserSerializer.serializeElement(el));
             } else if (Array.isArray(data)) {
                 result.data = data.map((e) => UserSerializer.serializeElement(e));
             } else {

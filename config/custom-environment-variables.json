@@ -33,6 +33,38 @@
         "google": {
           "clientSecret": "RW_GOOGLE_CLIENT_SECRET",
           "clientID": "RW_GOOGLE_CLIENT_ID"
+        },
+        "twitter": {
+          "consumerSecret": "RW_TWITTER_CONSUMER_SECRET",
+          "consumerKey": "RW_TWITTER_CONSUMER_KEY"
+        }
+      },
+      "gfw": {
+        "facebook": {
+          "clientSecret": "GFW_FACEBOOK_CLIENT_SECRET",
+          "clientID": "GFW_FACEBOOK_CLIENT_ID"
+        },
+        "google": {
+          "clientSecret": "GFW_GOOGLE_CLIENT_SECRET",
+          "clientID": "GFW_GOOGLE_CLIENT_ID"
+        },
+        "twitter": {
+          "consumerSecret": "GFW_TWITTER_CONSUMER_SECRET",
+          "consumerKey": "GFW_TWITTER_CONSUMER_KEY"
+        }
+      },
+      "prep": {
+        "facebook": {
+          "clientSecret": "PREP_FACEBOOK_CLIENT_SECRET",
+          "clientID": "PREP_FACEBOOK_CLIENT_ID"
+        },
+        "google": {
+          "clientSecret": "PREP_GOOGLE_CLIENT_SECRET",
+          "clientID": "PREP_GOOGLE_CLIENT_ID"
+        },
+        "twitter": {
+          "consumerSecret": "PREP_TWITTER_CONSUMER_SECRET",
+          "consumerKey": "PREP_TWITTER_CONSUMER_KEY"
         }
       }
     }

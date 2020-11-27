@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>RW API - Twitter account migration</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Open+Sans:300,400,700" media="all">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.2.3/foundation-flex.min.css" media="all">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.6.3/css/font-awesome.min.css" media="all">
+    <style>
+        body {
+            font-family: "Open Sans", Helvetica, Arial, sans-serif;
+            background: #f6f6f6;
+        }
+        #main {
+            height: 100vh
+        }
+        a {
+            color: <%= application.principalColor %>;
+        }
+        .login-form {
+            background: white;
+            padding: 50px 60px;
+            box-shadow: 2px 2px 20px rgba(0, 0, 0, .1);
+        }
+        .align-center {
+            margin: 0 auto;
+        }
+        .row {
+            align-items: center
+        }
+    </style>
+</head>
+<body>
+<div class="row align-middle align-center" id="main">
+    <div class="small-12 columns">
+        <div class="row align-center">
+            <div class="small-10 medium-8 large-8 columns">
+                <div class="login-form row">
+
+                    <div class="small-8 medium-8 large-5 columns align-center">
+                        <img src="<%= application.logo %>">
+                    </div>
+                    <div class="small-10 medium-8 large-6 columns align-center">
+                        <h2>Twitter account migration</h2>
+                        <p>Using Twitter to log in to <%= application.name %> is no longer supported. Using this migration tool, you will be able to migrate your Twitter-based <%= application.name %> account to use an email address and password for login. To start the migration process, click the "Twitter" button below to log in using your existing Twitter-based account.</p>
+                        <div class="third-party">
+                            <a href="/auth/twitter/auth"><i class="fa fa-twitter" aria-hidden="true"></i>Twitter</a>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/foundation/6.2.3/foundation.min.js"></script>
+</body>
+</html>

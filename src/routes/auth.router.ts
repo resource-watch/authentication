@@ -68,9 +68,6 @@ async function hasSignUpPermissions(ctx: Context, next: () => Promise<any>) {
 
 const router = new Router({ prefix: '/auth' });
 
-router.get('/twitter', setCallbackUrl, CTAuthRouter.twitter);
-router.get('/twitter/callback', CTAuthRouter.twitterCallback, CTAuthRouter.updateApplications);
-
 router.get('/google', setCallbackUrl, CTAuthRouter.google);
 router.get('/google/callback', CTAuthRouter.googleCallback, CTAuthRouter.updateApplications);
 router.get('/google/token', CTAuthRouter.googleToken, CTAuthRouter.generateJWT);

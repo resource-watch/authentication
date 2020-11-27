@@ -161,8 +161,8 @@ export default class Settings {
                         "active": config.get('settings.thirdParty.rw.google.active')
                     },
                     "twitter": {
-                        "consumerSecret": process.env.RW_TWITTER_CONSUMER_SECRET,
-                        "consumerKey": process.env.RW_TWITTER_CONSUMER_KEY,
+                        "consumerSecret": config.get('settings.thirdParty.rw.twitter.consumerSecret'),
+                        "consumerKey": config.get('settings.thirdParty.rw.twitter.consumerKey'),
                         "active": config.get('settings.thirdParty.rw.twitter.active')
                     }
                 },
@@ -190,8 +190,8 @@ export default class Settings {
                         "privateKeyString": process.env.GFW_APPLE_PRIVATE_KEY,
                     },
                     "twitter": {
-                        "consumerSecret": process.env.GFW_TWITTER_CONSUMER_SECRET,
-                        "consumerKey": process.env.GFW_TWITTER_CONSUMER_KEY,
+                        "consumerSecret": config.get('settings.thirdParty.gfw.twitter.consumerSecret'),
+                        "consumerKey": config.get('settings.thirdParty.gfw.twitter.consumerKey'),
                         "active": config.get('settings.thirdParty.gfw.twitter.active')
                     }
                 },
@@ -212,8 +212,8 @@ export default class Settings {
                         "active": config.get('settings.thirdParty.prep.google.active')
                     },
                     "twitter": {
-                        "consumerSecret": process.env.PREP_TWITTER_CONSUMER_SECRET,
-                        "consumerKey": process.env.PREP_TWITTER_CONSUMER_KEY,
+                        "consumerSecret": config.get('settings.thirdParty.prep.twitter.consumerSecret'),
+                        "consumerKey": config.get('settings.thirdParty.prep.twitter.consumerKey'),
                         "active": config.get('settings.thirdParty.prep.twitter.active')
                     }
                 }

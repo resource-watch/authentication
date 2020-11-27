@@ -13,25 +13,40 @@ import koaSimpleHealthCheck from 'koa-simple-healthcheck';
 import session from 'koa-generic-session';
 // @ts-ignore
 import MongoStore from 'koa-generic-session-mongo';
+import redisStore from 'koa-redis';
+import views from 'koa-views';
 
 import logger from 'logger';
 import { loadRoutes } from 'loader';
 import ErrorSerializer from 'serializers/errorSerializer';
-import mongooseOptions from '../config/mongoose';
-
-const SESSION_KEY = 'authorization';
+import mongooseDefaultOptions, { MongooseOptions } from '../config/mongoose';
 
 const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 
-const koaBodyMiddleware = koaBody({
-    multipart: true,
-    jsonLimit: '50mb',
-    formLimit: '50mb',
-    textLimit: '50mb',
-    formidable: { uploadDir: '/tmp' },
-});
-
 let retries = 10;
+
+let mongooseOptions: MongooseOptions = { ...mongooseDefaultOptions };
+if (mongoUri.indexOf('replicaSet') > -1) {
+    mongooseOptions = {
+        ...mongooseOptions,
+        db: { native_parser: true },
+        replset: {
+            auto_reconnect: false,
+            poolSize: 10,
+            socketOptions: {
+                keepAlive: 1000,
+                connectTimeoutMS: 30000
+            }
+        },
+        server: {
+            poolSize: 5,
+            socketOptions: {
+                keepAlive: 1000,
+                connectTimeoutMS: 30000
+            }
+        }
+    };
+}
 
 interface IInit {
     server: Server;
@@ -50,18 +65,29 @@ const init = async ():Promise<IInit> => {
                 } else {
                     logger.error('MongoURI', mongoUri);
                     logger.error(err);
-                    reject(err);
+                    reject(new Error(err.message));
                 }
 
                 return;
             }
 
             const app = new Koa();
-            app.use(cors({
-                credentials: true
-            }));
 
-            app.use(convert(koaBodyMiddleware));
+            app.use(koaBody({
+                multipart: true,
+                jsonLimit: '50mb',
+                formLimit: '50mb',
+                textLimit: '50mb'
+            }));
+            app.use(koaSimpleHealthCheck());
+
+            app.keys = ['twitter'];
+            // @ts-ignore
+            app.use(session({ store: redisStore({ url: config.get('redis.url') }) }));
+
+            app.use(views(`${__dirname}/views`, { extension: 'ejs' }));
+
+            app.use(cors({ credentials: true }));
 
             // Manage errors middleware
             app.use(async (ctx: { status: number; response: { type: string; }; body: any; }, next: () => any) => {
@@ -89,13 +115,12 @@ const init = async ():Promise<IInit> => {
             });
 
             // Mongo session middleware
-            app.keys = [SESSION_KEY];
+            app.keys = ['authorization'];
             const configSession = { store: new MongoStore({ url: mongoUri }), cookie: {} };
             app.use(convert(session(configSession)));
 
             // Load other stuff
             app.use(koaLogger());
-            app.use(koaSimpleHealthCheck());
             await loadRoutes(app);
 
             const server = app.listen(process.env.PORT);

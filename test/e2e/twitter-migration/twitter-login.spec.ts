@@ -36,11 +36,7 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
     });
 
     it('Visiting /auth/twitter while not being logged in should redirect to the start page', async () => {
-
-        const response = await requester
-            .get(`/auth/twitter`)
-            .redirects(0);
-
+        const response = await requester.get(`/auth/twitter`).redirects(0);
         response.status.should.equal(302);
         response.should.redirectTo('/auth/twitter/start');
     });
