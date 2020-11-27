@@ -1,4 +1,4 @@
-import SparkPost from 'sparkpost';
+import SparkPost, { Recipient } from 'sparkpost';
 
 import logger from 'logger';
 import Settings from "services/settings.service";
@@ -14,7 +14,11 @@ export default class MailService {
         this.publicUrl = Settings.getSettings().publicUrl;
     }
 
-    sendConfirmationMail(data, recipients, generalConfig) {
+    sendConfirmationMail(
+        data: Record<string, any>,
+        recipients: Recipient[],
+        generalConfig: Record<string, any>
+    ) {
         logger.info('[MailService] Sending confirmation mail to ', recipients);
         const reqOpts = {
             substitution_data: {
@@ -42,7 +46,11 @@ export default class MailService {
         });
     }
 
-    sendConfirmationMailWithPassword(data, recipients, generalConfig) {
+    sendConfirmationMailWithPassword(
+        data: Record<string, any>,
+        recipients: Recipient[],
+        generalConfig: Record<string, any>
+    ) {
         logger.info('[MailService] Sending confirmation mail to ', recipients);
         const reqOpts = {
             substitution_data: {
@@ -71,7 +79,12 @@ export default class MailService {
         });
     }
 
-    sendRecoverPasswordMail(data, recipients, generalConfig, originApp) {
+    sendRecoverPasswordMail(
+        data: Record<string, any>,
+        recipients: Recipient[],
+        generalConfig: Record<string, any>,
+        originApp: string
+    ) {
         logger.info('[MailService] Sending confirmation mail to ', recipients);
         const reqOpts = {
             substitution_data: {

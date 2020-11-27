@@ -8,7 +8,7 @@ import { getTestAgent, closeTestAgent } from '../utils/test-server';
 
 chai.should();
 
-let requester;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);

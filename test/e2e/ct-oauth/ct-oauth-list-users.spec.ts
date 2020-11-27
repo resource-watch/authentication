@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
 import { createUserAndToken, createUserInDB, ensureHasPaginationElements } from '../utils/helpers';
@@ -39,7 +39,7 @@ describe('List users', () => {
     });
 
     it('Visiting /auth/user while logged in as USER should return a 403 error', async () => {
-        const { token } = await createUserAndToken();
+        const { token } = await createUserAndToken(null);
 
         const response = await requester
             .get(`/auth/user`)
@@ -124,7 +124,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(3);
-        response.body.data.map((e) => e.email).should.include('rw-user-two@example.com').and.to.include('rw-user-one@example.com').and.to.include(user.email);
+        response.body.data.map((e: IUser) => e.email).should.include('rw-user-two@example.com').and.to.include('rw-user-one@example.com').and.to.include(user.email);
 
         ensureHasPaginationElements(response);
     });
@@ -139,7 +139,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        response.body.data.map((e) => e.email).should.include(user.email);
+        response.body.data.map((e: IUser) => e.email).should.include(user.email);
 
         ensureHasPaginationElements(response);
     });
@@ -155,7 +155,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        response.body.data.map((e) => e.email).should.include(user.email);
+        response.body.data.map((e: IUser) => e.email).should.include(user.email);
 
         ensureHasPaginationElements(response);
     });
@@ -171,7 +171,7 @@ describe('List users', () => {
 
         responseOne.status.should.equal(200);
         responseOne.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        responseOne.body.data.map((e) => e.email).should.include(userOne.email);
+        responseOne.body.data.map((e: IUser) => e.email).should.include(userOne.email);
 
         ensureHasPaginationElements(responseOne);
 
@@ -182,7 +182,7 @@ describe('List users', () => {
 
         responseTwo.status.should.equal(200);
         responseTwo.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        responseTwo.body.data.map((e) => e.email).should.include(userTwo.email);
+        responseTwo.body.data.map((e: IUser) => e.email).should.include(userTwo.email);
 
         ensureHasPaginationElements(responseTwo);
     });
@@ -198,7 +198,7 @@ describe('List users', () => {
 
         responseOne.status.should.equal(200);
         responseOne.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        responseOne.body.data.map((e) => e.email).should.include(userOne.email);
+        responseOne.body.data.map((e: IUser) => e.email).should.include(userOne.email);
 
         ensureHasPaginationElements(responseOne);
 
@@ -209,7 +209,7 @@ describe('List users', () => {
 
         responseTwo.status.should.equal(200);
         responseTwo.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        responseTwo.body.data.map((e) => e.email).should.include(userTwo.email);
+        responseTwo.body.data.map((e: IUser) => e.email).should.include(userTwo.email);
 
         ensureHasPaginationElements(responseTwo);
     });
@@ -226,7 +226,7 @@ describe('List users', () => {
 
         responseOne.status.should.equal(200);
         responseOne.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        responseOne.body.data.map((e) => e.email).should.include(userUser.email);
+        responseOne.body.data.map((e: IUser) => e.email).should.include(userUser.email);
 
         ensureHasPaginationElements(responseOne);
 
@@ -237,7 +237,7 @@ describe('List users', () => {
 
         responseTwo.status.should.equal(200);
         responseTwo.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        responseTwo.body.data.map((e) => e.email).should.include(userManager.email);
+        responseTwo.body.data.map((e: IUser) => e.email).should.include(userManager.email);
 
         ensureHasPaginationElements(responseTwo);
 
@@ -248,7 +248,7 @@ describe('List users', () => {
 
         responseThree.status.should.equal(200);
         responseThree.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        responseThree.body.data.map((e) => e.email).should.include(userAdmin.email);
+        responseThree.body.data.map((e: IUser) => e.email).should.include(userAdmin.email);
 
         ensureHasPaginationElements(responseThree);
     });
@@ -263,7 +263,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        response.body.data.map((e) => e.email).should.include(user.email);
+        response.body.data.map((e: IUser) => e.email).should.include(user.email);
 
         ensureHasPaginationElements(response);
     });
@@ -294,7 +294,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(3);
-        response.body.data.map((e) => e.email).should.include(userOne.email).and.to.include(userTwo.email).and.to.include(userThree.email);
+        response.body.data.map((e: IUser) => e.email).should.include(userOne.email).and.to.include(userTwo.email).and.to.include(userThree.email);
 
         ensureHasPaginationElements(response);
     });
@@ -320,7 +320,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(2);
-        response.body.data.map((e) => e.extraUserData.apps[0]).should.include(userThree.extraUserData.apps[0]).and.to.include(userTwo.extraUserData.apps[0]);
+        response.body.data.map((e: IUser) => e.extraUserData.apps[0]).should.include(userThree.extraUserData.apps[0]).and.to.include(userTwo.extraUserData.apps[0]);
 
         ensureHasPaginationElements(response);
     });

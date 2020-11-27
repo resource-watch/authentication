@@ -310,7 +310,7 @@ describe('Google auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData = JWT.decode(response.body.token);
+        const decodedTokenData = JWT.decode(response.body.token) as Record<string, any>;
         const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
@@ -368,7 +368,7 @@ describe('Google auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData = JWT.decode(response.body.token);
+        const decodedTokenData = JWT.decode(response.body.token) as Record<string, any>;
         const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 

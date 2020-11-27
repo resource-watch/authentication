@@ -90,7 +90,7 @@ describe('GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, single user)', async () => {
-        const userOne = await new UserModel(createUser()).save();
+        const userOne = await new UserModel(createUser({})).save();
 
         const response = await requester
             .get(`/auth/user/ids/USER`)

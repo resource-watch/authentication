@@ -11,7 +11,7 @@ export default class Utils {
         return ctx.req.user || ctx.state.user || ctx.state.microservice;
     }
 
-    static async isLogged(ctx: Context, next: () => Promise<any>) {
+    static async isLogged(ctx: Context, next: () => void) {
         logger.debug('Checking if user is logged');
         if (Utils.getUser(ctx)) {
             await next();
@@ -21,7 +21,7 @@ export default class Utils {
         }
     }
 
-    static async isAdmin(ctx: Context, next: () => Promise<any>) {
+    static async isAdmin(ctx: Context, next: () => void) {
         logger.info('Checking if user is admin');
         const user = Utils.getUser(ctx);
         if (!user) {
@@ -38,7 +38,7 @@ export default class Utils {
         }
     }
 
-    static async isAdminOrManager(ctx: Context, next: () => Promise<any>) {
+    static async isAdminOrManager(ctx: Context, next: () => void) {
         logger.info('Checking if user is admin or manager');
         const user = Utils.getUser(ctx);
         if (!user) {
@@ -54,7 +54,7 @@ export default class Utils {
         }
     }
 
-    static async isMicroservice(ctx: Context, next: () => Promise<any>) {
+    static async isMicroservice(ctx: Context, next: () => void) {
         logger.info('Checking if user is a microservice');
         const user = Utils.getUser(ctx);
         if (!user) {

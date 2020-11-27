@@ -1,6 +1,11 @@
 import mongoose, { Schema, Document } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate';
 
+export interface IUserPayload extends IUser {
+    apps?: string[];
+    callbackUrl: string;
+}
+
 export interface IUser extends Document {
     name?: string;
     photo?: string;

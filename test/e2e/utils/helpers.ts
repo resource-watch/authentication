@@ -2,16 +2,15 @@ import config from "config";
 import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import { SinonSandbox } from "sinon";
-import { promisify } from 'util';
 
-import UserModel, {IUser} from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 import TempUserModel, {IUserTemp} from 'models/user-temp.model';
 
 const { ObjectId } = mongoose.Types;
 
 export const getUUID = () => Math.random().toString(36).substring(7);
 
-export const createUser = (userData: Partial<IUser>) => ({
+export const createUser = (userData: IUser | Partial<IUser> | null) => ({
     _id: new ObjectId(),
     name: `${getUUID()} name`,
     email: `${getUUID()}@authorization.com`,
@@ -27,9 +26,9 @@ export const createUser = (userData: Partial<IUser>) => ({
     ...userData
 });
 
-export const createTokenForUser = (tokenData) => promisify(JWT.sign)(tokenData, process.env.JWT_SECRET);
+export const createTokenForUser = (tokenData: Partial<IUser>) => JWT.sign(tokenData, process.env.JWT_SECRET);
 
-export const createUserInDB = async (userData: Partial<IUser>) => {
+export const createUserInDB = async (userData: IUser | Partial<IUser>): Promise<Partial<IUser>> => {
     const user = await new UserModel(createUser(userData)).save();
 
     return {
@@ -38,13 +37,13 @@ export const createUserInDB = async (userData: Partial<IUser>) => {
         provider: user.provider,
         email: user.email,
         extraUserData: user.extraUserData,
-        createdAt: Date.now(),
+        createdAt: new Date(),
         photo: user.photo,
         name: user.name
     };
 };
 
-export const createUserAndToken = async (userData: Partial<IUser>) => {
+export const createUserAndToken = async (userData: IUser | Partial<IUser>) => {
     const user = await createUserInDB(userData);
     const token = await createTokenForUser(user);
 
@@ -65,7 +64,7 @@ export const createTempUser = async (userData: Partial<IUserTemp>) => (new TempU
     ...userData
 }).save());
 
-export const ensureHasPaginationElements = (response) => {
+export const ensureHasPaginationElements = (response: ChaiHttp.Response) => {
     response.body.should.have.property('meta').and.be.an('object');
     response.body.meta.should.have.property('total-pages').and.be.a('number');
     response.body.meta.should.have.property('total-items').and.be.a('number');

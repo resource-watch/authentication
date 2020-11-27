@@ -1,24 +1,5 @@
 import { IUser } from "models/user.model";
-
-interface ILinks {
-    self: string;
-    first: string;
-    last: string;
-    prev: string;
-    next: string;
-}
-
-interface IMeta {
-    'total-pages': number;
-    'total-items': number;
-    size: number;
-}
-
-interface ISerializedResponse {
-    data: Record<string, any>;
-    links?: ILinks;
-    meta?: IMeta;
-}
+import { ISerializedResponse } from "serializers/serializer.interface";
 
 export default class UserSerializer {
 
@@ -36,9 +17,7 @@ export default class UserSerializer {
     }
 
     static serialize(data: any, link: string = null) {
-        const result: ISerializedResponse = {
-            data: undefined,
-        };
+        const result: ISerializedResponse = { data: undefined };
 
         if (data && Array.isArray(data) && data.length === 0) {
             result.data = [];

@@ -1,4 +1,4 @@
-import { Context } from "koa";
+import { Context, DefaultState } from "koa";
 import passport from 'koa-passport';
 import Router from 'koa-router';
 import { cloneDeep } from 'lodash';
@@ -58,7 +58,7 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: () => Promis
     await next();
 }
 
-async function hasSignUpPermissions(ctx: Context, next: () => Promise<any>) {
+async function hasSignUpPermissions(ctx: Context, next: () => void) {
     if (!Settings.getSettings().allowPublicRegistration) {
         await Utils.isLogged(ctx, () => {});
         await Utils.isAdmin(ctx, () => {});
@@ -66,7 +66,7 @@ async function hasSignUpPermissions(ctx: Context, next: () => Promise<any>) {
     await next();
 }
 
-const router = new Router({ prefix: '/auth' });
+const router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
 router.get('/google', setCallbackUrl, CTAuthRouter.google);
 router.get('/google/callback', CTAuthRouter.googleCallback, CTAuthRouter.updateApplications);

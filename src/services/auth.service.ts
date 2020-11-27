@@ -1,31 +1,31 @@
-import logger from 'logger';
-import JWT from 'jsonwebtoken';
+import { Context } from "koa";
+import JWT, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { isEqual } from 'lodash';
-import { promisify } from 'util';
+
+import logger from 'logger';
+import MailService from 'services/mail.service';
+import UnprocessableEntityError from 'errors/unprocessableEntity.error';
+import UserModel, {IUser, IUserPayload} from 'models/user.model';
+import RenewModel from 'models/renew.model';
+import UserTempModel, {IUserTemp} from 'models/user-temp.model';
+import Settings from "services/settings.service";
 
 const { ObjectId } = mongoose.Types;
 
-import MailService from 'services/mail.service';
-import UnprocessableEntityError from 'errors/unprocessableEntity.error';
-
-import UserModel from 'models/user.model';
-import RenewModel from 'models/renew.model';
-import UserTempModel from 'models/user-temp.model';
-import Settings from "services/settings.service";
-
 export default class AuthService {
 
-    static getFilteredQuery(query) {
+    static getFilteredQuery(query: Record<string, any>) {
         const allowedSearchFields = ['name', 'provider', 'email', 'role'];
         logger.info('[AuthService] getFilteredQuery');
         logger.debug('[AuthService] getFilteredQuery Object.keys(query)', Object.keys(query));
         const filteredSearchFields = Object.keys(query).filter((param) => allowedSearchFields.includes(param));
-        const filteredQuery = {};
+        const filteredQuery: Record<string, any> = {};
 
         filteredSearchFields.forEach((param) => {
+            // @ts-ignore
             switch (UserModel.schema.paths[param].instance) {
 
                 case 'String':
@@ -57,9 +57,9 @@ export default class AuthService {
         return filteredQuery;
     }
 
-    static async createToken(user, saveInUser) {
+    static async createToken(user: IUser, saveInUser: boolean) {
         try {
-            const options = {};
+            const options: SignOptions = {};
             if (Settings.getSettings().jwt.expiresInMinutes && Settings.getSettings().jwt.expiresInMinutes > 0) {
                 options.expiresIn = Settings.getSettings().jwt.expiresInMinutes * 60;
             }
@@ -78,16 +78,17 @@ export default class AuthService {
                     photo: userData.photo,
                     name: userData.name
                 };
-                token = await promisify(JWT.sign)(dataToken, Settings.getSettings().jwt.secret, options);
+                token = JWT.sign(dataToken, Settings.getSettings().jwt.secret, options);
                 if (saveInUser) {
                     userData.userToken = token;
                     await userData.save();
                 }
             } else {
                 const dataToken = { ...user };
+                // @ts-ignore
                 delete dataToken.exp;
-                dataToken.createdAt = Date.now();
-                token = await promisify(JWT.sign)(dataToken, Settings.getSettings().jwt.secret, options);
+                dataToken.createdAt = new Date();
+                token = JWT.sign(dataToken, Settings.getSettings().jwt.secret, options);
             }
 
             return token;
@@ -97,15 +98,13 @@ export default class AuthService {
         }
     }
 
-    static async getUsers(app, query) {
+    static async getUsers(app: string, query: Record<string, string>) {
         logger.info('[AuthService] Get users with app', app);
 
         const filteredQuery = AuthService.getFilteredQuery({ ...query });
 
         if (app) {
-            filteredQuery['extraUserData.apps'] = {
-                $in: app
-            };
+            filteredQuery['extraUserData.apps'] = { $in: app };
         }
 
         const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
@@ -125,7 +124,7 @@ export default class AuthService {
         return UserModel.paginate(filteredQuery, paginationOptions);
     }
 
-    static async getUserById(id) {
+    static async getUserById(id: string) {
         const isValidId = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
@@ -135,7 +134,7 @@ export default class AuthService {
         return UserModel.findById(id).select('-password -salt -userToken -__v').exec();
     }
 
-    static async getUsersByIds(ids = []) {
+    static async getUsersByIds(ids: string[] = []) {
         const newIds = ids.filter(ObjectId.isValid).map((id) => new ObjectId(id));
         return UserModel.find({
             _id: {
@@ -144,7 +143,7 @@ export default class AuthService {
         }).select('-password -salt -userToken -__v').exec();
     }
 
-    static async getIdsByRole(role) {
+    static async getIdsByRole(role: string) {
         if (!['SUPERADMIN', 'ADMIN', 'MANAGER', 'USER'].includes(role)) {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
         }
@@ -153,7 +152,7 @@ export default class AuthService {
         return data.map((el) => el._id);
     }
 
-    static async updateUser(id, data, requestUser) {
+    static async updateUser(id: string, data: IUser, requestUser: IUser) {
         const isValidId = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
@@ -187,7 +186,7 @@ export default class AuthService {
         return user.save();
     }
 
-    static async deleteUser(id) {
+    static async deleteUser(id: string) {
         const isValidId = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
@@ -211,19 +210,13 @@ export default class AuthService {
         return user.deleteOne();
     }
 
-    static async existEmail(email) {
-        const exist = await UserModel.findOne({
-            email,
-        });
-
-        const existTemp = await UserTempModel.findOne({
-            email,
-        });
-
+    static async existEmail(email: string) {
+        const exist = await UserModel.findOne({ email });
+        const existTemp = await UserTempModel.findOne({ email });
         return exist || existTemp;
     }
 
-    static async createUser(data, generalConfig) {
+    static async createUser(data: IUserPayload, generalConfig: Record<string, any>): Promise<IUserTemp> {
         const salt = bcrypt.genSaltSync();
 
         const apps = data.apps || [];
@@ -258,7 +251,7 @@ export default class AuthService {
         return user;
     }
 
-    static async createUserWithoutPassword(data, generalConfig) {
+    static async createUserWithoutPassword(data: IUserPayload, generalConfig: Record<string, any>) {
         const salt = bcrypt.genSaltSync();
         const pass = crypto.randomBytes(8).toString('hex');
         const user = await new UserTempModel({
@@ -292,7 +285,7 @@ export default class AuthService {
 
     }
 
-    static async confirmUser(confirmationToken) {
+    static async confirmUser(confirmationToken: string) {
         const exist = await UserTempModel.findOne({ confirmationToken });
         if (!exist) {
             return null;
@@ -312,12 +305,12 @@ export default class AuthService {
         return user;
     }
 
-    static async getRenewModel(token) {
+    static async getRenewModel(token: string) {
         logger.info('[AuthService]obtaining renew model of token', token);
         return RenewModel.findOne({ token });
     }
 
-    static async sendResetMail(email, generalConfig, originApp) {
+    static async sendResetMail(email: string, generalConfig: Record<string,any>, originApp: string) {
         logger.info('[AuthService] Generating token to email', email);
 
         const user = await UserModel.findOne({ email });
@@ -345,7 +338,7 @@ export default class AuthService {
         return renew;
     }
 
-    static async updatePassword(token, newPassword) {
+    static async updatePassword(token: string, newPassword: string) {
         logger.info('[AuthService] Updating password');
         const renew = await RenewModel.findOne({ token });
         if (!renew) {
@@ -364,7 +357,7 @@ export default class AuthService {
         return user;
     }
 
-    static async checkRevokedToken(ctx, payload) {
+    static async checkRevokedToken(ctx: Context, payload: Record<string, any>) {
         logger.info('Checking if token is revoked');
 
         let isRevoked = false;
@@ -380,9 +373,8 @@ export default class AuthService {
             }
 
             checkList.forEach((property) => {
-                if (!isEqual(user[property], payload[property])) {
-                    logger.info(`[AuthService] ${property} in token does not match the database value - token value: "${payload[property]}" || database value: "${user[property]}" `);
-
+                if (!isEqual(user.get(property), payload[property])) {
+                    logger.info(`[AuthService] ${property} in token does not match the database value - token value: "${payload[property]}" || database value: "${user.get(property)}" `);
                     isRevoked = true;
                 }
             });
@@ -391,7 +383,7 @@ export default class AuthService {
         return isRevoked;
     }
 
-    static async updateApplicationsUser(id, applications) {
+    static async updateApplicationsUser(id: string, applications: string[]) {
         logger.info('[AuthService] Searching user with id ', id, applications);
         const user = await UserModel.findById(id);
         if (!user) {

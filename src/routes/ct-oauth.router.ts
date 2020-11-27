@@ -1,10 +1,11 @@
 import { Context } from "koa";
+import { RouterContext } from "koa-router";
 import passport from 'koa-passport';
 import { omit } from 'lodash';
+import { URL } from "url";
 
 import logger from 'logger';
 import Utils from 'utils';
-
 import AuthService from 'services/auth.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
@@ -12,31 +13,31 @@ import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
 import Settings from "services/settings.service";
 
-const twitter = async (ctx: Context, next: () => Promise<any>) => {
+const twitter = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`twitter:${app}`)(ctx, next);
 };
 
-const twitterCallback = async (ctx: Context, next: () => Promise<any>) => {
+const twitterCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`twitter:${app}`, {
         failureRedirect: '/auth/fail',
     })(ctx, next);
 };
 
-const facebook = async (ctx: Context, next: () => Promise<any>) => {
+const facebook = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`facebook:${app}`, {
         scope: Settings.getSettings().thirdParty[app] ? Settings.getSettings().thirdParty[app].facebook.scope : [],
     })(ctx, next);
 };
 
-const facebookToken = async (ctx: Context, next: () => Promise<any>) => {
+const facebookToken = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`facebook-token:${app}`)(ctx, next);
 };
 
-const facebookCallback = async (ctx: Context, next: () => Promise<any>) => {
+const facebookCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(
         `facebook:${app}`,
@@ -44,7 +45,7 @@ const facebookCallback = async (ctx: Context, next: () => Promise<any>) => {
     )(ctx, next);
 };
 
-const google = async (ctx: Context, next: () => Promise<any>) => {
+const google = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`google:${app}`, {
         scope: (Settings.getSettings().thirdParty[app] && Settings.getSettings().thirdParty[app].google.scope)
@@ -52,17 +53,17 @@ const google = async (ctx: Context, next: () => Promise<any>) => {
     })(ctx, next);
 };
 
-const googleToken = async (ctx: Context, next: () => Promise<any>) => {
+const googleToken = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`google-token:${app}`)(ctx, next);
 };
 
-const googleCallback = async (ctx: Context, next: () => Promise<any>) => {
+const googleCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
     const app = Utils.getOriginApp(ctx);
     await passport.authenticate(`google:${app}`, { failureRedirect: '/auth/fail' })(ctx, next);
 };
 
-const localCallback = async (ctx: Context, next: () => Promise<any>) => passport.authenticate('local', async (user) => {
+const localCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => passport.authenticate('local', async (user) => {
     if (!user) {
         if (ctx.request.type === 'application/json') {
             ctx.status = 401;
@@ -92,18 +93,16 @@ const localCallback = async (ctx: Context, next: () => Promise<any>) => passport
     }
 })(ctx, next);
 
-async function createToken(ctx: Context, next: () => Promise<any>) {
+async function createToken(ctx: Context, createInUser: boolean) {
     logger.info('Generating token');
-    return AuthService.createToken(Utils.getUser(ctx), next);
+    return AuthService.createToken(Utils.getUser(ctx), createInUser);
 }
 
-async function generateJWT(ctx: Context, next: () => Promise<any>) {
+async function generateJWT(ctx: Context) {
     logger.info('Generating token');
     try {
-        const token = await createToken(ctx, next);
-        ctx.body = {
-            token,
-        };
+        const token = await createToken(ctx, true);
+        ctx.body = { token };
     } catch (e) {
         logger.info(e);
     }
@@ -644,7 +643,7 @@ async function resetPassword(ctx: Context) {
     if (user) {
         if (ctx.request.type === 'application/json') {
             ctx.response.type = 'application/json';
-            ctx.body = UserTempSerializer.serialize(user);
+            ctx.body = UserSerializer.serialize(user);
         } else {
             const app = Utils.getOriginApp(ctx);
             const applicationConfig = Settings.getSettings().applications && Settings.getSettings().applications[app];

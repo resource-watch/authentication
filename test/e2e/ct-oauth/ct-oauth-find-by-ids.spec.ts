@@ -36,7 +36,7 @@ describe('Find users by id', () => {
     });
 
     it('Find users while being logged in as a regular user returns a 401 error', async () => {
-        const { token } = await createUserAndToken({});
+        const { token } = await createUserAndToken(null);
 
         const response = await requester
             .post(`/auth/user/find-by-ids`)
@@ -82,8 +82,8 @@ describe('Find users by id', () => {
     });
 
     it('Find users with id list containing a user that exists returns only the listed user', async () => {
-        userOne = await new UserModel(createUser({})).save();
-        userTwo = await new UserModel(createUser({})).save();
+        userOne = await new UserModel(createUser(null)).save();
+        userTwo = await new UserModel(createUser(null)).save();
 
         const response = await requester
             .post(`/auth/user/find-by-ids`)

@@ -52,7 +52,7 @@ interface IBasicAuth {
     active: boolean;
 }
 
-interface ILocalAuth {
+interface ILocalAuth extends Record<string,any> {
     confirmUrlRedirect: string;
     sparkpostKey: string;
     active: boolean;

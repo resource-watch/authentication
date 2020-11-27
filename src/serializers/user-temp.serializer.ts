@@ -1,4 +1,5 @@
 import { IUserTemp } from "models/user-temp.model";
+import { ISerializedResponse } from "serializers/serializer.interface";
 
 export default class UserTempSerializer {
 
@@ -14,8 +15,9 @@ export default class UserTempSerializer {
         };
     }
 
-    static serialize(data: IUserTemp[]) {
-        const result = {};
+    static serialize(data: IUserTemp|IUserTemp[]) {
+        const result: ISerializedResponse = { data: undefined };
+
         if (data && Array.isArray(data) && data.length === 0) {
             result.data = [];
             return result;
