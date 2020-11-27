@@ -1,7 +1,20 @@
-export default {
+export interface MongooseOptions {
+    useNewUrlParser: boolean;
+    useFindAndModify: boolean;
+    useCreateIndex: boolean;
+    useUnifiedTopology: boolean;
+    appname: string;
+    db?: Record<string, unknown>;
+    replset?: Record<string, unknown>;
+    server?: Record<string, unknown>;
+}
+
+const mongooseDefaultOptions: MongooseOptions = {
     useNewUrlParser: true,
     useFindAndModify: false,
     useCreateIndex: true,
     useUnifiedTopology: true,
-    appname: 'Authorization', // Displays the app name in MongoDB logs, for ease of debug
+    appname: 'Authorization',
 };
+
+export default mongooseDefaultOptions;

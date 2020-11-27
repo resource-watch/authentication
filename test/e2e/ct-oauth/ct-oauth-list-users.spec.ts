@@ -149,7 +149,6 @@ describe('List users', () => {
 
         const response = await requester
             .get(`/auth/user`)
-            // eslint-disable-next-line no-useless-escape
             .query({ email: 'text\\\+email@vizzuality.com' })
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);

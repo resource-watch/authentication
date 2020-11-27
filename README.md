@@ -11,6 +11,7 @@ Native execution requires:
 - [Node.js](https://nodejs.org/en/)
 - [Yarn](https://yarnpkg.com/)
 - [MongoDB](https://www.mongodb.com/)
+- [Redis](https://redis.io/)
 
 Execution using Docker requires:
 - [Docker](https://www.docker.com/)

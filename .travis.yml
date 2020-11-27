@@ -1,6 +1,7 @@
 language: node_js
 services:
   - mongodb
+  - redis
 node_js:
   - "12"
 cache:
@@ -22,6 +23,14 @@ env:
     - API_VERSION=v1
     - SPARKPOST_KEY=fakeSparkpostKey
     - ALLOW_CONFIG_MUTATIONS=true
+    # Twitter migration env vars
+    - REDIS_URL=localhost
+    - RW_TWITTER_CONSUMER_SECRET=rw_twitter_consumer_secret
+    - RW_TWITTER_CONSUMER_KEY=rw_twitter_consumer_key
+    - GFW_TWITTER_CONSUMER_SECRET=gfw_twitter_consumer_secret
+    - GFW_TWITTER_CONSUMER_KEY=gfw_twitter_consumer_key
+    - PREP_TWITTER_CONSUMER_SECRET=prep_twitter_consumer_secret
+    - PREP_TWITTER_CONSUMER_KEY=prep_twitter_consumer_key
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter

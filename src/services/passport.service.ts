@@ -106,7 +106,6 @@ export default async function registerStrategies() {
             }).exec();
             if (user && user.salt && user.password === bcrypt.hashSync(password, user.salt)) {
                 done(null, {
-                    // eslint-disable-next-line no-underscore-dangle
                     id: user._id,
                     name: user.name,
                     photo: user.photo,

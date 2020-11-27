@@ -187,7 +187,6 @@ describe('Auth endpoints tests - JSON', () => {
         responseUser.should.have.property('role').and.equal(user.role);
         responseUser.should.have.property('extraUserData').and.eql(user.extraUserData);
         responseUser.should.have.property('token').and.be.an('string').and.not.be.empty;
-        // eslint-disable-next-line
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
     });
 

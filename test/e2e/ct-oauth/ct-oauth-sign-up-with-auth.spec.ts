@@ -259,7 +259,6 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
         user.extraUserData.apps.should.be.an('array').and.contain('rw');
@@ -323,7 +322,6 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
         user.extraUserData.apps.should.be.an('array').and.contain('rw');

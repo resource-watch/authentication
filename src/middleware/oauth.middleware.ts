@@ -34,7 +34,6 @@ export async function middleware(app: Application) {
             const credentials = parts[1];
 
             if (/^Bearer$/i.test(scheme)) {
-                // eslint-disable-next-line consistent-return
                 return credentials;
             }
         }

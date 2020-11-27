@@ -49,7 +49,6 @@ describe('Google auth endpoint tests', () => {
 
         response.status.should.equal(200);
         response.header['content-type'].should.equalIgnoreCase('text/html; charset=UTF-8');
-        // eslint-disable-next-line no-unused-expressions
         response.redirects.should.be.an('array').and.not.be.empty;
         response.redirects.forEach((redirect) => {
             redirect.should.match(/^https:\/\/accounts\.google\.com\//);

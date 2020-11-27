@@ -17,9 +17,18 @@ services:
       PUBLIC_URL: http://localhost:9000
       SPARKPOST_KEY: fakeSparkpostKey
       MONGO_PORT_27017_TCP_ADDR: mongo
+      # Twitter migration env vars
+      REDIS_URL: redis
+      GFW_TWITTER_CONSUMER_KEY: GFW_TWITTER_CONSUMER_KEY
+      GFW_TWITTER_CONSUMER_SECRET: GFW_TWITTER_CONSUMER_SECRET
+      RW_TWITTER_CONSUMER_KEY: RW_TWITTER_CONSUMER_KEY
+      RW_TWITTER_CONSUMER_SECRET: RW_TWITTER_CONSUMER_SECRET
+      PREP_TWITTER_CONSUMER_KEY: PREP_TWITTER_CONSUMER_KEY
+      PREP_TWITTER_CONSUMER_SECRE: PREP_TWITTER_CONSUMER_SECRET
     command: test
     depends_on:
       - mongo
+      - redis
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -28,3 +37,10 @@ services:
     command: --smallfiles
     ports:
       - "27017"
+
+  redis:
+    image: redis
+    container_name: authorization-redis
+    ports:
+      - "16379:6379"
+    restart: always

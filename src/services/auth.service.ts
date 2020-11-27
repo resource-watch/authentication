@@ -69,7 +69,7 @@ export default class AuthService {
 
             if (userData) {
                 const dataToken = {
-                    id: userData._id, // eslint-disable-line no-underscore-dangle
+                    id: userData._id,
                     role: userData.role,
                     provider: userData.provider,
                     email: userData.email,
@@ -149,10 +149,7 @@ export default class AuthService {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
         }
 
-        const data = await UserModel.find({
-            role
-        }).exec();
-        // eslint-disable-next-line no-underscore-dangle
+        const data = await UserModel.find({ role }).exec();
         return data.map((el) => el._id);
     }
 
@@ -330,7 +327,6 @@ export default class AuthService {
         }
 
         const renew = await new RenewModel({
-            // eslint-disable-next-line no-underscore-dangle
             userId: user._id,
             token: crypto.randomBytes(20).toString('hex'),
         }).save();
@@ -383,7 +379,6 @@ export default class AuthService {
                 return true;
             }
 
-            // eslint-disable-next-line consistent-return
             checkList.forEach((property) => {
                 if (!isEqual(user[property], payload[property])) {
                     logger.info(`[AuthService] ${property} in token does not match the database value - token value: "${payload[property]}" || database value: "${user[property]}" `);

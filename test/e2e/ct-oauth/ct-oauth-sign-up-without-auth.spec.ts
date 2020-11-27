@@ -127,10 +127,8 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
         should.exist(user);
         user.should.have.property('email').and.equal('someemail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         user.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
     });
 
@@ -165,7 +163,6 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');
         confirmedUser.should.have.property('extraUserData').and.be.an('object');
-        // eslint-disable-next-line
         confirmedUser.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
     });
 
@@ -240,7 +237,6 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
-        // eslint-disable-next-line
         user.should.have.property('confirmationToken').and.not.be.empty;
         user.should.have.property('extraUserData').and.be.an('object');
         user.extraUserData.apps.should.be.an('array').and.contain('rw');
