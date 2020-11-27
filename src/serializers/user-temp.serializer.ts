@@ -1,4 +1,4 @@
-import { IUserTemp } from "../models/user-temp.model";
+import { IUserTemp } from "models/user-temp.model";
 
 export default class UserTempSerializer {
 

@@ -2,9 +2,9 @@ import nock from 'nock';
 import chai from 'chai';
 import { isEqual } from 'lodash';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
-import RenewModel from 'plugins/sd-ct-oauth-plugin/models/renew.model';
+import UserModel from 'models/user.model';
+import UserTempModel from 'models/user-temp.model';
+import RenewModel from 'models/renew.model';
 
 chai.should();
 

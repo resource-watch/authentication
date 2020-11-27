@@ -5,11 +5,11 @@ import { omit } from 'lodash';
 import logger from 'logger';
 import Utils from 'utils';
 
-import AuthService from 'plugins/sd-ct-oauth-plugin/services/auth.service';
-import UnprocessableEntityError from 'plugins/sd-ct-oauth-plugin/errors/unprocessableEntity.error';
-import UnauthorizedError from 'plugins/sd-ct-oauth-plugin/errors/unauthorized.error';
-import UserTempSerializer from 'plugins/sd-ct-oauth-plugin/serializers/user-temp.serializer';
-import UserSerializer from 'plugins/sd-ct-oauth-plugin/serializers/user.serializer';
+import AuthService from 'services/auth.service';
+import UnprocessableEntityError from 'errors/unprocessableEntity.error';
+import UnauthorizedError from 'errors/unauthorized.error';
+import UserTempSerializer from 'serializers/user-temp.serializer';
+import UserSerializer from 'serializers/user.serializer';
 import Settings from "services/settings.service";
 
 const twitter = async (ctx: Context, next: () => Promise<any>) => {

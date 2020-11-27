@@ -1,8 +1,8 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import UserSerializer from 'plugins/sd-ct-oauth-plugin/serializers/user.serializer';
+import UserModel from 'models/user.model';
+import UserSerializer from 'serializers/user.serializer';
 import { getTestAgent, closeTestAgent } from '../test-server';
 import { createUserAndToken } from '../utils/helpers';
 

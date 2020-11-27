@@ -4,8 +4,8 @@ import mongoose from 'mongoose';
 import { SinonSandbox } from "sinon";
 import { promisify } from 'util';
 
-import UserModel, {IUser} from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import TempUserModel, {IUserTemp} from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
+import UserModel, {IUser} from 'models/user.model';
+import TempUserModel, {IUserTemp} from 'models/user-temp.model';
 
 const { ObjectId } = mongoose.Types;
 

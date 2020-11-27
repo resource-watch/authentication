@@ -1,6 +1,5 @@
-import { init } from './app';
-
-import logger from './logger';
+import { init } from 'app';
+import logger from 'logger';
 
 init().then(() => {
     logger.info('Server running');

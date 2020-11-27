@@ -2,8 +2,8 @@ import nock from 'nock';
 import chai from 'chai';
 import JWT from 'jsonwebtoken';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import AuthService from 'plugins/sd-ct-oauth-plugin/services/auth.service';
+import UserModel from 'models/user.model';
+import AuthService from 'services/auth.service';
 
 import { getTestAgent, closeTestAgent } from '../test-server';
 

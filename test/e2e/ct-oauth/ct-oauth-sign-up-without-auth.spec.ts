@@ -2,8 +2,8 @@ import nock from 'nock';
 import chai from 'chai';
 import { isEqual } from 'lodash';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
+import UserModel from 'models/user.model';
+import UserTempModel from 'models/user-temp.model';
 import { getTestAgent, closeTestAgent } from '../test-server';
 
 const should = chai.should();

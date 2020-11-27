@@ -3,7 +3,7 @@ import passport from 'koa-passport';
 import Router from 'koa-router';
 import { cloneDeep } from 'lodash';
 
-import CTAuthRouter from 'plugins/sd-ct-oauth-plugin/auth.router';
+import CTAuthRouter from 'routes/ct-oauth.router';
 import logger from 'logger';
 import Utils from 'utils';
 import Settings from "services/settings.service";

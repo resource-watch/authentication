@@ -1,8 +1,8 @@
 import config from 'config';
 import { Context } from "koa";
 
-import logger from './logger';
-import Settings, { IApplication } from "./services/settings.service";
+import logger from 'logger';
+import Settings, { IApplication } from "services/settings.service";
 
 export default class Utils {
 

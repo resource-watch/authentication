@@ -1,4 +1,4 @@
-import logger from '../../../logger';
+import logger from 'logger';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -8,13 +8,13 @@ import { promisify } from 'util';
 
 const { ObjectId } = mongoose.Types;
 
-import MailService from 'plugins/sd-ct-oauth-plugin/services/mail.service';
-import UnprocessableEntityError from 'plugins/sd-ct-oauth-plugin/errors/unprocessableEntity.error';
+import MailService from 'services/mail.service';
+import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import RenewModel from 'plugins/sd-ct-oauth-plugin/models/renew.model';
-import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
-import Settings from "../../../services/settings.service";
+import UserModel from 'models/user.model';
+import RenewModel from 'models/renew.model';
+import UserTempModel from 'models/user-temp.model';
+import Settings from "services/settings.service";
 
 export default class AuthService {
 

@@ -1,7 +1,7 @@
 import SparkPost from 'sparkpost';
 
-import logger from '../../../logger';
-import Settings from "../../../services/settings.service";
+import logger from 'logger';
+import Settings from "services/settings.service";
 
 export default class MailService {
     private client: SparkPost;

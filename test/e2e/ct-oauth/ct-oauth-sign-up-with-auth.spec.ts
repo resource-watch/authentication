@@ -3,8 +3,8 @@ import chai from 'chai';
 import { isEqual } from 'lodash';
 import sinon, { SinonSandbox } from "sinon";
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
+import UserModel from 'models/user.model';
+import UserTempModel from 'models/user-temp.model';
 import { createUserAndToken, createTempUser, stubConfigValue } from '../utils/helpers';
 import { getTestAgent, closeTestAgent } from '../test-server';
 

@@ -3,14 +3,14 @@ import passport from 'koa-passport';
 import jwt, { Options } from 'koa-jwt';
 import views from 'koa-views';
 
-import logger from '../../logger';
-import registerStrategies from './services/passport.service';
-import AuthService from './services/auth.service';
-import Settings from "../../services/settings.service";
+import logger from 'logger';
+import registerStrategies from 'services/passport.service';
+import AuthService from 'services/auth.service';
+import Settings from "services/settings.service";
 
 export async function middleware(app: Application) {
     logger.info('Loading oauth-plugin');
-    app.use(views(`${__dirname}/views`, { extension: 'ejs' }));
+    app.use(views(`${__dirname}/../views`, { extension: 'ejs' }));
     await registerStrategies();
     app.use(passport.initialize());
     app.use(passport.session());

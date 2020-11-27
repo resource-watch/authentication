@@ -5,7 +5,6 @@ import koaBody from 'koa-body';
 import convert from 'koa-convert';
 import koaLogger from 'koa-logger';
 import mongoose from 'mongoose';
-
 import sleep from 'sleep';
 // @ts-ignore
 import cors from '@koa/cors';
@@ -15,9 +14,9 @@ import session from 'koa-generic-session';
 // @ts-ignore
 import MongoStore from 'koa-generic-session-mongo';
 
-import logger from './logger';
-import { loadRoutes } from './loader';
-import ErrorSerializer from './serializers/errorSerializer';
+import logger from 'logger';
+import { loadRoutes } from 'loader';
+import ErrorSerializer from 'serializers/errorSerializer';
 import mongooseOptions from '../config/mongoose';
 
 const SESSION_KEY = 'authorization';

@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
+import UserModel from 'models/user.model';
 import { createUserAndToken } from '../utils/helpers';
 import { getTestAgent, closeTestAgent } from '../test-server';
 

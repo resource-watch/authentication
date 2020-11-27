@@ -4,7 +4,7 @@ import nock from 'nock';
 import crypto from 'crypto';
 import JWT from 'jsonwebtoken';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
+import UserModel from 'models/user.model';
 import { getTestAgent, closeTestAgent } from '../test-server';
 
 const should = chai.should();

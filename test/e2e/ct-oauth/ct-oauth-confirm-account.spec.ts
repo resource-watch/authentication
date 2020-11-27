@@ -2,8 +2,8 @@ import chai from 'chai';
 import nock  from 'nock';
 import sinon, {SinonSandbox} from 'sinon';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
+import UserModel from 'models/user.model';
+import UserTempModel from 'models/user-temp.model';
 import { getTestAgent, closeTestAgent } from '../test-server';
 import { getUUID, stubConfigValue } from '../utils/helpers';
 

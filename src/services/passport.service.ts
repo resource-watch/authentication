@@ -9,9 +9,9 @@ import { Strategy as LocalStrategy } from 'passport-local';
 import { Strategy as GoogleTokenStrategy } from 'passport-google-token';
 import FacebookTokenStrategy from 'passport-facebook-token';
 
-import logger from '../../../logger';
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import Settings from "../../../services/settings.service";
+import logger from 'logger';
+import UserModel from 'models/user.model';
+import Settings from "services/settings.service";
 
 async function registerUser(accessToken: string, refreshToken: string, profile: any, done: Function) {
     logger.info('[passportService] Registering user', profile);
