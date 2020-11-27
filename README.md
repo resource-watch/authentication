@@ -143,13 +143,13 @@ Core Variables
 
 OAuth Variables
 
-- JWT_SECRET				=> The secret used to generate JWT tokens. It's a required field if the JWT feature in the auth-plugin is active. The JWT feature is active by default.
-- TWITTER_CONSUMER_KEY		=> Twitter OAuth consumer key. If's a required field if the Twitter feature in the auth-plugin is active. It's not active by default.
-- TWITTER_CONSUMER_SECRET	=> Twitter OAuth consumer secret. If's a required field if the Twitter feature in the auth-plugin is active. It's not active by default.
-- GOOGLE_CLIENT_ID			=> Google+ OAuth client ID. If's a required field if the Google feature in the auth-plugin is active. It's not active by default.
-- GOOGLE_CLIENT_SECRET		=> Google+ OAuth client secret. If's a required field if the Google feature in the auth-plugin is active. It's not active by default.
-- FACEBOOK_CLIENT_ID		=> Facebook OAuth client ID. If's a required field if the Facebook feature in the auth-plugin is active. It's not active by default.
-- FACEBOOK_CLIENT_SECRET	=> Facebook OAuth client secret. If's a required field if the Facebook feature in the auth-plugin is active. It's not active by default.
+- JWT_SECRET				=> The secret used to generate JWT tokens. It's a required field if the JWT feature is active. The JWT feature is active by default.
+- TWITTER_CONSUMER_KEY		=> Twitter OAuth consumer key. If's a required field if the Twitter feature is active. It's not active by default.
+- TWITTER_CONSUMER_SECRET	=> Twitter OAuth consumer secret. If's a required field if the Twitter feature is active. It's not active by default.
+- GOOGLE_CLIENT_ID			=> Google+ OAuth client ID. If's a required field if the Google feature is active. It's not active by default.
+- GOOGLE_CLIENT_SECRET		=> Google+ OAuth client secret. If's a required field if the Google feature is active. It's not active by default.
+- FACEBOOK_CLIENT_ID		=> Facebook OAuth client ID. If's a required field if the Facebook feature is active. It's not active by default.
+- FACEBOOK_CLIENT_SECRET	=> Facebook OAuth client secret. If's a required field if the Facebook feature is active. It's not active by default.
 - SPARKPOST_KEY				=> Key to send mails with Sparkpost. It's a required field if you offer a local OAuth provider.
 - CONFIRM_URL_REDIRECT		=> URL to redirect users whenever they activate their account. It's a required field if you offer a local OAuth provider.
 - PUBLIC_URL				=> Base Application URL. It must be the public domain of your Control Tower instance, and it's used to compose account links. It you are offering a local OAuth provider it's a required field. This URL also needs to be configured as an acceptable callback on the OAuth provider settings.
@@ -158,18 +158,14 @@ OAuth Variables
 
 Mongo session variables
 
-- COOKIE_DOMAIN => Session domain for cookies. Required field if you activate the sessionMongo plugin.
-- SESSION_KEY	=> Key to cipher the cookies.  Required field if you activate the sessionMongo plugin.
+- COOKIE_DOMAIN => Session domain for cookies. Required field.
+- SESSION_KEY	=> Key to cipher the cookies.  Required field.
 
 Variables used for testing environments only:
 
 - TEST_GOOGLE_OAUTH2_CLIENT_ID => Google OAuth2 API client ID
 - TEST_FACEBOOK_OAUTH2_APP_ID => Facebook OAuth app ID
 - TEST_FACEBOOK_OAUTH2_APP_SECRET => Facebook OAuth app secret
-
-### Plugins
-
-TODO
 
 
 ## Contributing

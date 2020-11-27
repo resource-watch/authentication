@@ -1,7 +1,8 @@
-import nock from 'nock';
 import chai from 'chai';
-import JWT from 'jsonwebtoken';
+import config from "config";
+import nock from 'nock';
 import crypto from 'crypto';
+import JWT from 'jsonwebtoken';
 
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import { getTestAgent, closeTestAgent } from '../test-server';
@@ -31,9 +32,7 @@ describe('Facebook auth endpoint tests', () => {
         await UserModel.deleteMany({}).exec();
     });
 
-    beforeEach(async () => {
-        requester = await getTestAgent(true);
-    });
+    beforeEach(async () => { requester = await getTestAgent(true); });
 
     it('Visiting /auth/facebook while not being logged in should redirect to the login page', async () => {
         if (skipTests) {
@@ -57,8 +56,8 @@ describe('Facebook auth endpoint tests', () => {
             .post('/v7.0/oauth/access_token', {
                 grant_type: 'authorization_code',
                 redirect_uri: `${process.env.PUBLIC_URL}/auth/facebook/callback`,
-                client_id: process.env.TEST_FACEBOOK_OAUTH2_APP_ID,
-                client_secret: process.env.TEST_FACEBOOK_OAUTH2_APP_SECRET,
+                client_id: config.get('settings.thirdParty.rw.facebook.clientID'),
+                client_secret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                 code: 'TEST_FACEBOOK_OAUTH2_CALLBACK_CODE'
             })
             .reply(200, {
@@ -119,8 +118,8 @@ describe('Facebook auth endpoint tests', () => {
             .post('/v7.0/oauth/access_token', {
                 grant_type: 'authorization_code',
                 redirect_uri: `${process.env.PUBLIC_URL}/auth/facebook/callback`,
-                client_id: process.env.TEST_FACEBOOK_OAUTH2_APP_ID,
-                client_secret: process.env.TEST_FACEBOOK_OAUTH2_APP_SECRET,
+                client_id: config.get('settings.thirdParty.rw.facebook.clientID'),
+                client_secret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                 code: 'TEST_FACEBOOK_OAUTH2_CALLBACK_CODE'
             })
             .reply(200, {
@@ -153,8 +152,7 @@ describe('Facebook auth endpoint tests', () => {
             .get('/')
             .reply(200, 'ok');
 
-        await requester
-            .get(`/auth?callbackUrl=https://www.wikipedia.org`);
+        await requester.get(`/auth?callbackUrl=https://www.wikipedia.org`);
 
         const responseOne = await requester
             .get(`/auth/facebook/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
@@ -163,9 +161,7 @@ describe('Facebook auth endpoint tests', () => {
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
-            .get('/auth/success');
-
+        const responseTwo = await requester.get('/auth/success');
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
@@ -191,8 +187,8 @@ describe('Facebook auth endpoint tests', () => {
             .post('/v7.0/oauth/access_token', {
                 grant_type: 'authorization_code',
                 redirect_uri: `${process.env.PUBLIC_URL}/auth/facebook/callback`,
-                client_id: process.env.TEST_FACEBOOK_OAUTH2_APP_ID,
-                client_secret: process.env.TEST_FACEBOOK_OAUTH2_APP_SECRET,
+                client_id: config.get('settings.thirdParty.rw.facebook.clientID'),
+                client_secret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                 code: 'TEST_FACEBOOK_OAUTH2_CALLBACK_CODE'
             })
             .reply(200, {
@@ -274,7 +270,9 @@ describe('Facebook auth endpoint tests', () => {
         existingUser.should.have.property('providerId').and.equal('10216001184997572');
         existingUser.should.have.property('userToken').and.equal(undefined);
 
-        const proof = crypto.createHmac('sha256', process.env.TEST_FACEBOOK_OAUTH2_APP_SECRET || 'TEST_FACEBOOK_OAUTH2_APP_SECRET').update('TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN').digest('hex');
+        const proof = crypto.createHmac('sha256', config.get('settings.thirdParty.rw.facebook.clientSecret'))
+            .update('TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN')
+            .digest('hex');
 
         nock('https://graph.facebook.com')
             .get('/v2.6/me')
@@ -291,9 +289,7 @@ describe('Facebook auth endpoint tests', () => {
                 email: 'john.doe@vizzuality.com'
             });
 
-        const response = await requester
-            .get(`/auth/facebook/token?access_token=TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN`);
-
+        const response = await requester.get(`/auth/facebook/token?access_token=TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN`);
         response.status.should.equal(200);
         response.should.be.json;
         response.body.should.be.an('object');

@@ -125,7 +125,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
 
         return new Promise((resolve) => {
             response.should.redirect;
-            response.should.redirectTo('http://resourcewatch.org');
+            response.should.redirectTo('https://resourcewatch.org');
             resolve();
         });
     });

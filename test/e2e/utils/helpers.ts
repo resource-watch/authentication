@@ -4,14 +4,14 @@ import mongoose from 'mongoose';
 import { SinonSandbox } from "sinon";
 import { promisify } from 'util';
 
-import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import TempUserModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
+import UserModel, {IUser} from 'plugins/sd-ct-oauth-plugin/models/user.model';
+import TempUserModel, {IUserTemp} from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
 
 const { ObjectId } = mongoose.Types;
 
 export const getUUID = () => Math.random().toString(36).substring(7);
 
-export const createUser = (userData) => ({
+export const createUser = (userData: Partial<IUser>) => ({
     _id: new ObjectId(),
     name: `${getUUID()} name`,
     email: `${getUUID()}@authorization.com`,
@@ -29,8 +29,7 @@ export const createUser = (userData) => ({
 
 export const createTokenForUser = (tokenData) => promisify(JWT.sign)(tokenData, process.env.JWT_SECRET);
 
-export const createUserInDB = async (userData) => {
-    // eslint-disable-next-line no-undef
+export const createUserInDB = async (userData: Partial<IUser>) => {
     const user = await new UserModel(createUser(userData)).save();
 
     return {
@@ -45,14 +44,14 @@ export const createUserInDB = async (userData) => {
     };
 };
 
-export const createUserAndToken = async (userData) => {
+export const createUserAndToken = async (userData: Partial<IUser>) => {
     const user = await createUserInDB(userData);
     const token = await createTokenForUser(user);
 
     return { user, token };
 };
 
-export const createTempUser = async (userData) => (TempUserModel({
+export const createTempUser = async (userData: Partial<IUserTemp>) => (new TempUserModel({
     _id: new ObjectId(),
     email: `${getUUID()}@authorization.com`,
     password: '$password.hash',

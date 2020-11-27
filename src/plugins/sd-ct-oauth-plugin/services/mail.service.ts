@@ -1,20 +1,17 @@
 import SparkPost from 'sparkpost';
 
 import logger from '../../../logger';
-import Plugin from "../../../models/plugin.model";
+import Settings from "../../../services/settings.service";
 
 export default class MailService {
-    private disableEmailSending: Boolean;
     private client: SparkPost;
     private publicUrl: string;
 
     async setup() {
-        const plugin = await Plugin.findOne({ name: 'oauth' });
-        this.disableEmailSending = plugin.config.disableEmailSending;
-        if (plugin.config.local.sparkpostKey) {
-            this.client = new SparkPost(plugin.config.local.sparkpostKey);
+        if (Settings.getSettings().local.sparkpostKey) {
+            this.client = new SparkPost(Settings.getSettings().local.sparkpostKey);
         }
-        this.publicUrl = plugin.config.publicUrl;
+        this.publicUrl = Settings.getSettings().publicUrl;
     }
 
     sendConfirmationMail(data, recipients, generalConfig) {
@@ -32,12 +29,6 @@ export default class MailService {
             },
             recipients,
         };
-
-        if (this.disableEmailSending) {
-            logger.info('[MailService] Email sending disabled, skipping user account confirmation email');
-            logger.info(reqOpts);
-            return new Promise((resolve) => resolve(true));
-        }
 
         return new Promise((resolve, reject) => {
             logger.info(reqOpts);
@@ -68,12 +59,6 @@ export default class MailService {
             recipients,
         };
 
-        if (this.disableEmailSending) {
-            logger.info('[MailService] Email sending disabled, skipping user account confirmation with password email');
-            logger.info(reqOpts);
-            return new Promise((resolve) => resolve(true));
-        }
-
         return new Promise((resolve, reject) => {
             logger.info(reqOpts);
             this.client.transmissions.send(reqOpts, (error, res) => {
@@ -101,12 +86,6 @@ export default class MailService {
             },
             recipients,
         };
-
-        if (this.disableEmailSending) {
-            logger.info('[MailService] Email sending disabled, skipping password recover email');
-            logger.info(reqOpts);
-            return new Promise((resolve) => resolve(true));
-        }
 
         return new Promise((resolve, reject) => {
             this.client.transmissions.send(reqOpts, (error, res) => {

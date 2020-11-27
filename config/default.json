@@ -41,6 +41,26 @@
       "gfw": { "confirmUrlRedirect": "http://www.globalforestwatch.org" },
       "rw": { "confirmUrlRedirect": "https://resourcewatch.org/myrw/areas" },
       "prep": { "confirmUrlRedirect": null }
+    },
+    "thirdParty": {
+      "rw": {
+        "facebook": { "active": true },
+        "google": { "active": true },
+        "apple": { "active": false },
+        "twitter": { "active": true }
+      },
+      "gfw": {
+        "facebook": { "active": true },
+        "google": { "active": true },
+        "apple": { "active": true },
+        "twitter": { "active": true }
+      },
+      "prep": {
+        "facebook": { "active": true },
+        "google": { "active": true },
+        "apple": { "active": false },
+        "twitter": { "active": true }
+      }
     }
   }
 }

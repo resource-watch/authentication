@@ -21,6 +21,7 @@ env:
     - PUBLIC_URL=http://localhost:9000
     - API_VERSION=v1
     - SPARKPOST_KEY=fakeSparkpostKey
+    - ALLOW_CONFIG_MUTATIONS=true
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter

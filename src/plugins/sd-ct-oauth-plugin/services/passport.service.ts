@@ -11,7 +11,7 @@ import FacebookTokenStrategy from 'passport-facebook-token';
 
 import logger from '../../../logger';
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
-import Plugin from "../../../models/plugin.model";
+import Settings from "../../../services/settings.service";
 
 async function registerUser(accessToken: string, refreshToken: string, profile: any, done: Function) {
     logger.info('[passportService] Registering user', profile);
@@ -74,11 +74,11 @@ async function registerUser(accessToken: string, refreshToken: string, profile: 
 async function registerUserBasic(userId, password, done) {
     try {
         logger.info('[passportService] Verifying basic auth');
-        if (userId === plugin.config.basic.userId && password === plugin.config.basic.password) {
+        if (userId === Settings.getSettings().basic.userId && password === Settings.getSettings().basic.password) {
             done(null, {
                 id: '57ab3917d1d5fb2f00b20f2d',
                 provider: 'basic',
-                role: plugin.config.basic.role,
+                role: Settings.getSettings().basic.role,
             });
         } else {
             done(null, false);
@@ -89,8 +89,6 @@ async function registerUserBasic(userId, password, done) {
 }
 
 export default async function registerStrategies() {
-    const plugin = await Plugin.findOne({ name: 'oauth' });
-
     passport.serializeUser((user, done) => {
         done(null, user);
     });
@@ -99,7 +97,7 @@ export default async function registerStrategies() {
         done(null, user);
     });
 
-    if (plugin.config.local && plugin.config.local.active) {
+    if (Settings.getSettings().local && Settings.getSettings().local.active) {
         logger.info('[passportService] Loading local strategy');
         const login = async function login(username, password, done) {
             const user = await UserModel.findOne({
@@ -130,26 +128,26 @@ export default async function registerStrategies() {
         passport.use(localStrategy);
     }
 
-    if (plugin.config.basic && plugin.config.basic.active) {
+    if (Settings.getSettings().basic && Settings.getSettings().basic.active) {
         logger.info('[passportService] Loading basic strategy');
         const basicStrategy = new BasicStrategy(registerUserBasic);
         passport.use(basicStrategy);
     }
 
     // third party oauth
-    if (plugin.config.thirdParty) {
+    if (Settings.getSettings().thirdParty) {
         logger.info('[passportService] Loading third-party oauth');
-        const apps = Object.keys(plugin.config.thirdParty);
+        const apps = Object.keys(Settings.getSettings().thirdParty);
         for (let i = 0, { length } = apps; i < length; i += 1) {
             logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
-            const app = plugin.config.thirdParty[apps[i]];
+            const app = Settings.getSettings().thirdParty[apps[i]];
             if (app.twitter && app.twitter.active) {
                 logger.info(`[passportService] Loading twitter strategy of ${apps[i]}`);
                 const configTwitter = {
                     consumerKey: app.twitter.consumerKey,
                     consumerSecret: app.twitter.consumerSecret,
                     userProfileURL: 'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true',
-                    callbackURL: `${plugin.config.publicUrl}/auth/twitter/callback`
+                    callbackURL: `${Settings.getSettings().publicUrl}/auth/twitter/callback`
                 };
                 const twitterStrategy = new TwitterStrategy(configTwitter, registerUser);
                 twitterStrategy.name += `:${apps[i]}`;
@@ -161,7 +159,7 @@ export default async function registerStrategies() {
                 const configGoogle = {
                     clientID: app.google.clientID,
                     clientSecret: app.google.clientSecret,
-                    callbackURL: `${plugin.config.publicUrl}/auth/google/callback`,
+                    callbackURL: `${Settings.getSettings().publicUrl}/auth/google/callback`,
                     userProfileURL: 'https://www.googleapis.com/oauth2/v3/userinfo'
                 };
                 const googleStrategy = new GoogleStrategy(configGoogle, registerUser);
@@ -183,7 +181,7 @@ export default async function registerStrategies() {
                 const configFacebook = {
                     clientID: app.facebook.clientID,
                     clientSecret: app.facebook.clientSecret,
-                    callbackURL: `${plugin.config.publicUrl}/auth/facebook/callback`,
+                    callbackURL: `${Settings.getSettings().publicUrl}/auth/facebook/callback`,
                     profileFields: ['id', 'displayName', 'photos', 'email'],
                     graphAPIVersion: 'v7.0',
                 };

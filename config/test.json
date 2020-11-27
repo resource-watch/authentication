@@ -11,6 +11,34 @@
       "gfw": { "confirmUrlRedirect": null },
       "rw": { "confirmUrlRedirect": null },
       "prep": { "confirmUrlRedirect": null }
+    },
+    "thirdParty": {
+      "rw": {
+        "facebook": {
+          "clientSecret": "test",
+          "clientID": "test",
+          "active": true
+        },
+        "google": {
+          "clientSecret": "test",
+          "clientID": "test",
+          "active": true
+        },
+        "apple": { "active": false },
+        "twitter": { "active": false }
+      },
+      "gfw": {
+        "facebook": { "active": false },
+        "google": { "active": false },
+        "apple": { "active": false },
+        "twitter": { "active": false }
+      },
+      "prep": {
+        "facebook": { "active": false },
+        "google": { "active": false },
+        "apple": { "active": false },
+        "twitter": { "active": false }
+      }
     }
   }
 }

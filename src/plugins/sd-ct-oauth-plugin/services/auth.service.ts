@@ -1,5 +1,3 @@
-import Plugin from "../../../models/plugin.model";
-
 import logger from '../../../logger';
 import JWT from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
@@ -16,6 +14,7 @@ import UnprocessableEntityError from 'plugins/sd-ct-oauth-plugin/errors/unproces
 import UserModel from 'plugins/sd-ct-oauth-plugin/models/user.model';
 import RenewModel from 'plugins/sd-ct-oauth-plugin/models/renew.model';
 import UserTempModel from 'plugins/sd-ct-oauth-plugin/models/user-temp.model';
+import Settings from "../../../services/settings.service";
 
 export default class AuthService {
 
@@ -60,11 +59,9 @@ export default class AuthService {
 
     static async createToken(user, saveInUser) {
         try {
-            const plugin = await Plugin.findOne({ name: 'oauth' });
-
             const options = {};
-            if (plugin.config.jwt.expiresInMinutes && plugin.config.jwt.expiresInMinutes > 0) {
-                options.expiresIn = plugin.config.jwt.expiresInMinutes * 60;
+            if (Settings.getSettings().jwt.expiresInMinutes && Settings.getSettings().jwt.expiresInMinutes > 0) {
+                options.expiresIn = Settings.getSettings().jwt.expiresInMinutes * 60;
             }
 
             const userData = await UserModel.findById(user.id);
@@ -81,7 +78,7 @@ export default class AuthService {
                     photo: userData.photo,
                     name: userData.name
                 };
-                token = await promisify(JWT.sign)(dataToken, plugin.config.jwt.secret, options);
+                token = await promisify(JWT.sign)(dataToken, Settings.getSettings().jwt.secret, options);
                 if (saveInUser) {
                     userData.userToken = token;
                     await userData.save();
@@ -90,7 +87,7 @@ export default class AuthService {
                 const dataToken = { ...user };
                 delete dataToken.exp;
                 dataToken.createdAt = Date.now();
-                token = await promisify(JWT.sign)(dataToken, plugin.config.jwt.secret, options);
+                token = await promisify(JWT.sign)(dataToken, Settings.getSettings().jwt.secret, options);
             }
 
             return token;

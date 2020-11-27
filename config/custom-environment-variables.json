@@ -19,5 +19,19 @@
   },
   "jwt": {
     "token": "JWT_SECRET"
+  },
+  "settings": {
+    "thirdParty": {
+      "rw": {
+        "facebook": {
+          "clientSecret": "RW_FACEBOOK_CLIENT_SECRET",
+          "clientID": "RW_FACEBOOK_CLIENT_ID"
+        },
+        "google": {
+          "clientSecret": "RW_GOOGLE_CLIENT_SECRET",
+          "clientID": "RW_GOOGLE_CLIENT_ID"
+        }
+      }
+    }
   }
 }
