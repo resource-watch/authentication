@@ -3,11 +3,12 @@ import chai from 'chai';
 
 import UserModel from 'models/user.model';
 import { createUserAndToken } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
 chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -28,7 +29,7 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Visiting /auth while not logged in should redirect to the login page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth`)
             .redirects(0);
 
@@ -40,7 +41,7 @@ describe('Auth endpoints tests - HTML', () => {
     it('Visiting /auth while logged in should redirect to the success page', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth`)
             .set('Authorization', `Bearer ${token}`)
             .redirects(0);
@@ -52,7 +53,7 @@ describe('Auth endpoints tests - HTML', () => {
     it('Visiting /auth with callbackUrl while being logged in should redirect to the callback page', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth?callbackUrl=https://www.wikipedia.org`)
             .set('Authorization', `Bearer ${token}`)
             .redirects(0);
@@ -64,7 +65,7 @@ describe('Auth endpoints tests - HTML', () => {
     it('Revisiting /auth with callbackUrl while being logged in should redirect to the callback page', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth?callbackUrl=https://www.google.com`)
             .set('Authorization', `Bearer ${token}`)
             .redirects(0);
@@ -74,7 +75,7 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Visiting /auth/login while not being logged in should show you the login page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/login`);
 
         response.status.should.equal(200);
@@ -84,7 +85,7 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with no credentials should display the error messages', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .redirects(0);
@@ -94,7 +95,7 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with email and no password should display the error messages', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .send({
@@ -108,7 +109,7 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with invalid credentials (account does not exist) should display the error messages', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .send({
@@ -137,7 +138,7 @@ describe('Auth endpoints tests - HTML', () => {
             provider: 'local'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .send({
@@ -162,7 +163,7 @@ describe('Auth endpoints tests - HTML', () => {
             .get('/')
             .reply(200, 'ok');
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .redirects(0)
             .set('Authorization', `Bearer ${token}`);
@@ -170,7 +171,7 @@ describe('Auth endpoints tests - HTML', () => {
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get('/auth/success');
 
         responseTwo.should.redirect;
@@ -192,7 +193,7 @@ describe('Auth endpoints tests - HTML', () => {
         await requester
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org`);
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .redirects(0)
@@ -204,7 +205,7 @@ describe('Auth endpoints tests - HTML', () => {
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get('/auth/success');
 
         responseTwo.should.redirect;
@@ -229,7 +230,7 @@ describe('Auth endpoints tests - HTML', () => {
         await requester
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org`);
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .redirects(0)
@@ -241,7 +242,7 @@ describe('Auth endpoints tests - HTML', () => {
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get('/auth/success');
 
         responseTwo.should.redirect;
@@ -259,7 +260,7 @@ describe('Auth endpoints tests - HTML', () => {
         await requester
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org&token=true`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .redirects(0)
@@ -273,7 +274,7 @@ describe('Auth endpoints tests - HTML', () => {
     });
 
     it('Log in failure with /auth/login in should redirect to the failure page - HTTP request', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .type('form')
             .send({

@@ -3,12 +3,13 @@ import chai from 'chai';
 
 import UserModel, { IUser } from 'models/user.model';
 
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserAndToken, createUserInDB, ensureHasPaginationElements } from '../utils/helpers';
+import type request from 'superagent';
 
 chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -27,7 +28,7 @@ describe('List users', () => {
     });
 
     it('Visiting /auth/user while not logged in should return a 401 error', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json');
 
@@ -41,7 +42,7 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as USER should return a 403 error', async () => {
         const { token } = await createUserAndToken(null);
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -55,7 +56,7 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as MANAGER should return a 403 error', async () => {
         const { token } = await createUserAndToken({ role: 'MANAGER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -67,7 +68,7 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - just current user', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -89,7 +90,7 @@ describe('List users', () => {
             }
         });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -117,7 +118,7 @@ describe('List users', () => {
             }
         });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -132,7 +133,7 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by email address is supported', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user?email=${user.email}`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -147,7 +148,7 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by email address with plus sign in it is supported as long as it\'s escaped', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN', email: 'text+email@vizzuality.com' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .query({ email: 'text\\\+email@vizzuality.com' })
             .set('Content-Type', 'application/json')
@@ -164,7 +165,7 @@ describe('List users', () => {
         const { token, user: userOne } = await createUserAndToken({ role: 'ADMIN' });
         const { user: userTwo } = await createUserAndToken({ provider: 'google', role: 'ADMIN' });
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/user?provider=local`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -175,7 +176,7 @@ describe('List users', () => {
 
         ensureHasPaginationElements(responseOne);
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get(`/auth/user?provider=google`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -191,7 +192,7 @@ describe('List users', () => {
         const { token, user: userOne } = await createUserAndToken({ role: 'ADMIN' });
         const { user: userTwo } = await createUserAndToken({ role: 'ADMIN' });
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/user?name=${userOne.name}`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -202,7 +203,7 @@ describe('List users', () => {
 
         ensureHasPaginationElements(responseOne);
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get(`/auth/user?name=${userTwo.name}`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -219,7 +220,7 @@ describe('List users', () => {
         const { user: userManager } = await createUserAndToken({ role: 'MANAGER' });
         const { user: userUser } = await createUserAndToken({ role: 'USER' });
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/user?role=USER`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -230,7 +231,7 @@ describe('List users', () => {
 
         ensureHasPaginationElements(responseOne);
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get(`/auth/user?role=MANAGER`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -241,7 +242,7 @@ describe('List users', () => {
 
         ensureHasPaginationElements(responseTwo);
 
-        const responseThree = await requester
+        const responseThree: request.Response = await requester
             .get(`/auth/user?role=ADMIN`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -256,7 +257,7 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by password not supported', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user?password=%242b%2410%241wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -286,7 +287,7 @@ describe('List users', () => {
             }
         });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user?app=all`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
@@ -312,7 +313,7 @@ describe('List users', () => {
                 apps: ['fake-app-2']
             }
         });
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user?app=fake-app,fake-app-2`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
@@ -328,13 +329,13 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as ADMIN and an invalid query param should return the list of users ignoring the invalid query param', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const filteredResponse = await requester
+        const filteredResponse: request.Response = await requester
             .get(`/auth/user?foo=bar`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
             .send();
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)

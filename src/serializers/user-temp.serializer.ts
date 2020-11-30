@@ -3,7 +3,7 @@ import { ISerializedResponse } from "serializers/serializer.interface";
 
 export default class UserTempSerializer {
 
-    static serializeElement(el: IUserTemp) {
+    static serializeElement(el: IUserTemp): Record<string, any> {
         return {
             id: el.id,
             email: el.email,
@@ -15,7 +15,7 @@ export default class UserTempSerializer {
         };
     }
 
-    static serialize(data: IUserTemp|IUserTemp[]) {
+    static serialize(data: IUserTemp|IUserTemp[]): ISerializedResponse {
         const result: ISerializedResponse = { data: undefined };
 
         if (data && Array.isArray(data) && data.length === 0) {

@@ -1,17 +1,18 @@
 import config from 'config';
-import { Context } from "koa";
+import { Context, Middleware, Next } from "koa";
 
 import logger from 'logger';
 import Settings, { IApplication } from "services/settings.service";
+import { IUser } from "./models/user.model";
 
 export default class Utils {
 
-    static getUser(ctx: Context) {
+    static getUser(ctx: Context): IUser {
         // @ts-ignore
         return ctx.req.user || ctx.state.user || ctx.state.microservice;
     }
 
-    static async isLogged(ctx: Context, next: () => void) {
+    static async isLogged(ctx: Context, next: Next): Promise<void> {
         logger.debug('Checking if user is logged');
         if (Utils.getUser(ctx)) {
             await next();
@@ -21,9 +22,9 @@ export default class Utils {
         }
     }
 
-    static async isAdmin(ctx: Context, next: () => void) {
+    static async isAdmin(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin');
-        const user = Utils.getUser(ctx);
+        const user:IUser = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -38,9 +39,9 @@ export default class Utils {
         }
     }
 
-    static async isAdminOrManager(ctx: Context, next: () => void) {
+    static async isAdminOrManager(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin or manager');
-        const user = Utils.getUser(ctx);
+        const user:IUser = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -54,9 +55,9 @@ export default class Utils {
         }
     }
 
-    static async isMicroservice(ctx: Context, next: () => void) {
+    static async isMicroservice(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is a microservice');
-        const user = Utils.getUser(ctx);
+        const user:IUser = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -82,14 +83,14 @@ export default class Utils {
         return Settings.getSettings().defaultApp;
     }
 
-    static serializeObjToQuery(obj: Record<string, any>) {
+    static serializeObjToQuery(obj: Record<string, any>): string {
         return Object.keys(obj).reduce((a, k) => {
             a.push(`${k}=${encodeURIComponent(obj[k])}`);
             return a;
         }, []).join('&');
     }
 
-    static getGeneralConfig() {
+    static getGeneralConfig(): { mongoUri: string, application: string } {
         return {
             mongoUri: process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`,
             application: config.get('application'),
@@ -97,7 +98,7 @@ export default class Utils {
     }
 
     static getApplicationsConfig(ctx: Context): IApplication {
-        const app = Utils.getOriginApp(ctx);
+        const app:string = Utils.getOriginApp(ctx);
         return Settings.getSettings().applications && Settings.getSettings().applications[app];
     }
 

@@ -12,7 +12,7 @@ export default class UserService {
     }
 
     static async getUserById(id:string):Promise<IUser> {
-        const isValidId = mongoose.Types.ObjectId.isValid(id);
+        const isValidId:boolean = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
             logger.info(`[Auth Service - getUserById] - Invalid id ${id} provided`);
@@ -26,7 +26,7 @@ export default class UserService {
             return null;
         }
 
-        const salt = bcrypt.genSaltSync();
+        const salt:string = bcrypt.genSaltSync();
 
         user.provider = 'local';
         delete user.providerId;

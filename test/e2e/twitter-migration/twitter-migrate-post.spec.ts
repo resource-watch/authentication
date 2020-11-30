@@ -2,13 +2,13 @@ import nock from 'nock';
 import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
-
-import UserModel from 'models/user.model';
+import type request from 'superagent';
+import UserModel, { IUser } from 'models/user.model';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
 
-const should = chai.should();
+const should: Chai.Should = chai.should();
 chai.use(ChaiString);
 chai.use(ChaiHttp);
 
@@ -35,7 +35,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
     });
 
     it('Submitting the migrate form while not being logged in (no session) should redirect to the start page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/twitter/migrate`)
             .redirects(0);
 
@@ -55,7 +55,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         await requester
             .get(`/auth/twitter/auth`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/twitter/migrate`)
             .redirects(0);
 
@@ -140,7 +140,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/twitter/migrate`)
             .redirects(0);
 
@@ -226,7 +226,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/twitter/migrate`)
             .send({
                 email: 'john.doe@vizzuality.com',
@@ -241,7 +241,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
     });
 
     it('Submitting the migrate form for a logged in user with the correct data should migrate the user data (happy case)', async () => {
-        const user = await createUserInDB({
+        const user: Partial<IUser> = await createUserInDB({
             email: 'john.doe@vizzuality.com',
             provider: 'twitter',
             providerId: '113994825016233013735'
@@ -317,7 +317,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/twitter/migrate`)
             .send({
                 email: 'john.doe@vizzuality.com',
@@ -326,11 +326,10 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
             })
             .redirects(0);
 
-        // tslint:disable-next-line:no-unused-expression
-        response.should.redirect;
+response.should.redirect;
         response.should.redirectTo(/\/auth\/twitter\/finished$/);
 
-        const confirmedUser = await UserModel.findById(user.id)
+        const confirmedUser: IUser = await UserModel.findById(user.id)
             .exec();
 
         should.exist(confirmedUser);
@@ -352,11 +351,9 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         confirmedUser.should.have.property('providerId')
             .and
             .equal('113994825016233013735');
-        // tslint:disable-next-line:no-unused-expression
-        confirmedUser.should.have.property('password')
+confirmedUser.should.have.property('password')
             .and.not.be.empty;
-        // tslint:disable-next-line:no-unused-expression
-        confirmedUser.should.have.property('salt')
+confirmedUser.should.have.property('salt')
             .and.not.be.empty;
     });
 

@@ -2,17 +2,17 @@ import nock from 'nock';
 import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
-
+import type request from 'superagent';
 import UserModel from 'models/user.model';
 
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
 
 chai.should();
 chai.use(ChaiString);
 chai.use(ChaiHttp);
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -35,7 +35,7 @@ describe('Twitter migrate endpoint tests - Migration form loading', () => {
     });
 
     it('Visiting /auth/twitter/migrate while not being logged in (no session) should redirect to the start page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/migrate`)
             .redirects(0);
 
@@ -55,7 +55,7 @@ describe('Twitter migrate endpoint tests - Migration form loading', () => {
         await requester
             .get(`/auth/twitter/auth`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/migrate`)
             .redirects(0);
 
@@ -140,7 +140,7 @@ describe('Twitter migrate endpoint tests - Migration form loading', () => {
         await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/migrate`)
             .redirects(0);
 

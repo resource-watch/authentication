@@ -3,14 +3,15 @@ import chai from 'chai';
 
 import UserModel, { IUser } from 'models/user.model';
 import { createUser, createUserAndToken } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
+import type request from 'superagent';
 
 chai.should();
 
-let requester:ChaiHttp.Agent;
-let userOne:IUser;
-let userTwo:IUser;
+let requester: ChaiHttp.Agent;
+let userOne: IUser;
+let userTwo: IUser;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -28,7 +29,7 @@ describe('Find users by id', () => {
     });
 
     it('Find users without being logged in returns a 401', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
             .send({});
 
@@ -38,7 +39,7 @@ describe('Find users by id', () => {
     it('Find users while being logged in as a regular user returns a 401 error', async () => {
         const { token } = await createUserAndToken(null);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
             .set('Authorization', `Bearer ${token}`)
             .send({});
@@ -49,7 +50,7 @@ describe('Find users by id', () => {
     });
 
     it('Find users without ids in body returns a 400 error', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({});
@@ -60,7 +61,7 @@ describe('Find users by id', () => {
     });
 
     it('Find users with id list containing non-object ids returns an empty list (invalid ids are ignored)', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({ ids: ['123'] });
@@ -70,7 +71,7 @@ describe('Find users by id', () => {
     });
 
     it('Find users with id list containing user that does not exist returns an empty list (empty db)', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({
@@ -85,7 +86,7 @@ describe('Find users by id', () => {
         userOne = await new UserModel(createUser(null)).save();
         userTwo = await new UserModel(createUser(null)).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({
@@ -95,7 +96,7 @@ describe('Find users by id', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(1);
 
-        const responseUserOne = response.body.data[0];
+        const responseUserOne: Record<string, any> = response.body.data[0];
 
         responseUserOne.should.have.property('_id').and.equal(userOne.id);
         responseUserOne.should.have.property('extraUserData').and.be.an('object');
@@ -107,7 +108,7 @@ describe('Find users by id', () => {
     });
 
     it('Find users with id list containing users that exist returns the listed users', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({
@@ -117,8 +118,8 @@ describe('Find users by id', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(2);
 
-        const responseUserOne = response.body.data[0];
-        const responseUserTwo = response.body.data[1];
+        const responseUserOne: Record<string, any> = response.body.data[0];
+        const responseUserTwo: Record<string, any> = response.body.data[1];
 
         responseUserOne.should.have.property('_id').and.equal(userOne.id);
         responseUserOne.should.have.property('extraUserData').and.be.an('object');
@@ -138,7 +139,7 @@ describe('Find users by id', () => {
     });
 
     it('Find users with id list containing users that exist returns the listed users (id query param is useless)', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/user/find-by-ids?ids=${userTwo.id}`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({
@@ -148,7 +149,7 @@ describe('Find users by id', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(1);
 
-        const responseUserOne = response.body.data[0];
+        const responseUserOne: Record<string, any> = response.body.data[0];
 
         responseUserOne.should.have.property('_id').and.equal(userOne.id);
         responseUserOne.should.have.property('extraUserData').and.be.an('object');

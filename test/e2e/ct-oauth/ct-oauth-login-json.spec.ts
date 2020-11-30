@@ -1,13 +1,14 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel from 'models/user.model';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import UserModel, { IUser } from 'models/user.model';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserAndToken, createUserInDB } from '../utils/helpers';
+import type request from 'superagent';
 
 chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -27,7 +28,7 @@ describe('Auth endpoints tests - JSON', () => {
 
     // Default HTML request behavior
     it('Visiting /auth while not logged in should redirect to the login page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth`)
             .set('Content-Type', 'application/json');
 
@@ -41,7 +42,7 @@ describe('Auth endpoints tests - JSON', () => {
     it('Visiting /auth while logged in should redirect to the success page', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -56,7 +57,7 @@ describe('Auth endpoints tests - JSON', () => {
     it('Visiting /auth with callbackUrl while being logged in should redirect to the callback page', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth?callbackUrl=https://www.wikipedia.org`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
@@ -67,7 +68,7 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Visiting /auth/login while not being logged in should show you the login page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/login`)
             .set('Content-Type', 'application/json');
 
@@ -79,7 +80,7 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with no credentials should display the error messages', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json');
 
@@ -91,7 +92,7 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with email and no password should display the error messages', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json')
             .send({
@@ -106,7 +107,7 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with invalid credentials (account does not exist) should display the error messages', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json')
             .send({
@@ -122,13 +123,13 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with valid credentials should return a 200 HTTP code and the user details', async () => {
-        const user = await createUserInDB({
+        const user: Partial<IUser> = await createUserInDB({
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
             salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
         });
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json')
             .send({
@@ -139,7 +140,7 @@ describe('Auth endpoints tests - JSON', () => {
         response.status.should.equal(200);
         response.redirects.should.be.an('array').and.length(0);
 
-        const responseUser = response.body.data;
+        const responseUser: Record<string, any> = response.body.data;
         responseUser.should.have.property('id').and.be.a('string').and.equal(user.id.toString());
         responseUser.should.have.property('name').and.be.a('string').and.equal(user.name);
         responseUser.should.have.property('photo').and.be.a('string').and.equal(user.photo);
@@ -152,7 +153,7 @@ describe('Auth endpoints tests - JSON', () => {
     it('Visiting GET /auth/login with callbackUrl while being logged in should return a 200', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -162,13 +163,13 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in successfully with POST /auth/login with callbackUrl should not redirect to the callback page', async () => {
-        const user = await createUserInDB({
+        const user: Partial<IUser> = await createUserInDB({
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
             salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
         });
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .set('Content-Type', 'application/json')
             .send({
@@ -179,7 +180,7 @@ describe('Auth endpoints tests - JSON', () => {
         response.status.should.equal(200);
         response.redirects.should.be.an('array').and.length(0);
 
-        const responseUser = response.body.data;
+        const responseUser: Record<string, any> = response.body.data;
         responseUser.should.have.property('id').and.be.a('string').and.equal(user.id.toString());
         responseUser.should.have.property('name').and.be.a('string').and.equal(user.name);
         responseUser.should.have.property('photo').and.be.a('string').and.equal(user.photo);
@@ -191,7 +192,7 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Log in failure with /auth/login in should redirect to the failure page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .set('Content-Type', 'application/json')
             .send({

@@ -2,6 +2,7 @@ import chai from 'chai';
 import nock from 'nock';
 
 import { getTestAgent } from './utils/test-server';
+import request from "superagent";
 
 let requester:ChaiHttp.Agent;
 
@@ -17,7 +18,7 @@ describe('GET healthcheck', () => {
     });
 
     it('Checking the application\'s health should return a 200', async () => {
-        const response = await requester.get('/healthcheck');
+        const response: request.Response = await requester.get('/healthcheck');
         response.status.should.equal(200);
         response.body.should.be.an('object').and.have.property('uptime');
     });

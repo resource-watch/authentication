@@ -61,7 +61,7 @@ interface ILocalAuth extends Record<string,any> {
     prep: { confirmUrlRedirect: string; };
 }
 
-interface IThirdPartyAuth {
+export interface IThirdPartyAuth {
     facebook: IFacebookAuth;
     google: IGoogleAuth;
     apple?: IAppleAuth;
@@ -70,7 +70,7 @@ interface IThirdPartyAuth {
 
 export interface ISettings {
     applications: Record<string, IApplication>;
-    allowPublicRegistration: Boolean;
+    allowPublicRegistration: boolean;
     publicUrl: string;
     jwt: IJwtAuth;
     basic: IBasicAuth;

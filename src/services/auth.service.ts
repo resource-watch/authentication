@@ -2,29 +2,29 @@ import { Context } from "koa";
 import JWT, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import mongoose from 'mongoose';
+import mongoose, { PaginateResult, Types } from 'mongoose';
 import { isEqual } from 'lodash';
 
 import logger from 'logger';
 import MailService from 'services/mail.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
-import UserModel, {IUser, IUserPayload} from 'models/user.model';
-import RenewModel from 'models/renew.model';
-import UserTempModel, {IUserTemp} from 'models/user-temp.model';
+import UserModel, { IUser, IUserPayload } from 'models/user.model';
+import RenewModel, { IRenew } from 'models/renew.model';
+import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import Settings from "services/settings.service";
 
 const { ObjectId } = mongoose.Types;
 
 export default class AuthService {
 
-    static getFilteredQuery(query: Record<string, any>) {
-        const allowedSearchFields = ['name', 'provider', 'email', 'role'];
+    static getFilteredQuery(query: Record<string, any>): Record<string, any> {
+        const allowedSearchFields: string[] = ['name', 'provider', 'email', 'role'];
         logger.info('[AuthService] getFilteredQuery');
         logger.debug('[AuthService] getFilteredQuery Object.keys(query)', Object.keys(query));
-        const filteredSearchFields = Object.keys(query).filter((param) => allowedSearchFields.includes(param));
+        const filteredSearchFields: string[] = Object.keys(query).filter((param) => allowedSearchFields.includes(param));
         const filteredQuery: Record<string, any> = {};
 
-        filteredSearchFields.forEach((param) => {
+        filteredSearchFields.forEach((param: string) => {
             // @ts-ignore
             switch (UserModel.schema.paths[param].instance) {
 
@@ -57,18 +57,18 @@ export default class AuthService {
         return filteredQuery;
     }
 
-    static async createToken(user: IUser, saveInUser: boolean) {
+    static async createToken(user: IUser, saveInUser: boolean): Promise<string> {
         try {
             const options: SignOptions = {};
             if (Settings.getSettings().jwt.expiresInMinutes && Settings.getSettings().jwt.expiresInMinutes > 0) {
                 options.expiresIn = Settings.getSettings().jwt.expiresInMinutes * 60;
             }
 
-            const userData = await UserModel.findById(user.id);
-            let token;
+            const userData: IUser = await UserModel.findById(user.id);
+            let token: string;
 
             if (userData) {
-                const dataToken = {
+                const dataToken: Record<string, any> = {
                     id: userData._id,
                     role: userData.role,
                     provider: userData.provider,
@@ -84,8 +84,7 @@ export default class AuthService {
                     await userData.save();
                 }
             } else {
-                const dataToken = { ...user };
-                // @ts-ignore
+                const dataToken: Record<string, any> = { ...user };
                 delete dataToken.exp;
                 dataToken.createdAt = new Date();
                 token = JWT.sign(dataToken, Settings.getSettings().jwt.secret, options);
@@ -98,19 +97,19 @@ export default class AuthService {
         }
     }
 
-    static async getUsers(app: string, query: Record<string, string>) {
+    static async getUsers(app: string[], query: Record<string, string>): Promise<PaginateResult<IUser>> {
         logger.info('[AuthService] Get users with app', app);
 
-        const filteredQuery = AuthService.getFilteredQuery({ ...query });
+        const filteredQuery: Record<string, any> = AuthService.getFilteredQuery({ ...query });
 
         if (app) {
             filteredQuery['extraUserData.apps'] = { $in: app };
         }
 
-        const page = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
-        const limit = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
+        const page: number = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
+        const limit: number = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
 
-        const paginationOptions = {
+        const paginationOptions: Record<string, any> = {
             page,
             limit,
             select: {
@@ -124,8 +123,8 @@ export default class AuthService {
         return UserModel.paginate(filteredQuery, paginationOptions);
     }
 
-    static async getUserById(id: string) {
-        const isValidId = mongoose.Types.ObjectId.isValid(id);
+    static async getUserById(id: string): Promise<IUser> {
+        const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
             logger.info(`[Auth Service - getUserById] - Invalid id ${id} provided`);
@@ -134,8 +133,8 @@ export default class AuthService {
         return UserModel.findById(id).select('-password -salt -userToken -__v').exec();
     }
 
-    static async getUsersByIds(ids: string[] = []) {
-        const newIds = ids.filter(ObjectId.isValid).map((id) => new ObjectId(id));
+    static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
+        const newIds: Types.ObjectId[] = ids.filter(ObjectId.isValid).map((id) => new ObjectId(id));
         return UserModel.find({
             _id: {
                 $in: newIds
@@ -143,24 +142,24 @@ export default class AuthService {
         }).select('-password -salt -userToken -__v').exec();
     }
 
-    static async getIdsByRole(role: string) {
+    static async getIdsByRole(role: string): Promise<Types.ObjectId[]> {
         if (!['SUPERADMIN', 'ADMIN', 'MANAGER', 'USER'].includes(role)) {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
         }
 
-        const data = await UserModel.find({ role }).exec();
+        const data: IUser[] = await UserModel.find({ role }).exec();
         return data.map((el) => el._id);
     }
 
-    static async updateUser(id: string, data: IUser, requestUser: IUser) {
-        const isValidId = mongoose.Types.ObjectId.isValid(id);
+    static async updateUser(id: string, data: IUser, requestUser: IUser): Promise<IUser> {
+        const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
             logger.info(`[Auth Service - updateUserMe] Invalid id ${id} provided`);
             throw new UnprocessableEntityError(`Invalid id ${id} provided`);
         }
 
-        const user = await UserModel.findById(id).exec();
+        const user: IUser = await UserModel.findById(id).exec();
         if (!user) {
             return null;
         }
@@ -186,15 +185,15 @@ export default class AuthService {
         return user.save();
     }
 
-    static async deleteUser(id: string) {
-        const isValidId = mongoose.Types.ObjectId.isValid(id);
+    static async deleteUser(id: string): Promise<IUser> {
+        const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
             logger.info(`[Auth Service - deleteUser] Invalid id ${id} provided`);
             throw new UnprocessableEntityError(`Invalid id ${id} provided`);
         }
 
-        let user;
+        let user: IUser;
         try {
             user = await UserModel.findById(id).exec();
         } catch (e) {
@@ -210,18 +209,18 @@ export default class AuthService {
         return user.deleteOne();
     }
 
-    static async existEmail(email: string) {
-        const exist = await UserModel.findOne({ email });
-        const existTemp = await UserTempModel.findOne({ email });
-        return exist || existTemp;
+    static async existEmail(email: string): Promise<boolean> {
+        const exist: IUser = await UserModel.findOne({ email });
+        const existTemp: IUserTemp = await UserTempModel.findOne({ email });
+        return !!(exist || existTemp);
     }
 
     static async createUser(data: IUserPayload, generalConfig: Record<string, any>): Promise<IUserTemp> {
-        const salt = bcrypt.genSaltSync();
+        const salt: string = bcrypt.genSaltSync();
 
-        const apps = data.apps || [];
+        const apps: string[] = data.apps || [];
 
-        const user = await new UserTempModel({
+        const user: IUserTemp = await new UserTempModel({
             provider: 'local',
             email: data.email,
             role: 'USER',
@@ -233,7 +232,7 @@ export default class AuthService {
 
         logger.info('Sending mail');
         try {
-            const mailService = new MailService();
+            const mailService: MailService = new MailService();
             await mailService.setup();
             await mailService.sendConfirmationMail(
                 {
@@ -251,10 +250,10 @@ export default class AuthService {
         return user;
     }
 
-    static async createUserWithoutPassword(data: IUserPayload, generalConfig: Record<string, any>) {
-        const salt = bcrypt.genSaltSync();
-        const pass = crypto.randomBytes(8).toString('hex');
-        const user = await new UserTempModel({
+    static async createUserWithoutPassword(data: IUserPayload, generalConfig: Record<string, any>): Promise<void> {
+        const salt: string = bcrypt.genSaltSync();
+        const pass: string = crypto.randomBytes(8).toString('hex');
+        const user: IUserTemp = await new UserTempModel({
             provider: 'local',
             email: data.email,
             role: data.role,
@@ -266,7 +265,7 @@ export default class AuthService {
 
         logger.info('Sending mail');
         try {
-            const mailService = new MailService();
+            const mailService: MailService = new MailService();
             await mailService.setup();
             await mailService.sendConfirmationMailWithPassword(
                 {
@@ -285,12 +284,12 @@ export default class AuthService {
 
     }
 
-    static async confirmUser(confirmationToken: string) {
-        const exist = await UserTempModel.findOne({ confirmationToken });
+    static async confirmUser(confirmationToken: string): Promise<IUser> {
+        const exist: IUserTemp = await UserTempModel.findOne({ confirmationToken });
         if (!exist) {
             return null;
         }
-        const user = await new UserModel({
+        const user: IUser = await new UserModel({
             email: exist.email,
             password: exist.password,
             salt: exist.salt,
@@ -305,26 +304,26 @@ export default class AuthService {
         return user;
     }
 
-    static async getRenewModel(token: string) {
+    static async getRenewModel(token: string): Promise<IRenew> {
         logger.info('[AuthService]obtaining renew model of token', token);
         return RenewModel.findOne({ token });
     }
 
-    static async sendResetMail(email: string, generalConfig: Record<string,any>, originApp: string) {
+    static async sendResetMail(email: string, generalConfig: Record<string, any>, originApp: string): Promise<IRenew> {
         logger.info('[AuthService] Generating token to email', email);
 
-        const user = await UserModel.findOne({ email });
+        const user: IUser = await UserModel.findOne({ email });
         if (!user) {
             logger.info('[AuthService] User not found');
             return null;
         }
 
-        const renew = await new RenewModel({
+        const renew: IRenew = await new RenewModel({
             userId: user._id,
             token: crypto.randomBytes(20).toString('hex'),
         }).save();
 
-        const mailService = new MailService();
+        const mailService: MailService = new MailService();
         await mailService.setup();
         await mailService.sendRecoverPasswordMail(
             {
@@ -338,33 +337,33 @@ export default class AuthService {
         return renew;
     }
 
-    static async updatePassword(token: string, newPassword: string) {
+    static async updatePassword(token: string, newPassword: string): Promise<IUser> {
         logger.info('[AuthService] Updating password');
-        const renew = await RenewModel.findOne({ token });
+        const renew: IRenew = await RenewModel.findOne({ token });
         if (!renew) {
             logger.info('[AuthService] Token not found');
             return null;
         }
-        const user = await UserModel.findById(renew.userId);
+        const user: IUser = await UserModel.findById(renew.userId);
         if (!user) {
             logger.info('[AuthService] User not found');
             return null;
         }
-        const salt = bcrypt.genSaltSync();
+        const salt: string = bcrypt.genSaltSync();
         user.password = bcrypt.hashSync(newPassword, salt);
         user.salt = salt;
         await user.save();
         return user;
     }
 
-    static async checkRevokedToken(ctx: Context, payload: Record<string, any>) {
+    static async checkRevokedToken(ctx: Context, payload: Record<string, any>): Promise<boolean> {
         logger.info('Checking if token is revoked');
 
-        let isRevoked = false;
+        let isRevoked: boolean = false;
         if (payload.id !== 'microservice') {
-            const checkList = ['id', 'role', 'extraUserData', 'email'];
+            const checkList: string[] = ['id', 'role', 'extraUserData', 'email'];
 
-            const user = await UserModel.findById(payload.id);
+            const user: IUser = await UserModel.findById(payload.id);
 
             if (!user) {
                 logger.info('[AuthService] User ID in token does not match an existing user');
@@ -383,9 +382,9 @@ export default class AuthService {
         return isRevoked;
     }
 
-    static async updateApplicationsUser(id: string, applications: string[]) {
+    static async updateApplicationsUser(id: string, applications: string[]): Promise<IUser> {
         logger.info('[AuthService] Searching user with id ', id, applications);
-        const user = await UserModel.findById(id);
+        const user: IUser = await UserModel.findById(id);
         if (!user) {
             logger.info('[AuthService] User not found');
             return null;
@@ -397,7 +396,7 @@ export default class AuthService {
         } else {
             user.extraUserData = { ...user.extraUserData };
         }
-        for (let i = 0, { length } = applications; i < length; i += 1) {
+        for (let i: number = 0, { length } = applications; i < length; i += 1) {
             if (user.extraUserData.apps.indexOf(applications[i]) === -1) {
                 user.extraUserData.apps.push(applications[i].toLowerCase());
             }

@@ -5,12 +5,12 @@ import { isEqual } from 'lodash';
 import UserModel from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel from 'models/renew.model';
+import type request from 'superagent';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 
 chai.should();
 
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
-
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -20,6 +20,9 @@ describe('OAuth endpoints tests - Recover password request - HTML version', () =
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
+        }
+        if (!process.env.SPARKPOST_KEY) {
+            throw Error(`Running the test suite without SPARKPOST_KEY will fail. Please set a value for SPARKPOST_KEY`);
         }
 
         requester = await getTestAgent(true);
@@ -35,7 +38,7 @@ describe('OAuth endpoints tests - Recover password request - HTML version', () =
     });
 
     it('Recover password request with no email should return an error - HTML format (TODO: this should return a 422)', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password`);
 
         response.status.should.equal(200);
@@ -44,7 +47,7 @@ describe('OAuth endpoints tests - Recover password request - HTML version', () =
     });
 
     it('Recover password request with non-existing email should return an error - HTML format', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password`)
             .type('form')
             .send({
@@ -59,7 +62,7 @@ describe('OAuth endpoints tests - Recover password request - HTML version', () =
     it('Recover password request with correct email should return OK - HTML format', async () => {
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'recover-password'
                     },
@@ -101,7 +104,7 @@ describe('OAuth endpoints tests - Recover password request - HTML version', () =
             email: 'potato@gmail.com'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password`)
             .type('form')
             .send({

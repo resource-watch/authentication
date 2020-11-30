@@ -1,19 +1,20 @@
 import nock from 'nock';
 import chai from 'chai';
 import JWT from 'jsonwebtoken';
-
-import UserModel from 'models/user.model';
+import chaiString from "chai-string";
+import UserModel, { IUser } from 'models/user.model';
 import AuthService from 'services/auth.service';
 
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
-const should = chai.should();
-chai.use(require('chai-string'));
+const should: Chai.Should = chai.should();
+chai.use(chaiString);
 
 let requester: ChaiHttp.Agent;
 
 // https://github.com/mochajs/mocha/issues/2683
-let skipTests = false;
+let skipTests: boolean = false;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -43,7 +44,7 @@ describe('Google auth endpoint tests', () => {
             return;
         }
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/google`)
             .redirects(0);
 
@@ -60,7 +61,7 @@ describe('Google auth endpoint tests', () => {
             return;
         }
 
-        const missingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://www.googleapis.com')
@@ -98,20 +99,20 @@ describe('Google auth endpoint tests', () => {
         await requester
             .get(`/auth`);
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/google/callback?code=TEST_GOOGLE_OAUTH2_CALLBACK_CODE&scope=openid%20email%20https://www.googleapis.com/auth/userinfo.email`)
             .redirects(0);
 
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get('/auth/success');
 
         responseTwo.should.be.html;
         responseTwo.text.should.include('Welcome to the RW API');
 
-        const confirmedUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         confirmedUser.should.have.property('name').and.equal('John Doe');
@@ -126,7 +127,7 @@ describe('Google auth endpoint tests', () => {
             return;
         }
 
-        const missingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://www.googleapis.com')
@@ -168,20 +169,20 @@ describe('Google auth endpoint tests', () => {
         await requester
             .get(`/auth?callbackUrl=https://www.wikipedia.org`);
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/google/callback?code=TEST_GOOGLE_OAUTH2_CALLBACK_CODE&scope=openid%20email%20https://www.googleapis.com/auth/userinfo.email`)
             .redirects(0);
 
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get('/auth/success');
 
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         confirmedUser.should.have.property('name').and.equal('John Doe');
@@ -196,7 +197,7 @@ describe('Google auth endpoint tests', () => {
             return;
         }
 
-        const missingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://www.googleapis.com')
@@ -241,20 +242,20 @@ describe('Google auth endpoint tests', () => {
         await requester
             .get(`/auth?callbackUrl=https://www.wikipedia.org`);
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/google/callback?code=TEST_GOOGLE_OAUTH2_CALLBACK_CODE&scope=openid%20email%20https://www.googleapis.com/auth/userinfo.email`)
             .redirects(0);
 
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get('/auth/success');
 
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         confirmedUser.should.have.property('name').and.equal('John Doe');
@@ -274,7 +275,7 @@ describe('Google auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const existingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(existingUser);
         existingUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         existingUser.should.have.property('name').and.equal('John Doe');
@@ -300,7 +301,7 @@ describe('Google auth endpoint tests', () => {
                 hd: 'vizzuality.com'
             });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/google/token?access_token=TEST_GOOGLE_OAUTH2_ACCESS_TOKEN`);
 
         response.status.should.equal(200);
@@ -310,11 +311,11 @@ describe('Google auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData = JWT.decode(response.body.token) as Record<string, any>;
-        const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
+        const decodedTokenData: Record<string, any> = JWT.decode(response.body.token) as Record<string, any>;
+        const isTokenRevoked: boolean = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
-        const userWithToken = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const userWithToken: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(userWithToken);
         userWithToken.should.have.property('email').and.equal('john.doe@vizzuality.com').and.equal(decodedTokenData.email);
         userWithToken.should.have.property('name').and.equal('John Doe').and.equal(decodedTokenData.name);
@@ -326,7 +327,7 @@ describe('Google auth endpoint tests', () => {
     });
 
     it('Visiting /auth/google/token with a valid Google OAuth token should generate a new token - account with no email address', async () => {
-        const savedUser = await new UserModel({
+        const savedUser: IUser = await new UserModel({
             name: 'John Doe',
             role: 'USER',
             provider: 'google',
@@ -334,7 +335,7 @@ describe('Google auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser = await UserModel.findOne({ _id: savedUser.id }).exec();
+        const existingUser: IUser = await UserModel.findOne({ _id: savedUser.id }).exec();
         should.exist(existingUser);
         existingUser.should.have.property('name').and.equal('John Doe');
         existingUser.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
@@ -358,7 +359,7 @@ describe('Google auth endpoint tests', () => {
                 hd: 'vizzuality.com'
             });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/google/token?access_token=TEST_GOOGLE_OAUTH2_ACCESS_TOKEN`);
 
         response.status.should.equal(200);
@@ -368,11 +369,11 @@ describe('Google auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData = JWT.decode(response.body.token) as Record<string, any>;
-        const isTokenRevoked = await AuthService.checkRevokedToken(null, decodedTokenData);
+        const decodedTokenData: Record<string, any> = JWT.decode(response.body.token) as Record<string, any>;
+        const isTokenRevoked: boolean = await AuthService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
-        const userWithToken = await UserModel.findOne({ _id: savedUser.id }).exec();
+        const userWithToken: IUser = await UserModel.findOne({ _id: savedUser.id }).exec();
         should.exist(userWithToken);
         userWithToken.should.have.property('name').and.equal('John Doe').and.equal(decodedTokenData.name);
         userWithToken.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260').and.equal(decodedTokenData.photo);

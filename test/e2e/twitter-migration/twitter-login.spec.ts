@@ -3,12 +3,13 @@ import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
 
-import UserModel from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
+import request from "superagent";
 
-const should = chai.should();
+const should: Chai.Should = chai.should();
 chai.use(ChaiString);
 chai.use(ChaiHttp);
 
@@ -36,7 +37,7 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
     });
 
     it('Visiting /auth/twitter while not being logged in should redirect to the start page', async () => {
-        const response = await requester.get(`/auth/twitter`).redirects(0);
+        const response: request.Response = await requester.get(`/auth/twitter`).redirects(0);
         response.status.should.equal(302);
         response.should.redirectTo('/auth/twitter/start');
     });
@@ -46,7 +47,7 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
             .post('/oauth/request_token')
             .reply(200, 'oauth_token=OAUTH_TOKEN&oauth_token_secret=OAUTH_TOKEN_SECRET&oauth_callback_confirmed=true');
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/callback`)
             .redirects(0);
 
@@ -55,7 +56,7 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
     });
 
     it('Visiting /auth/twitter/callback with the correct oauth data for a user that does not exist locally should return an error message', async () => {
-        const missingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.not.exist(missingUser);
 
@@ -124,7 +125,7 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
         await requester
             .get(`/auth/twitter/auth`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`)
             .redirects(0);
 
@@ -206,12 +207,11 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
         await requester
             .get(`/auth/twitter/auth`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`)
             .redirects(0);
 
-        // tslint:disable-next-line:no-unused-expression
-        response.should.redirect;
+response.should.redirect;
         response.should.redirectTo(/\/auth\/twitter\/migrate$/);
     });
 

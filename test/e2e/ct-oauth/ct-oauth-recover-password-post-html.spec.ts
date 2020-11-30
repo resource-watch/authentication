@@ -2,15 +2,15 @@ import nock from 'nock';
 import chai from 'chai';
 import mongoose from 'mongoose';
 
-import UserModel from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel from 'models/renew.model';
+import type request from 'superagent';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 
 chai.should();
 
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
-
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -32,7 +32,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
     });
 
     it('Recover password post with fake token should return an error - HTML format (TODO: this should return a 422)', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/token`);
 
         return new Promise((resolve) => {
@@ -49,7 +49,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .type('form');
 
@@ -67,7 +67,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .type('form')
             .send({
@@ -88,7 +88,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .type('form')
             .send({
@@ -105,7 +105,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
     });
 
     it('Recover password post with correct token and matching passwords should redirect to the configured URL (happy case) - HTML format', async () => {
-        const user = await new UserModel({
+        const user: IUser = await new UserModel({
             email: 'potato@gmail.com'
         }).save();
 
@@ -114,7 +114,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .type('form')
             .redirects(0)
@@ -131,7 +131,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
     });
 
     it('Recover password post with correct token, matching passwords and custom origin app should redirect to that app\'s configured URL - HTML format', async () => {
-        const user = await new UserModel({
+        const user: IUser = await new UserModel({
             email: 'potato@gmail.com'
         }).save();
 
@@ -140,7 +140,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken?origin=gfw`)
             .type('form')
             .redirects(0)

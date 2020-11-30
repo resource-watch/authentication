@@ -4,15 +4,17 @@ import nock from 'nock';
 import crypto from 'crypto';
 import JWT from 'jsonwebtoken';
 
-import UserModel from 'models/user.model';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import UserModel, { IUser } from 'models/user.model';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
-const should = chai.should();
+// tslint:disable-next-line:typedef
+const should: Chai.Should = chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 // https://github.com/mochajs/mocha/issues/2683
-let skipTests = false;
+let skipTests: boolean = false;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -32,14 +34,16 @@ describe('Facebook auth endpoint tests', () => {
         await UserModel.deleteMany({}).exec();
     });
 
-    beforeEach(async () => { requester = await getTestAgent(true); });
+    beforeEach(async () => {
+        requester = await getTestAgent(true);
+    });
 
     it('Visiting /auth/facebook while not being logged in should redirect to the login page', async () => {
         if (skipTests) {
             return;
         }
 
-        const response = await requester.get(`/auth/facebook`).redirects(0);
+        const response: request.Response = await requester.get(`/auth/facebook`).redirects(0);
         response.should.redirect;
         response.should.redirectTo(/^https:\/\/www\.facebook\.com\/v7\.0\/dialog\/oauth/);
     });
@@ -49,7 +53,7 @@ describe('Facebook auth endpoint tests', () => {
             return;
         }
 
-        const missingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://graph.facebook.com')
@@ -89,14 +93,14 @@ describe('Facebook auth endpoint tests', () => {
         await requester
             .get(`/auth`);
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/facebook/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
             .redirects(0);
 
         response.should.redirect;
         response.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const confirmedUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         confirmedUser.should.have.property('name').and.equal('John Doe');
@@ -111,7 +115,7 @@ describe('Facebook auth endpoint tests', () => {
             return;
         }
 
-        const missingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://graph.facebook.com')
@@ -154,18 +158,18 @@ describe('Facebook auth endpoint tests', () => {
 
         await requester.get(`/auth?callbackUrl=https://www.wikipedia.org`);
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/facebook/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
             .redirects(0);
 
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester.get('/auth/success');
+        const responseTwo: request.Response = await requester.get('/auth/success');
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         confirmedUser.should.have.property('name').and.equal('John Doe');
@@ -180,7 +184,7 @@ describe('Facebook auth endpoint tests', () => {
             return;
         }
 
-        const missingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://graph.facebook.com')
@@ -227,20 +231,20 @@ describe('Facebook auth endpoint tests', () => {
         await requester
             .get(`/auth?callbackUrl=https://www.wri.org`);
 
-        const responseOne = await requester
+        const responseOne: request.Response = await requester
             .get(`/auth/facebook/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
             .redirects(0);
 
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo = await requester
+        const responseTwo: request.Response = await requester
             .get('/auth/success');
 
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wri.org/');
 
-        const confirmedUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         confirmedUser.should.have.property('name').and.equal('John Doe');
@@ -260,7 +264,7 @@ describe('Facebook auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const existingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(existingUser);
         existingUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         existingUser.should.have.property('name').and.equal('John Doe');
@@ -270,7 +274,7 @@ describe('Facebook auth endpoint tests', () => {
         existingUser.should.have.property('providerId').and.equal('10216001184997572');
         existingUser.should.have.property('userToken').and.equal(undefined);
 
-        const proof = crypto.createHmac('sha256', config.get('settings.thirdParty.rw.facebook.clientSecret'))
+        const proof: string = crypto.createHmac('sha256', config.get('settings.thirdParty.rw.facebook.clientSecret'))
             .update('TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN')
             .digest('hex');
 
@@ -289,7 +293,7 @@ describe('Facebook auth endpoint tests', () => {
                 email: 'john.doe@vizzuality.com'
             });
 
-        const response = await requester.get(`/auth/facebook/token?access_token=TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN`);
+        const response: request.Response = await requester.get(`/auth/facebook/token?access_token=TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN`);
         response.status.should.equal(200);
         response.should.be.json;
         response.body.should.be.an('object');
@@ -297,7 +301,7 @@ describe('Facebook auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const userWithToken = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const userWithToken: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(userWithToken);
         userWithToken.should.have.property('email').and.equal('john.doe@vizzuality.com');
         userWithToken.should.have.property('name').and.equal('John Doe');

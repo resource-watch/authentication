@@ -5,12 +5,12 @@ import { isEqual } from 'lodash';
 import UserModel from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel from 'models/renew.model';
+import type request from 'superagent';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 
 chai.should();
 
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
-
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -37,7 +37,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
     });
 
     it('Recover password request with no email should return an error - JSON format', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password`)
             .set('Content-Type', 'application/json');
 
@@ -48,7 +48,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
     });
 
     it('Recover password request with non-existing email should return a 422 error - JSON format', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password`)
             .set('Content-Type', 'application/json')
             .send({
@@ -64,7 +64,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
     it('Recover password request with correct email should return OK - JSON format', async () => {
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'recover-password'
                     },
@@ -106,7 +106,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
             email: 'potato@gmail.com'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password`)
             .set('Content-Type', 'application/json')
             .send({
@@ -121,7 +121,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
     it('Recover password request with correct email and a custom origin should return OK - JSON format', async () => {
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'recover-password'
                     },
@@ -157,7 +157,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
             email: 'potato@gmail.com'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password?origin=gfw`)
             .set('Content-Type', 'application/json')
             .send({

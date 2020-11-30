@@ -1,4 +1,4 @@
-import Application, { Context } from "koa";
+import Application, { Context, Next } from "koa";
 import passport from "koa-passport";
 import jwt, { Options } from "koa-jwt";
 
@@ -9,7 +9,7 @@ import registerStrategies from "services/passport.service";
 import AuthRouter from 'routes/auth.router';
 import { router as TwitterRouter } from 'routes/auth/twitter.router';
 
-export async function loadRoutes(app: Application) {
+export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
 
     await registerStrategies();
@@ -17,7 +17,7 @@ export async function loadRoutes(app: Application) {
     app.use(passport.initialize());
     app.use(passport.session());
 
-    const getToken = (ctx: Context, opts: Options) => {
+    const getToken:(ctx: Context, opts: Options) => string = (ctx: Context, opts: Options) => {
         // External requests use the standard 'authorization' header, but internal requests use 'authentication' instead
         // so we need a custom function to load the token. Why don't we use authorization on both will always elude me...
 
@@ -29,11 +29,11 @@ export async function loadRoutes(app: Application) {
             return ctx.headers.authentication;
         }
 
-        const parts = ctx.headers.authorization.split(' ');
+        const parts:string[] = ctx.headers.authorization.split(' ');
 
         if (parts.length === 2) {
-            const scheme = parts[0];
-            const credentials = parts[1];
+            const scheme:string = parts[0];
+            const credentials:string = parts[1];
 
             if (/^Bearer$/i.test(scheme)) {
                 return credentials;
@@ -53,7 +53,7 @@ export async function loadRoutes(app: Application) {
     }));
 
     logger.debug('Loading JWT validation middleware...');
-    app.use(async (ctx: Context, next: () => Promise<any>) => {
+    app.use(async (ctx: Context, next: Next) => {
         if (ctx.state.jwtOriginalError && ctx.state.jwtOriginalError.message === 'Token revoked') {
             return ctx.throw(401, 'Your token is outdated. Please use /auth/login to login and /auth/generate-token to generate a new token.');
         }

@@ -1,18 +1,19 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel, {IUser} from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 import { createUserAndToken } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
 chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const assertTokenInfo = (response: ChaiHttp.Response, user: IUser | Partial<IUser>) => {
+const assertTokenInfo: (response: ChaiHttp.Response, user: (IUser | Partial<IUser>)) => void = (response: ChaiHttp.Response, user: IUser | Partial<IUser>) => {
     response.status.should.equal(200);
     response.body.should.have.property('_id').and.equal(user.id.toString());
     response.body.should.have.property('extraUserData').and.be.an('object');
@@ -36,31 +37,31 @@ describe('GET current user details from token (to be called by other MSs)', () =
     });
 
     it('Getting user details from token without being logged in returns a 401', async () => {
-        const response = await requester.get(`/auth/user/me`);
+        const response: request.Response = await requester.get(`/auth/user/me`);
         response.status.should.equal(401);
     });
 
     it('Getting user details from token while being logged in with USER role returns 403 Forbidden', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
-        const response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
 
     it('Getting user details from token while being logged in with MANAGER role returns', async () => {
         const { token, user } = await createUserAndToken({ role: 'MANAGER' });
-        const response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
 
     it('Getting user details from token while being logged in with ADMIN role returns', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
-        const response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
 
     it('Getting user details from token while being logged in with MICROSERVICE role returns', async () => {
         const { token, user } = await createUserAndToken({ role: 'MICROSERVICE' });
-        const response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
 

@@ -4,11 +4,12 @@ import chai from 'chai';
 import UserModel from 'models/user.model';
 
 import { createUserAndToken } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
 chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -27,7 +28,7 @@ describe('GET current user details', () => {
     });
 
     it('Getting my user without being logged in returns a 401', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/me`);
 
         response.status.should.equal(401);
@@ -36,7 +37,7 @@ describe('GET current user details', () => {
     it('Getting my user while being logged in with USER role returns the user', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/me`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -54,7 +55,7 @@ describe('GET current user details', () => {
     it('Getting my user while being logged in with ADMIN role returns', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/me`)
             .set('Authorization', `Bearer ${token}`);
 

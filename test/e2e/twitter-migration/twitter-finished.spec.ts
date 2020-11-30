@@ -7,6 +7,7 @@ import UserModel from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
+import request from "superagent";
 
 chai.should();
 chai.use(ChaiString);
@@ -36,7 +37,7 @@ describe('Twitter migrate endpoint tests - Finish page', () => {
     });
 
     it('Visiting /auth/twitter/finished while not being logged in should redirect to the start page', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/finished`)
             .redirects(0);
 
@@ -130,7 +131,7 @@ describe('Twitter migrate endpoint tests - Finish page', () => {
                 repeatPassword: 'bar'
             });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/twitter/finished`);
 
         response.text.should.include(`Migration finished`);

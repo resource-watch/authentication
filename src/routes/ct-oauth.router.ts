@@ -1,4 +1,4 @@
-import { Context } from "koa";
+import { Context, Next } from "koa";
 import { RouterContext } from "koa-router";
 import passport from 'koa-passport';
 import { omit } from 'lodash';
@@ -11,59 +11,63 @@ import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
 import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
-import Settings from "services/settings.service";
+import Settings, { IApplication, IThirdPartyAuth } from "services/settings.service";
+import { IUser } from "../models/user.model";
+import { PaginateResult, Types } from "mongoose";
+import { IUserTemp } from "../models/user-temp.model";
+import { IRenew } from "../models/renew.model";
 
-const twitter = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const twitter: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(`twitter:${app}`)(ctx, next);
 };
 
-const twitterCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const twitterCallback: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(`twitter:${app}`, {
         failureRedirect: '/auth/fail',
     })(ctx, next);
 };
 
-const facebook = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const facebook: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(`facebook:${app}`, {
         scope: Settings.getSettings().thirdParty[app] ? Settings.getSettings().thirdParty[app].facebook.scope : [],
     })(ctx, next);
 };
 
-const facebookToken = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const facebookToken: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(`facebook-token:${app}`)(ctx, next);
 };
 
-const facebookCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const facebookCallback: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(
         `facebook:${app}`,
         { failureRedirect: '/auth/fail' }
     )(ctx, next);
 };
 
-const google = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const google: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(`google:${app}`, {
         scope: (Settings.getSettings().thirdParty[app] && Settings.getSettings().thirdParty[app].google.scope)
             ? Settings.getSettings().thirdParty[app].google.scope : ['openid'],
     })(ctx, next);
 };
 
-const googleToken = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const googleToken: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(`google-token:${app}`)(ctx, next);
 };
 
-const googleCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => {
-    const app = Utils.getOriginApp(ctx);
+const googleCallback: (ctx: Context, next: Next) => Promise<void> = async (ctx: Context & RouterContext, next: Next) => {
+    const app: string = Utils.getOriginApp(ctx);
     await passport.authenticate(`google:${app}`, { failureRedirect: '/auth/fail' })(ctx, next);
 };
 
-const localCallback = async (ctx: Context & RouterContext, next: () => Promise<any>) => passport.authenticate('local', async (user) => {
+const localCallback: (ctx: Context, next: Next) => Promise<any> = async (ctx: Context & RouterContext, next: Next) => passport.authenticate('local', async (user) => {
     if (!user) {
         if (ctx.request.type === 'application/json') {
             ctx.status = 401;
@@ -83,7 +87,7 @@ const localCallback = async (ctx: Context & RouterContext, next: () => Promise<a
     if (ctx.request.type === 'application/json') {
         ctx.status = 200;
         logger.info('Generating token');
-        const token = await AuthService.createToken(user, false);
+        const token: string = await AuthService.createToken(user, false);
         ctx.body = UserTempSerializer.serialize(user);
         ctx.body.data.token = token;
     } else {
@@ -93,25 +97,25 @@ const localCallback = async (ctx: Context & RouterContext, next: () => Promise<a
     }
 })(ctx, next);
 
-async function createToken(ctx: Context, createInUser: boolean) {
+async function createToken(ctx: Context, createInUser: boolean): Promise<string> {
     logger.info('Generating token');
     return AuthService.createToken(Utils.getUser(ctx), createInUser);
 }
 
-async function generateJWT(ctx: Context) {
+async function generateJWT(ctx: Context): Promise<void> {
     logger.info('Generating token');
     try {
-        const token = await createToken(ctx, true);
+        const token: string = await createToken(ctx, true);
         ctx.body = { token };
     } catch (e) {
         logger.info(e);
     }
 }
 
-async function checkLogged(ctx: Context) {
+async function checkLogged(ctx: Context): Promise<void> {
     if (Utils.getUser(ctx)) {
-        const userToken = Utils.getUser(ctx);
-        const user = await AuthService.getUserById(userToken.id);
+        const userToken: IUser = Utils.getUser(ctx);
+        const user: IUser = await AuthService.getUserById(userToken.id);
 
         ctx.body = {
             id: user._id,
@@ -131,9 +135,9 @@ async function checkLogged(ctx: Context) {
     }
 }
 
-async function getUsers(ctx: Context) {
+async function getUsers(ctx: Context): Promise<void> {
     logger.info('Get Users');
-    const user = Utils.getUser(ctx);
+    const user: IUser = Utils.getUser(ctx);
     if (!user.extraUserData || !user.extraUserData.apps) {
         ctx.throw(403, 'Not authorized');
         return;
@@ -142,15 +146,15 @@ async function getUsers(ctx: Context) {
     const { apps } = user.extraUserData;
     const { query } = ctx;
 
-    const clonedQuery = { ...query };
+    const clonedQuery: any = { ...query };
     delete clonedQuery['page[size]'];
     delete clonedQuery['page[number]'];
     delete clonedQuery.ids;
     delete clonedQuery.loggedUser;
-    const serializedQuery = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
-    const link = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
+    const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
+    const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
-    let users;
+    let users: PaginateResult<IUser>;
 
     if (query.app === 'all') {
         users = await AuthService.getUsers(null, omit(query, ['app']));
@@ -163,12 +167,12 @@ async function getUsers(ctx: Context) {
     ctx.body = UserSerializer.serialize(users, link);
 }
 
-async function getCurrentUser(ctx: Context) {
-    const requestUser = Utils.getUser(ctx);
+async function getCurrentUser(ctx: Context): Promise<void> {
+    const requestUser: IUser = Utils.getUser(ctx);
 
     logger.info('Get current user: ', requestUser.id);
 
-    const user = await AuthService.getUserById(requestUser.id);
+    const user: IUser = await AuthService.getUserById(requestUser.id);
 
     if (!user) {
         ctx.throw(404, 'User not found');
@@ -177,10 +181,10 @@ async function getCurrentUser(ctx: Context) {
     ctx.body = user;
 }
 
-async function getUserById(ctx: Context) {
+async function getUserById(ctx: Context): Promise<void> {
     logger.info('Get User by id: ', ctx.params.id);
 
-    const user = await AuthService.getUserById(ctx.params.id);
+    const user: IUser = await AuthService.getUserById(ctx.params.id);
 
     if (!user) {
         ctx.throw(404, 'User not found');
@@ -189,27 +193,27 @@ async function getUserById(ctx: Context) {
     ctx.body = user;
 }
 
-async function findByIds(ctx: Context) {
+async function findByIds(ctx: Context): Promise<void> {
     logger.info('Find by ids');
     ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
-    const data = await AuthService.getUsersByIds(ctx.request.body.ids);
+    const data: IUser[] = await AuthService.getUsersByIds(ctx.request.body.ids);
     ctx.body = {
         data
     };
 }
 
-async function getIdsByRole(ctx: Context) {
+async function getIdsByRole(ctx: Context): Promise<void> {
     logger.info(`[getIdsByRole] Get ids by role: ${ctx.params.role}`);
-    const data = await AuthService.getIdsByRole(ctx.params.role);
+    const data: Types.ObjectId[] = await AuthService.getIdsByRole(ctx.params.role);
     ctx.body = { data };
 }
 
-async function updateUser(ctx: Context) {
+async function updateUser(ctx: Context): Promise<void> {
     logger.info(`Update user with id ${ctx.params.id}`);
     ctx.assert(ctx.params.id, 400, 'Id param required');
 
-    const user = Utils.getUser(ctx);
-    const userUpdate = await AuthService.updateUser(ctx.params.id, ctx.request.body, user);
+    const user: IUser = Utils.getUser(ctx);
+    const userUpdate: IUser = await AuthService.updateUser(ctx.params.id, ctx.request.body, user);
     if (!userUpdate) {
         ctx.throw(404, 'User not found');
         return;
@@ -217,11 +221,11 @@ async function updateUser(ctx: Context) {
     ctx.body = UserSerializer.serialize(userUpdate);
 }
 
-async function updateMe(ctx: Context) {
+async function updateMe(ctx: Context): Promise<void> {
     logger.info(`Update user me`);
 
-    const user = Utils.getUser(ctx);
-    const userUpdate = await AuthService.updateUser(user.id, ctx.request.body, user);
+    const user: IUser = Utils.getUser(ctx);
+    const userUpdate: IUser = await AuthService.updateUser(user.id, ctx.request.body, user);
     if (!userUpdate) {
         ctx.throw(404, 'User not found');
         return;
@@ -229,11 +233,11 @@ async function updateMe(ctx: Context) {
     ctx.body = UserSerializer.serialize(userUpdate);
 }
 
-async function deleteUser(ctx: Context) {
+async function deleteUser(ctx: Context, next:Next): Promise<void> {
     logger.info(`Delete user with id ${ctx.params.id}`);
     ctx.assert(ctx.params.id, 400, 'Id param required');
 
-    const deletedUser = await AuthService.deleteUser(ctx.params.id);
+    const deletedUser: IUser = await AuthService.deleteUser(ctx.params.id);
     if (!deletedUser) {
         ctx.throw(404, 'User not found');
         return;
@@ -241,10 +245,10 @@ async function deleteUser(ctx: Context) {
     ctx.body = UserSerializer.serialize(deletedUser);
 }
 
-async function createUser(ctx: Context) {
+async function createUser(ctx: Context): Promise<void> {
     logger.info(`Create user with body ${ctx.request.body}`);
     const { body } = ctx.request;
-    const user = Utils.getUser(ctx);
+    const user: IUser = Utils.getUser(ctx);
     if (!user) {
         ctx.throw(401, 'Not logged');
         return;
@@ -267,14 +271,14 @@ async function createUser(ctx: Context) {
         return;
     }
 
-    const exist = await AuthService.existEmail(body.email);
+    const exist: boolean = await AuthService.existEmail(body.email);
     if (exist) {
         ctx.throw(400, 'Email exists');
         return;
     }
 
     // check Apps
-    for (let i = 0, { length } = body.extraUserData.apps; i < length; i += 1) {
+    for (let i: number = 0, { length } = body.extraUserData.apps; i < length; i += 1) {
         if (user.extraUserData.apps.indexOf(body.extraUserData.apps[i]) < 0) {
             ctx.throw(403, 'Forbidden');
             return;
@@ -286,7 +290,7 @@ async function createUser(ctx: Context) {
 
 }
 
-async function success(ctx: Context) {
+async function success(ctx: Context): Promise<void> {
     if (ctx.session.callbackUrl) {
         logger.info('Url redirect', ctx.session.callbackUrl);
 
@@ -295,10 +299,10 @@ async function success(ctx: Context) {
 
         if (ctx.session.generateToken) {
             // generate token and eliminate session
-            const token = await createToken(ctx, false);
+            const token: string = await createToken(ctx, false);
 
             // Replace token query parameter in redirect URL
-            const url = new URL(ctx.session.callbackUrl);
+            const url: URL = new URL(ctx.session.callbackUrl);
             const { searchParams } = url;
             searchParams.set('token', token);
             url.search = searchParams.toString();
@@ -320,12 +324,12 @@ async function success(ctx: Context) {
     });
 }
 
-async function failAuth(ctx: Context) {
+async function failAuth(ctx: Context): Promise<void> {
     logger.info('Not authenticated');
-    const originApp = Utils.getOriginApp(ctx);
-    const appConfig = Settings.getSettings().thirdParty[originApp];
+    const originApp: string = Utils.getOriginApp(ctx);
+    const appConfig: IThirdPartyAuth = Settings.getSettings().thirdParty[originApp];
 
-    const thirdParty = {
+    const thirdParty: Record<string, any> = {
         twitter: false,
         google: false,
         facebook: false,
@@ -361,14 +365,14 @@ async function failAuth(ctx: Context) {
     }
 }
 
-async function logout(ctx: Context) {
+async function logout(ctx: Context): Promise<void> {
     ctx.logout();
     ctx.redirect('/auth/login');
 }
 
-async function signUp(ctx: Context) {
+async function signUp(ctx: Context): Promise<void> {
     logger.info('Creating user');
-    let error = null;
+    let error: string = null;
     if (!ctx.request.body.email || !ctx.request.body.password || !ctx.request.body.repeatPassword) {
         error = 'Email, Password and Repeat password are required';
     }
@@ -376,7 +380,7 @@ async function signUp(ctx: Context) {
         error = 'Password and Repeat password not equal';
     }
 
-    const exist = await AuthService.existEmail(ctx.request.body.email);
+    const exist: boolean = await AuthService.existEmail(ctx.request.body.email);
     if (exist) {
         error = 'Email exists';
     }
@@ -395,7 +399,7 @@ async function signUp(ctx: Context) {
     }
 
     try {
-        const data = await AuthService.createUser(ctx.request.body, ctx.state.generalConfig);
+        const data: IUserTemp = await AuthService.createUser(ctx.request.body, ctx.state.generalConfig);
         if (ctx.request.type === 'application/json') {
             ctx.response.type = 'application/json';
             ctx.body = UserTempSerializer.serialize(data);
@@ -414,7 +418,7 @@ async function signUp(ctx: Context) {
     }
 }
 
-async function getSignUp(ctx: Context) {
+async function getSignUp(ctx: Context): Promise<void> {
     await ctx.render('sign-up', {
         error: null,
         email: null,
@@ -422,9 +426,9 @@ async function getSignUp(ctx: Context) {
     });
 }
 
-async function confirmUser(ctx: Context) {
+async function confirmUser(ctx: Context): Promise<void> {
     logger.info('Confirming user');
-    const user = await AuthService.confirmUser(ctx.params.token);
+    const user: IUser = await AuthService.confirmUser(ctx.params.token);
     if (!user) {
         ctx.throw(400, 'User expired or token not found');
         return;
@@ -448,9 +452,9 @@ async function confirmUser(ctx: Context) {
     ctx.body = UserSerializer.serialize(user);
 }
 
-async function loginView(ctx: Context) {
+async function loginView(ctx: Context): Promise<void> {
     // check if the user has session
-    const user = Utils.getUser(ctx);
+    const user: IUser = Utils.getUser(ctx);
     if (user) {
         logger.info('User has session');
 
@@ -466,23 +470,38 @@ async function loginView(ctx: Context) {
         throw new UnauthorizedError('Not logged in');
     }
 
-    const originApp = Utils.getOriginApp(ctx);
-    const thirdParty = {
+    const originApp: string = Utils.getOriginApp(ctx);
+    const thirdParty: Record<string, any> = {
         twitter: false,
         google: false,
         facebook: false,
         basic: false
     };
 
-    if (Settings.getSettings().thirdParty && Settings.getSettings().thirdParty[originApp] && Settings.getSettings().thirdParty[originApp].twitter && Settings.getSettings().thirdParty[originApp].twitter.active) {
+    if (
+        Settings.getSettings().thirdParty &&
+        Settings.getSettings().thirdParty[originApp] &&
+        Settings.getSettings().thirdParty[originApp].twitter &&
+        Settings.getSettings().thirdParty[originApp].twitter.active
+    ) {
         thirdParty.twitter = Settings.getSettings().thirdParty[originApp].twitter.active;
     }
 
-    if (Settings.getSettings().thirdParty && Settings.getSettings().thirdParty[originApp] && Settings.getSettings().thirdParty[originApp].google && Settings.getSettings().thirdParty[originApp].google.active) {
+    if (
+        Settings.getSettings().thirdParty &&
+        Settings.getSettings().thirdParty[originApp] &&
+        Settings.getSettings().thirdParty[originApp].google &&
+        Settings.getSettings().thirdParty[originApp].google.active
+    ) {
         thirdParty.google = Settings.getSettings().thirdParty[originApp].google.active;
     }
 
-    if (Settings.getSettings().thirdParty && Settings.getSettings().thirdParty[originApp] && Settings.getSettings().thirdParty[originApp].facebook && Settings.getSettings().thirdParty[originApp].facebook.active) {
+    if (
+        Settings.getSettings().thirdParty &&
+        Settings.getSettings().thirdParty[originApp] &&
+        Settings.getSettings().thirdParty[originApp].facebook &&
+        Settings.getSettings().thirdParty[originApp].facebook.active
+    ) {
         thirdParty.facebook = Settings.getSettings().thirdParty[originApp].facebook.active;
     }
 
@@ -500,7 +519,7 @@ async function loginView(ctx: Context) {
     });
 }
 
-async function requestEmailResetView(ctx: Context) {
+async function requestEmailResetView(ctx: Context): Promise<void> {
     await ctx.render('request-mail-reset', {
         error: null,
         info: null,
@@ -510,13 +529,13 @@ async function requestEmailResetView(ctx: Context) {
     });
 }
 
-async function redirectLogin(ctx: Context) {
+async function redirectLogin(ctx: Context): Promise<void> {
     ctx.redirect('/auth/login');
 }
 
-async function resetPasswordView(ctx: Context) {
-    const renew = await AuthService.getRenewModel(ctx.params.token);
-    let error = null;
+async function resetPasswordView(ctx: Context): Promise<void> {
+    const renew: IRenew = await AuthService.getRenewModel(ctx.params.token);
+    let error: string = null;
     if (!renew) {
         error = 'Token expired';
     }
@@ -529,7 +548,7 @@ async function resetPasswordView(ctx: Context) {
     });
 }
 
-async function sendResetMail(ctx: Context) {
+async function sendResetMail(ctx: Context): Promise<void> {
     logger.info('Send reset mail');
 
     if (!ctx.request.body.email) {
@@ -548,8 +567,8 @@ async function sendResetMail(ctx: Context) {
         }
     }
 
-    const originApp = Utils.getOriginApp(ctx);
-    const renew = await AuthService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
+    const originApp: string = Utils.getOriginApp(ctx);
+    const renew: IRenew = await AuthService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
     if (!renew) {
         if (ctx.request.type === 'application/json') {
             throw new UnprocessableEntityError('User not found');
@@ -579,10 +598,10 @@ async function sendResetMail(ctx: Context) {
     }
 }
 
-async function updateApplications(ctx: Context) {
+async function updateApplications(ctx: Context): Promise<void> {
     try {
         if (ctx.session && ctx.session.applications) {
-            let user = Utils.getUser(ctx);
+            let user: IUser = Utils.getUser(ctx);
             if (user.role === 'USER') {
                 user = await AuthService.updateApplicationsUser(user.id, ctx.session.applications);
             } else {
@@ -611,17 +630,17 @@ async function updateApplications(ctx: Context) {
 
 }
 
-async function resetPassword(ctx: Context) {
+async function resetPassword(ctx: Context): Promise<void> {
     logger.info('Resetting password');
 
-    let error = null;
+    let error: string = null;
     if (!ctx.request.body.password || !ctx.request.body.repeatPassword) {
         error = 'Password and Repeat password are required';
     }
     if (ctx.request.body.password !== ctx.request.body.repeatPassword) {
         error = 'Password and Repeat password not equal';
     }
-    const exist = await AuthService.getRenewModel(ctx.params.token);
+    const exist: IRenew = await AuthService.getRenewModel(ctx.params.token);
     if (!exist) {
         error = 'Token expired';
     }
@@ -639,14 +658,14 @@ async function resetPassword(ctx: Context) {
 
         return;
     }
-    const user = await AuthService.updatePassword(ctx.params.token, ctx.request.body.password);
+    const user: IUser = await AuthService.updatePassword(ctx.params.token, ctx.request.body.password);
     if (user) {
         if (ctx.request.type === 'application/json') {
             ctx.response.type = 'application/json';
             ctx.body = UserSerializer.serialize(user);
         } else {
-            const app = Utils.getOriginApp(ctx);
-            const applicationConfig = Settings.getSettings().applications && Settings.getSettings().applications[app];
+            const app: string = Utils.getOriginApp(ctx);
+            const applicationConfig: IApplication = Settings.getSettings().applications && Settings.getSettings().applications[app];
 
             if (applicationConfig && applicationConfig.confirmUrlRedirect) {
                 ctx.redirect(applicationConfig.confirmUrlRedirect);

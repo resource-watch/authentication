@@ -1,19 +1,21 @@
 {
   "defaultSeverity": "error",
-  "extends": ["tslint:recommended",  "tslint-config-prettier"],
-  "jsRules": {
-    "no-unused-expression": true
-  },
+  "extends": [
+    "tslint:recommended",
+    "tslint-config-prettier"
+  ],
   "rules": {
-    "semicolon": [true, "always"],
-    "quotemark": false,
-    "member-access": [false],
-    "max-line-length": [true, 140],
-    "member-ordering": [false],
-    "interface-name": [false],
-    "arrow-parens": false,
-    "object-literal-sort-keys": false,
-    "variable-name": false
+    "no-unused-expression": [false],
+    "semicolon": [
+      true,
+      "always"
+    ],
+    "typedef": [
+      true,
+      "call-signature",
+      "property-declaration",
+      "variable-declaration"
+    ]
   },
   "rulesDirectory": []
 }

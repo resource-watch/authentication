@@ -1,16 +1,16 @@
 import config from "config";
 import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import { SinonSandbox } from "sinon";
+import Sinon, { SinonSandbox } from "sinon";
 
 import UserModel, { IUser } from 'models/user.model';
-import TempUserModel, {IUserTemp} from 'models/user-temp.model';
+import TempUserModel, { IUserTemp } from 'models/user-temp.model';
 
 const { ObjectId } = mongoose.Types;
 
-export const getUUID = () => Math.random().toString(36).substring(7);
+export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
-export const createUser = (userData: IUser | Partial<IUser> | null) => ({
+export const createUser: (userData: IUser | Partial<IUser> | null) => Partial<IUser> = (userData: IUser | Partial<IUser> | null) => ({
     _id: new ObjectId(),
     name: `${getUUID()} name`,
     email: `${getUUID()}@authorization.com`,
@@ -26,10 +26,10 @@ export const createUser = (userData: IUser | Partial<IUser> | null) => ({
     ...userData
 });
 
-export const createTokenForUser = (tokenData: Partial<IUser>) => JWT.sign(tokenData, process.env.JWT_SECRET);
+export const createTokenForUser: (tokenData: Partial<IUser>) => string = (tokenData: Partial<IUser>) => JWT.sign(tokenData, process.env.JWT_SECRET);
 
-export const createUserInDB = async (userData: IUser | Partial<IUser>): Promise<Partial<IUser>> => {
-    const user = await new UserModel(createUser(userData)).save();
+export const createUserInDB: (userData: (IUser | Partial<IUser>)) => Promise<Partial<IUser>> = async (userData: IUser | Partial<IUser>): Promise<Partial<IUser>> => {
+    const user: IUser = await new UserModel(createUser(userData)).save();
 
     return {
         id: user._id.toString(),
@@ -43,14 +43,14 @@ export const createUserInDB = async (userData: IUser | Partial<IUser>): Promise<
     };
 };
 
-export const createUserAndToken = async (userData: IUser | Partial<IUser>) => {
-    const user = await createUserInDB(userData);
-    const token = await createTokenForUser(user);
+export const createUserAndToken: (userData: (IUser | Partial<IUser>)) => Promise<{ user: Partial<IUser>; token: string }> = async (userData: IUser | Partial<IUser>) => {
+    const user: Partial<IUser> = await createUserInDB(userData);
+    const token: string = await createTokenForUser(user);
 
     return { user, token };
 };
 
-export const createTempUser = async (userData: Partial<IUserTemp>) => (new TempUserModel({
+export const createTempUser: (userData: Partial<IUserTemp>) => Promise<IUserTemp> = async (userData: Partial<IUserTemp>) => (new TempUserModel({
     _id: new ObjectId(),
     email: `${getUUID()}@authorization.com`,
     password: '$password.hash',
@@ -64,7 +64,7 @@ export const createTempUser = async (userData: Partial<IUserTemp>) => (new TempU
     ...userData
 }).save());
 
-export const ensureHasPaginationElements = (response: ChaiHttp.Response) => {
+export const ensureHasPaginationElements: (response: ChaiHttp.Response) => void = (response: ChaiHttp.Response) => {
     response.body.should.have.property('meta').and.be.an('object');
     response.body.meta.should.have.property('total-pages').and.be.a('number');
     response.body.meta.should.have.property('total-items').and.be.a('number');
@@ -78,7 +78,9 @@ export const ensureHasPaginationElements = (response: ChaiHttp.Response) => {
     response.body.links.should.have.property('next').and.be.a('string');
 };
 
-export const stubConfigValue = (sandbox: SinonSandbox, stubMap: Record<string, any>): void => {
-    const stub = sandbox.stub(config, 'get');
-    Object.keys(stubMap).forEach(key => { stub.withArgs(key).returns(stubMap[key]); });
-}
+export const stubConfigValue: (sandbox: Sinon.SinonSandbox, stubMap: Record<string, any>) => void = (sandbox: SinonSandbox, stubMap: Record<string, any>): void => {
+    const stub: any = sandbox.stub(config, 'get');
+    Object.keys(stubMap).forEach(key => {
+        stub.withArgs(key).returns(stubMap[key]);
+    });
+};

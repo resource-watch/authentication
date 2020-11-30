@@ -4,7 +4,8 @@ import chai from 'chai';
 import UserModel from 'models/user.model';
 
 import { createUserAndToken } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
 chai.should();
 
@@ -27,7 +28,7 @@ describe('GET users by id', () => {
     });
 
     it('Get user without being logged in returns a 401', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`);
 
         response.status.should.equal(401);
@@ -36,7 +37,7 @@ describe('GET users by id', () => {
     it('Get user while being logged in as a regular user returns a 403 error', async () => {
         const { token } = await createUserAndToken({ role: 'USER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -48,7 +49,7 @@ describe('GET users by id', () => {
     it('Get user with an invalid id of a user that does not exist returns a 422', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/1234`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -61,7 +62,7 @@ describe('GET users by id', () => {
     it('Get user with id of a user that does not exist returns a 404', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -72,7 +73,7 @@ describe('GET users by id', () => {
     it('Get user with id of a user that exists returns the requested user (happy case)', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/${user.id}`)
             .set('Authorization', `Bearer ${token}`);
 

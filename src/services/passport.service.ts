@@ -1,9 +1,9 @@
 import bcrypt from 'bcrypt';
 import passport from 'koa-passport';
 import { BasicStrategy } from 'passport-http';
-import { Strategy as TwitterStrategy } from 'passport-twitter';
-import { Strategy as FacebookStrategy } from 'passport-facebook';
-import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
+import { IStrategyOption, Strategy as TwitterStrategy } from 'passport-twitter';
+import { Strategy as FacebookStrategy, StrategyOption } from 'passport-facebook';
+import { Strategy as GoogleStrategy, StrategyOptions } from 'passport-google-oauth20';
 import { Strategy as LocalStrategy } from 'passport-local';
 // @ts-ignore
 import { Strategy as GoogleTokenStrategy } from 'passport-google-token';
@@ -11,23 +11,25 @@ import FacebookTokenStrategy from 'passport-facebook-token';
 
 import logger from 'logger';
 import NoTwitterAccountError from "errors/noTwitterAccount.error";
-import UserModel from 'models/user.model';
-import Settings from "services/settings.service";
+import UserModel, { IUser } from 'models/user.model';
+import Settings, { IThirdPartyAuth } from "services/settings.service";
 import UserService from 'services/user.service';
+import { Strategy } from "passport";
+import PassportFacebookToken from "passport-facebook-token";
 
-async function registerUser(accessToken: string, refreshToken: string, profile: any, done: Function) {
+async function registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
     logger.info('[passportService] Registering user', profile);
 
-    let user = await UserModel.findOne({
+    let user: IUser = await UserModel.findOne({
         provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
         providerId: profile.id,
     }).exec();
     logger.info(user);
     if (!user) {
         logger.info('[passportService] User does not exist');
-        let name = null;
-        let email = null;
-        let photo = null;
+        let name: string = null;
+        let email: string = null;
+        let photo: string = null;
         if (profile) {
             name = profile.displayName;
             photo = profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null;
@@ -45,7 +47,7 @@ async function registerUser(accessToken: string, refreshToken: string, profile: 
             providerId: profile.id
         }).save();
     } else {
-        let email = null;
+        let email: string = null;
         if (profile) {
             if (profile.emails && profile.emails.length > 0) {
                 email = profile.emails[0].value;
@@ -73,7 +75,7 @@ async function registerUser(accessToken: string, refreshToken: string, profile: 
     });
 }
 
-async function registerUserBasic(userId: string, password: string, done: Function) {
+async function registerUserBasic(userId: string, password: string, done: (error: any, user?: any) => void): Promise<void> {
     try {
         logger.info('[passportService] Verifying basic auth');
         if (userId === Settings.getSettings().basic.userId && password === Settings.getSettings().basic.password) {
@@ -90,16 +92,16 @@ async function registerUserBasic(userId: string, password: string, done: Functio
     }
 }
 
-export default async function registerStrategies() {
+export default async function registerStrategies(): Promise<void> {
     async function registerUserBasicTwitter(
         accessToken: string,
         refreshToken: string,
         profile: Record<string, any>,
         done: (error: any, user?: any) => void
-    ) {
+    ): Promise<void> {
         logger.info('[passportService] Registering user', profile);
 
-        const user = await UserService.findOne({
+        const user: IUser = await UserService.findOne({
             provider: 'twitter',
             providerId: profile.id,
         });
@@ -109,7 +111,7 @@ export default async function registerStrategies() {
         if (!user) {
             done(new NoTwitterAccountError());
         } else {
-            let email = null;
+            let email: string = null;
             if (profile && profile.emails && profile.emails.length > 0) {
                 email = profile.emails[0].value;
             }
@@ -143,8 +145,8 @@ export default async function registerStrategies() {
 
     if (Settings.getSettings().local && Settings.getSettings().local.active) {
         logger.info('[passportService] Loading local strategy');
-        const login = async function login(username: string, password: string, done: Function) {
-            const user = await UserModel.findOne({
+        const login: (username: string, password: string, done: (error: any, user?: any) => void) => Promise<void> = async (username: string, password: string, done: (error: any, user?: any) => void): Promise<void> => {
+            const user: IUser = await UserModel.findOne({
                 email: username,
                 provider: 'local'
             }).exec();
@@ -164,7 +166,7 @@ export default async function registerStrategies() {
                 done(null, false);
             }
         };
-        const localStrategy = new LocalStrategy({
+        const localStrategy: Strategy = new LocalStrategy({
             usernameField: 'email',
             passwordField: 'password',
         }, login);
@@ -173,71 +175,71 @@ export default async function registerStrategies() {
 
     if (Settings.getSettings().basic && Settings.getSettings().basic.active) {
         logger.info('[passportService] Loading basic strategy');
-        const basicStrategy = new BasicStrategy(registerUserBasic);
+        const basicStrategy: BasicStrategy = new BasicStrategy(registerUserBasic);
         passport.use(basicStrategy);
     }
 
     // third party oauth
     if (Settings.getSettings().thirdParty) {
         logger.info('[passportService] Loading third-party oauth');
-        const apps = Object.keys(Settings.getSettings().thirdParty);
-        for (let i = 0, { length } = apps; i < length; i += 1) {
+        const apps: string[] = Object.keys(Settings.getSettings().thirdParty);
+        for (let i: number = 0, { length } = apps; i < length; i += 1) {
             logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
-            const app = Settings.getSettings().thirdParty[apps[i]];
+            const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
             if (app.twitter && app.twitter.active) {
                 logger.info(`[passportService] Loading twitter strategy of ${apps[i]}`);
-                const configTwitter = {
+                const configTwitter: IStrategyOption = {
                     consumerKey: app.twitter.consumerKey,
                     consumerSecret: app.twitter.consumerSecret,
                     userProfileURL: 'https://api.twitter.com/1.1/account/verify_credentials.json?include_email=true',
                     callbackURL: `${Settings.getSettings().publicUrl}/auth/twitter/callback`
                 };
-                const twitterStrategy = new TwitterStrategy(configTwitter, registerUserBasicTwitter);
+                const twitterStrategy: Strategy = new TwitterStrategy(configTwitter, registerUserBasicTwitter);
                 twitterStrategy.name += `:${apps[i]}`;
                 passport.use(twitterStrategy);
             }
 
             if (app.google && app.google.active) {
                 logger.info(`[passportService] Loading google strategy ${apps[i]}`);
-                const configGoogle = {
+                const configGoogle: StrategyOptions = {
                     clientID: app.google.clientID,
                     clientSecret: app.google.clientSecret,
                     callbackURL: `${Settings.getSettings().publicUrl}/auth/google/callback`,
                     userProfileURL: 'https://www.googleapis.com/oauth2/v3/userinfo'
                 };
-                const googleStrategy = new GoogleStrategy(configGoogle, registerUser);
+                const googleStrategy: Strategy = new GoogleStrategy(configGoogle, registerUser);
                 googleStrategy.name += `:${apps[i]}`;
                 passport.use(googleStrategy);
 
-                const configGoogleToken = {
+                const configGoogleToken: Record<string, any> = {
                     clientID: app.google.clientID,
                     clientSecret: app.google.clientSecret,
                     passReqToCallback: false
                 };
-                const googleTokenStrategy = new GoogleTokenStrategy(configGoogleToken, registerUser);
+                const googleTokenStrategy: any = new GoogleTokenStrategy(configGoogleToken, registerUser);
                 googleTokenStrategy.name += `:${apps[i]}`;
                 passport.use(googleTokenStrategy);
             }
 
             if (app.facebook && app.facebook.active) {
                 logger.info(`[passportService] Loading facebook strategy ${apps[i]}`);
-                const configFacebook = {
+                const configFacebook: StrategyOption = {
                     clientID: app.facebook.clientID,
                     clientSecret: app.facebook.clientSecret,
                     callbackURL: `${Settings.getSettings().publicUrl}/auth/facebook/callback`,
                     profileFields: ['id', 'displayName', 'photos', 'email'],
                     graphAPIVersion: 'v7.0',
                 };
-                const facebookStrategy = new FacebookStrategy(configFacebook, registerUser);
+                const facebookStrategy: Strategy = new FacebookStrategy(configFacebook, registerUser);
                 facebookStrategy.name += `:${apps[i]}`;
                 passport.use(facebookStrategy);
 
-                const configFacebookToken = {
+                const configFacebookToken: StrategyOptions = {
                     clientID: app.facebook.clientID,
                     clientSecret: app.facebook.clientSecret,
                     passReqToCallback: false
                 };
-                const facebookTokenStrategy = new FacebookTokenStrategy(configFacebookToken, registerUser);
+                const facebookTokenStrategy: PassportFacebookToken.StrategyInstance = new FacebookTokenStrategy(configFacebookToken, registerUser);
                 facebookTokenStrategy.name += `:${apps[i]}`;
                 passport.use(facebookTokenStrategy);
             }

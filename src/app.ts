@@ -10,7 +10,6 @@ import cors from '@koa/cors';
 // @ts-ignore
 import koaSimpleHealthCheck from 'koa-simple-healthcheck';
 import session from 'koa-generic-session';
-// @ts-ignore
 import redisStore from 'koa-redis';
 import views from 'koa-views';
 
@@ -19,9 +18,9 @@ import { loadRoutes } from 'loader';
 import ErrorSerializer from 'serializers/errorSerializer';
 import mongooseDefaultOptions, { MongooseOptions } from '../config/mongoose';
 
-const mongoUri = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
+const mongoUri:string = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 
-let retries = 10;
+let retries:number = 10;
 
 let mongooseOptions: MongooseOptions = { ...mongooseDefaultOptions };
 if (mongoUri.indexOf('replicaSet') > -1) {
@@ -51,9 +50,9 @@ interface IInit {
     app: Koa;
 }
 
-const init = async ():Promise<IInit> => {
+const init:() => Promise<IInit> = async ():Promise<IInit> => {
     return new Promise((resolve, reject) => {
-        async function onDbReady(err: Error) {
+        async function onDbReady(err: Error): Promise<void> {
             if (err) {
                 if (retries >= 0) {
                     retries--;
@@ -69,7 +68,7 @@ const init = async ():Promise<IInit> => {
                 return;
             }
 
-            const app = new Koa();
+            const app:Koa = new Koa();
 
             app.use(koaBody({
                 multipart: true,
@@ -116,7 +115,7 @@ const init = async ():Promise<IInit> => {
             app.use(koaLogger());
             await loadRoutes(app);
 
-            const server = app.listen(process.env.PORT);
+            const server:Server = app.listen(process.env.PORT);
             logger.info('Server started in ', process.env.PORT);
             resolve({ app, server });
         }
@@ -124,6 +123,6 @@ const init = async ():Promise<IInit> => {
         logger.info(`Connecting to MongoDB URL ${mongoUri}`);
         mongoose.connect(mongoUri, mongooseOptions, onDbReady);
     });
-}
+};
 
 export { init };

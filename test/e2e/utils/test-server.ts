@@ -5,7 +5,7 @@ let requester:ChaiHttp.Agent;
 
 chai.use(ChaiHttp);
 
-export const getTestAgent = async (forceNew = false) => {
+export const getTestAgent: (forceNew?: boolean) => Promise<ChaiHttp.Agent> = async (forceNew = false) => {
     if (forceNew && requester) {
         await new Promise((resolve) => {
             requester.close(() => {
@@ -27,7 +27,7 @@ export const getTestAgent = async (forceNew = false) => {
     return requester;
 };
 
-export const closeTestAgent = async () => {
+export const closeTestAgent: () => Promise<void> = async () => {
     if (!requester) {
         return;
     }

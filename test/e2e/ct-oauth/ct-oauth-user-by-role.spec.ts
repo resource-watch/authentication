@@ -1,14 +1,15 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 import { createUser, createUserAndToken } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
+import type request from 'superagent';
 
 chai.should();
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -27,7 +28,7 @@ describe('GET users ids by role', () => {
     });
 
     it('Get users ids by role without being logged in returns a 401', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/USER`);
 
         response.status.should.equal(401);
@@ -36,7 +37,7 @@ describe('GET users ids by role', () => {
     it('Get users ids by role while being logged in as a USER returns a 400 error', async () => {
         const { token } = await createUserAndToken({ role: 'USER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -48,7 +49,7 @@ describe('GET users ids by role', () => {
     it('Get users ids by role while being logged in as a MANAGER returns a 400 error', async () => {
         const { token } = await createUserAndToken({ role: 'MANAGER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -60,7 +61,7 @@ describe('GET users ids by role', () => {
     it('Get users ids by role while being logged in as an ADMIN returns a 400 error', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -70,7 +71,7 @@ describe('GET users ids by role', () => {
     });
 
     it('Get users ids by role with an invalid role returns a 422', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/FOO`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
@@ -80,7 +81,7 @@ describe('GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role and no users on the database returns a 200 response and an empty array', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
@@ -90,9 +91,9 @@ describe('GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, single user)', async () => {
-        const userOne = await new UserModel(createUser({})).save();
+        const userOne: IUser = await new UserModel(createUser({})).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
@@ -105,10 +106,10 @@ describe('GET users ids by role', () => {
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, multiple users)', async () => {
         await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'ADMIN' })).save();
         await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'MANAGER' })).save();
-        const userThree = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
-        const userFour = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
+        const userThree: IUser = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
+        const userFour: IUser = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 

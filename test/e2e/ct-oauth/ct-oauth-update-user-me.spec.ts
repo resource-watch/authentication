@@ -1,15 +1,17 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserAndToken } from '../utils/helpers';
+import type request from 'superagent';
+import chaiDateTime from "chai-datetime";
 
 chai.should();
-chai.use(require('chai-datetime'));
+chai.use(chaiDateTime);
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -32,7 +34,7 @@ describe('Auth endpoints tests - Update user', () => {
     });
 
     it('Updating own\'s profile while not logged in should return a 401', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json');
 
@@ -45,7 +47,7 @@ describe('Auth endpoints tests - Update user', () => {
     it('Updating own\'s profile while logged in as the user should return a 200 (no actual data changes)', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -63,9 +65,9 @@ describe('Auth endpoints tests - Update user', () => {
     it('Updating own\'s profile while logged in as the user with role USER should return a 200 with updated name and photo', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
 
-        const startDate = new Date();
+        const startDate: Date = new Date();
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
@@ -103,7 +105,7 @@ describe('Auth endpoints tests - Update user', () => {
         (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
         (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
 
-        const updatedUser = await UserModel.findOne({ email: user.email }).exec();
+        const updatedUser: IUser = await UserModel.findOne({ email: user.email }).exec();
 
         response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });
@@ -111,9 +113,9 @@ describe('Auth endpoints tests - Update user', () => {
     it('Updating own\'s profile while logged in as the user with role ADMIN should return a 200 with updated name, photo, role and apps', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const startDate = new Date();
+        const startDate: Date = new Date();
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
@@ -150,7 +152,7 @@ describe('Auth endpoints tests - Update user', () => {
         (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
         (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
 
-        const updatedUser = await UserModel.findOne({ email: user.email }).exec();
+        const updatedUser: IUser = await UserModel.findOne({ email: user.email }).exec();
 
         response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });

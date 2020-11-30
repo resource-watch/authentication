@@ -1,15 +1,16 @@
 import nock from 'nock';
 import chai from 'chai';
-
-import UserModel from 'models/user.model';
+import chaiDateTime from "chai-datetime";
+import UserModel, { IUser } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserAndToken } from '../utils/helpers';
+import type request from 'superagent';
 
 chai.should();
-chai.use(require('chai-datetime'));
+chai.use(chaiDateTime);
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -28,7 +29,7 @@ describe('Auth endpoints tests - Update user by id', () => {
     });
 
     it('Updating a user while not logged in should return a 401', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/1`)
             .set('Content-Type', 'application/json');
 
@@ -41,7 +42,7 @@ describe('Auth endpoints tests - Update user by id', () => {
     it('Updating a user while logged in as USER should return a 403', async () => {
         const { token } = await createUserAndToken({ role: 'USER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/1`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -55,7 +56,7 @@ describe('Auth endpoints tests - Update user by id', () => {
     it('Updating a user while logged in as MANAGER should return a 403', async () => {
         const { token } = await createUserAndToken({ role: 'MANAGER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/1`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -69,7 +70,7 @@ describe('Auth endpoints tests - Update user by id', () => {
     it('Updating a user with an id that does not match an existing user should return a 404', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/41224d776a326fb40f000001`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
@@ -83,7 +84,7 @@ describe('Auth endpoints tests - Update user by id', () => {
     it('Updating user with an invalid id of a user that does not exist returns a 422', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/1234`)
             .set('Authorization', `Bearer ${token}`);
 
@@ -93,12 +94,12 @@ describe('Auth endpoints tests - Update user by id', () => {
     });
 
     it('Updating an existing user should return a 200 and the updated user data', async () => {
-        const startDate = new Date();
+        const startDate: Date = new Date();
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
         const { user } = await createUserAndToken({ role: 'USER' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .patch(`/auth/user/${user.id}`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
@@ -135,7 +136,7 @@ describe('Auth endpoints tests - Update user by id', () => {
         (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
         (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
 
-        const updatedUser = await UserModel.findOne({ email: user.email }).exec();
+        const updatedUser: IUser = await UserModel.findOne({ email: user.email }).exec();
 
         response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });

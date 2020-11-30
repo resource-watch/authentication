@@ -2,11 +2,12 @@ import nock from 'nock';
 import chai from 'chai';
 import { isEqual } from 'lodash';
 
-import UserModel from 'models/user.model';
-import UserTempModel from 'models/user-temp.model';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import UserModel, { IUser } from 'models/user.model';
+import UserTempModel, { IUserTemp } from 'models/user-temp.model';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
-const should = chai.should();
+const should: Chai.Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 
@@ -28,7 +29,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Registering a user without being logged in returns a 422 error - JSON version', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json');
 
@@ -40,7 +41,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Registering a user without the actual data returns a 422 error - JSON version', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json');
 
@@ -52,7 +53,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Registering a user with partial data returns a 422 error', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .send({
@@ -68,7 +69,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
     it('Registering a user with different passwords returns a 422 error', async () => {
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .send({
@@ -83,14 +84,14 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         response.body.errors[0].status.should.equal(422);
         response.body.errors[0].detail.should.equal('Password and Repeat password not equal');
 
-        const tempUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const tempUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(tempUser);
     });
 
     it('Registering a user with correct data and no app returns a 200', async () => {
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'confirm-user'
                     },
@@ -120,10 +121,10 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
             })
             .reply(200);
 
-        const missingUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const missingUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .send({
@@ -136,13 +137,13 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         response.should.be.json;
         response.body.should.have.property('data').and.not.be.empty;
 
-        const responseUser = response.body.data;
+        const responseUser: Record<string, any> = response.body.data;
         responseUser.should.have.property('email').and.equal('someemail@gmail.com');
         responseUser.should.have.property('role').and.equal('USER');
         responseUser.should.have.property('extraUserData').and.be.an('object');
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
 
-        const user = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const user: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(user);
 
         user.should.have.property('email').and.equal('someemail@gmail.com');
@@ -153,14 +154,14 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Registering a user with an existing email address (temp user) returns a 422 error', async () => {
-        const tempUser = await new UserTempModel({
+        const tempUser: IUserTemp = await new UserTempModel({
             email: 'someemail@gmail.com',
             confirmationToken: 'myToken'
         }).save();
 
         should.exist(tempUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .send({
@@ -177,21 +178,21 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Confirming a user\'s account using the email token should be successful (user without app)', async () => {
-        const tempUser = await new UserTempModel({
+        const tempUser: IUserTemp = await new UserTempModel({
             email: 'someemail@gmail.com',
             confirmationToken: 'myToken',
             extraUserData: { apps: [] }
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/confirm/${tempUser.confirmationToken}`)
             .set('Content-Type', 'application/json');
         response.status.should.equal(200);
 
-        const missingTempUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -200,7 +201,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Registering a user with an existing email address (confirmed user) returns a 422 error', async () => {
-        const user = await new UserModel({
+        const user: IUser = await new UserModel({
             email: 'someemail@gmail.com',
             confirmationToken: 'myToken',
             extraUserData: { apps: [] }
@@ -208,7 +209,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
 
         should.exist(user);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .send({
@@ -227,7 +228,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     it('Registering a user with correct data and app returns a 200', async () => {
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'confirm-user'
                     },
@@ -257,10 +258,10 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
             })
             .reply(200);
 
-        const missingUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const missingUser: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .send({
@@ -274,13 +275,13 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         response.should.be.json;
         response.body.should.have.property('data').and.not.be.empty;
 
-        const responseUser = response.body.data;
+        const responseUser: Record<string, any> = response.body.data;
         responseUser.should.have.property('email').and.equal('someotheremail@gmail.com');
         responseUser.should.have.property('role').and.equal('USER');
         responseUser.should.have.property('extraUserData').and.be.an('object');
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
 
-        const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const user: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
@@ -292,7 +293,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     it('Registering a user with a custom role should return a 200 and ignore the role', async () => {
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'confirm-user'
                     },
@@ -322,10 +323,10 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
             })
             .reply(200);
 
-        const missingUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const missingUser: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .send({
@@ -340,13 +341,13 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         response.should.be.json;
         response.body.should.have.property('data').and.not.be.empty;
 
-        const responseUser = response.body.data;
+        const responseUser: Record<string, any> = response.body.data;
         responseUser.should.have.property('email').and.equal('someotheremail@gmail.com');
         responseUser.should.have.property('role').and.equal('USER');
         responseUser.should.have.property('extraUserData').and.be.an('object');
         responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
 
-        const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const user: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
@@ -356,21 +357,21 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Confirming a user\'s account using the email token should be successful (user with app)', async () => {
-        const tempUser = await new UserTempModel({
+        const tempUser: IUserTemp = await new UserTempModel({
             email: 'someotheremail@gmail.com',
             confirmationToken: 'myToken',
             extraUserData: { apps: ['rw'] }
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .get(`/auth/confirm/${tempUser.confirmationToken}`)
             .set('Content-Type', 'application/json');
         response.status.should.equal(200);
 
-        const missingTempUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser = await UserModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someotheremail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');

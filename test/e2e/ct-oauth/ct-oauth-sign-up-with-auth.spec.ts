@@ -3,12 +3,13 @@ import chai from 'chai';
 import { isEqual } from 'lodash';
 import sinon, { SinonSandbox } from "sinon";
 
-import UserModel from 'models/user.model';
-import UserTempModel from 'models/user-temp.model';
-import { createUserAndToken, createTempUser, stubConfigValue } from '../utils/helpers';
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
+import UserModel, { IUser } from 'models/user.model';
+import UserTempModel, { IUserTemp } from 'models/user-temp.model';
+import { createTempUser, createUserAndToken, stubConfigValue } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import type request from 'superagent';
 
-const should = chai.should();
+const should: Chai.Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 let sandbox: SinonSandbox;
@@ -26,14 +27,14 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         requester = await getTestAgent(true);
 
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'settings.allowPublicRegistration' : false });
+        stubConfigValue(sandbox, { 'settings.allowPublicRegistration': false });
 
         await UserModel.deleteMany({}).exec();
         await UserTempModel.deleteMany({}).exec();
     });
 
     it('Registering a user without being logged in returns an 401 error (JSON format)', async () => {
-        const response = await requester.post(`/auth/sign-up`);
+        const response: request.Response = await requester.post(`/auth/sign-up`);
         response.status.should.equal(401);
         response.should.be.json;
         response.body.should.have.property('errors').and.be.an('array');
@@ -43,7 +44,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
     it('Registering a user without the actual data returns a 200 error (TODO: this should return a 422)', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .type('form')
             .set('Authorization', `Bearer ${token}`);
@@ -55,7 +56,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
     it('Registering a user with partial data returns a 200 error (TODO: this should return a 422)', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Authorization', `Bearer ${token}`)
             .type('form')
@@ -70,7 +71,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
     it('Registering a user with different passwords returns a 200 error (TODO: this should return a 422)', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Authorization', `Bearer ${token}`)
             .type('form')
@@ -89,7 +90,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
 
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'confirm-user'
                     },
@@ -119,10 +120,10 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
             })
             .reply(200);
 
-        const missingUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const missingUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Authorization', `Bearer ${token}`)
             .type('form')
@@ -136,7 +137,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         response.text.should.include('Registration successful');
         response.text.should.include('We\'ve sent you an email. Click the link in it to confirm your account.');
 
-        const user = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const user: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someemail@gmail.com');
         user.should.have.property('role').and.equal('USER');
@@ -147,11 +148,11 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
 
     it('Registering a user with an existing email address (temp user) returns a 200 error (TODO: this should return a 422)', async () => {
         const { token } = await createUserAndToken({ role: 'ADMIN' });
-        const tempUser = await createTempUser({ email: 'someemail@gmail.com' });
+        const tempUser: IUserTemp = await createTempUser({ email: 'someemail@gmail.com' });
 
         should.exist(tempUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Authorization', `Bearer ${token}`)
             .type('form')
@@ -166,15 +167,15 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
     });
 
     it('Confirming a user\'s account using the email token should be successful', async () => {
-        const tempUser = await createTempUser({ email: 'someemail@gmail.com' });
+        const tempUser: IUserTemp = await createTempUser({ email: 'someemail@gmail.com' });
 
-        const response = await requester.get(`/auth/confirm/${tempUser.confirmationToken}`);
+        const response: request.Response = await requester.get(`/auth/confirm/${tempUser.confirmationToken}`);
         response.status.should.equal(200);
 
-        const missingTempUser = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -187,7 +188,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
 
         should.exist(user);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Authorization', `Bearer ${token}`)
             .type('form')
@@ -207,7 +208,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
 
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'confirm-user'
                     },
@@ -237,10 +238,10 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
             })
             .reply(200);
 
-        const missingUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const missingUser: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .set('Authorization', `Bearer ${token}`)
             .type('form')
@@ -255,7 +256,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         response.text.should.include('Registration successful');
         response.text.should.include('We\'ve sent you an email. Click the link in it to confirm your account.');
 
-        const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const user: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');
@@ -270,7 +271,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
 
         nock('https://api.sparkpost.com')
             .post('/api/v1/transmissions', (body) => {
-                const expectedRequestBody = {
+                const expectedRequestBody: Record<string, any> = {
                     content: {
                         template_id: 'confirm-user'
                     },
@@ -300,10 +301,10 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
             })
             .reply(200);
 
-        const missingUser = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const missingUser: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingUser);
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/sign-up?origin=gfw`)
             .set('Authorization', `Bearer ${token}`)
             .type('form')
@@ -318,7 +319,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         response.text.should.include('Registration successful');
         response.text.should.include('We\'ve sent you an email. Click the link in it to confirm your account.');
 
-        const user = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const user: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(user);
         user.should.have.property('email').and.equal('someotheremail@gmail.com');
         user.should.have.property('role').and.equal('USER');

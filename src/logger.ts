@@ -1,5 +1,6 @@
 import config = require('config');
 import bunyan = require('bunyan');
+import type Logger from "bunyan";
 
 const streams: Record<string, unknown>[] = [
     {
@@ -18,7 +19,7 @@ if (config.get('logger.toFile')) {
     });
 }
 
-const logger = bunyan.createLogger({
+const logger:Logger = bunyan.createLogger({
     name: config.get('logger.name'),
     src: true,
     streams,

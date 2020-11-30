@@ -2,15 +2,15 @@ import nock from 'nock';
 import chai from 'chai';
 import mongoose from 'mongoose';
 
-import UserModel from 'models/user.model';
+import UserModel, { IUser } from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
-import RenewModel from 'models/renew.model';
+import RenewModel, { IRenew } from 'models/renew.model';
+import type request from 'superagent';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 
 chai.should();
 
-import { getTestAgent, closeTestAgent } from '../utils/test-server';
-
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -30,7 +30,7 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
     });
 
     it('Recover password post with fake token returns a 422 error - JSON format', async () => {
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/token`)
             .set('Content-Type', 'application/json');
 
@@ -51,7 +51,7 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .set('Content-Type', 'application/json');
 
@@ -72,7 +72,7 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .set('Content-Type', 'application/json')
             .send({
@@ -92,16 +92,16 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
     });
 
     it('Recover password post with correct token and different password and repeatPassword should return an error message - JSON format', async () => {
-        const renewModel = await new RenewModel({
+        const renewModel: IRenew = await new RenewModel({
             userId: mongoose.Types.ObjectId(),
             token: 'myToken'
         }).save();
 
-        const loadedRenewModels = await RenewModel.find({});
+        const loadedRenewModels: IRenew[] = await RenewModel.find({});
         loadedRenewModels.should.have.lengthOf(1);
         loadedRenewModels[0]._id.toString().should.equal(renewModel._id.toString());
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .set('Content-Type', 'application/json')
             .send({
@@ -117,7 +117,7 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
     });
 
     it('Recover password post with correct token and matching passwords should redirect to the configured URL (happy case) - JSON format', async () => {
-        const user = await new UserModel({
+        const user: IUser = await new UserModel({
             __v: 0,
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
@@ -138,7 +138,7 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
             token: 'myToken'
         }).save();
 
-        const response = await requester
+        const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .set('Content-Type', 'application/json')
             .send({
@@ -149,7 +149,7 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
             response.status.should.equal(200);
             response.redirects.should.be.an('array').and.length(0);
 
-            const responseUser = response.body.data;
+            const responseUser: Record<string, any> = response.body.data;
             responseUser.should.have.property('id').and.be.a('string').and.not.be.empty;
             responseUser.should.have.property('name').and.be.a('string').and.equal('lorem-ipsum');
             responseUser.should.have.property('photo').and.be.a('string').and.equal('http://www.random.rand/abc.jpg');
