@@ -3,9 +3,9 @@ import chai from 'chai';
 import JWT from 'jsonwebtoken';
 import chaiString from "chai-string";
 import UserModel, { IUser } from 'models/user.model';
-import AuthService from 'services/auth.service';
+import UserService from 'services/user.service';
 
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
 
 const should: Chai.Should = chai.should();
@@ -312,7 +312,7 @@ describe('Google auth endpoint tests', () => {
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
         const decodedTokenData: Record<string, any> = JWT.decode(response.body.token) as Record<string, any>;
-        const isTokenRevoked: boolean = await AuthService.checkRevokedToken(null, decodedTokenData);
+        const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
         const userWithToken: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
@@ -370,7 +370,7 @@ describe('Google auth endpoint tests', () => {
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
         const decodedTokenData: Record<string, any> = JWT.decode(response.body.token) as Record<string, any>;
-        const isTokenRevoked: boolean = await AuthService.checkRevokedToken(null, decodedTokenData);
+        const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
         const userWithToken: IUser = await UserModel.findOne({ _id: savedUser.id }).exec();

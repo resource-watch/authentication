@@ -3,8 +3,8 @@ import chai from 'chai';
 import chaiDateTime from "chai-datetime";
 import UserModel, { IUser } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { createUserAndToken } from './utils/helpers';
 import type request from 'superagent';
 
 chai.should();

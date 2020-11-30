@@ -4,8 +4,8 @@ import sinon, { SinonSandbox } from 'sinon';
 
 import UserModel, { IUser } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { getUUID, stubConfigValue } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { getUUID, stubConfigValue } from './utils/helpers';
 import type request from 'superagent';
 
 const should: Chai.Should = chai.should();

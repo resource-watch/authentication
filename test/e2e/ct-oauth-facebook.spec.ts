@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import JWT from 'jsonwebtoken';
 
 import UserModel, { IUser } from 'models/user.model';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
 
 // tslint:disable-next-line:typedef

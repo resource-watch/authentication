@@ -3,7 +3,7 @@ import passport from "koa-passport";
 import jwt, { Options } from "koa-jwt";
 
 import logger from 'logger';
-import AuthService from "services/auth.service";
+import UserService from "services/user.service";
 import Settings from "services/settings.service";
 import registerStrategies from "services/passport.service";
 import AuthRouter from 'routes/auth.router';
@@ -48,7 +48,7 @@ export async function loadRoutes(app: Application): Promise<void> {
     app.use(jwt({
         secret: Settings.getSettings().jwt.secret,
         passthrough: Settings.getSettings().jwt.passthrough,
-        isRevoked: AuthService.checkRevokedToken,
+        isRevoked: UserService.checkRevokedToken,
         getToken
     }));
 

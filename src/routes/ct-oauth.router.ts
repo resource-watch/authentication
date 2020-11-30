@@ -6,7 +6,7 @@ import { URL } from "url";
 
 import logger from 'logger';
 import Utils from 'utils';
-import AuthService from 'services/auth.service';
+import UserService from 'services/user.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
 import UserTempSerializer from 'serializers/user-temp.serializer';
@@ -87,7 +87,7 @@ const localCallback: (ctx: Context, next: Next) => Promise<any> = async (ctx: Co
     if (ctx.request.type === 'application/json') {
         ctx.status = 200;
         logger.info('Generating token');
-        const token: string = await AuthService.createToken(user, false);
+        const token: string = await UserService.createToken(user, false);
         ctx.body = UserTempSerializer.serialize(user);
         ctx.body.data.token = token;
     } else {
@@ -99,7 +99,7 @@ const localCallback: (ctx: Context, next: Next) => Promise<any> = async (ctx: Co
 
 async function createToken(ctx: Context, createInUser: boolean): Promise<string> {
     logger.info('Generating token');
-    return AuthService.createToken(Utils.getUser(ctx), createInUser);
+    return UserService.createToken(Utils.getUser(ctx), createInUser);
 }
 
 async function generateJWT(ctx: Context): Promise<void> {
@@ -115,7 +115,7 @@ async function generateJWT(ctx: Context): Promise<void> {
 async function checkLogged(ctx: Context): Promise<void> {
     if (Utils.getUser(ctx)) {
         const userToken: IUser = Utils.getUser(ctx);
-        const user: IUser = await AuthService.getUserById(userToken.id);
+        const user: IUser = await UserService.getUserById(userToken.id);
 
         ctx.body = {
             id: user._id,
@@ -157,11 +157,11 @@ async function getUsers(ctx: Context): Promise<void> {
     let users: PaginateResult<IUser>;
 
     if (query.app === 'all') {
-        users = await AuthService.getUsers(null, omit(query, ['app']));
+        users = await UserService.getUsers(null, omit(query, ['app']));
     } else if (query.app) {
-        users = await AuthService.getUsers(query.app.split(','), omit(query, ['app']));
+        users = await UserService.getUsers(query.app.split(','), omit(query, ['app']));
     } else {
-        users = await AuthService.getUsers(apps, query);
+        users = await UserService.getUsers(apps, query);
     }
 
     ctx.body = UserSerializer.serialize(users, link);
@@ -172,7 +172,7 @@ async function getCurrentUser(ctx: Context): Promise<void> {
 
     logger.info('Get current user: ', requestUser.id);
 
-    const user: IUser = await AuthService.getUserById(requestUser.id);
+    const user: IUser = await UserService.getUserById(requestUser.id);
 
     if (!user) {
         ctx.throw(404, 'User not found');
@@ -184,7 +184,7 @@ async function getCurrentUser(ctx: Context): Promise<void> {
 async function getUserById(ctx: Context): Promise<void> {
     logger.info('Get User by id: ', ctx.params.id);
 
-    const user: IUser = await AuthService.getUserById(ctx.params.id);
+    const user: IUser = await UserService.getUserById(ctx.params.id);
 
     if (!user) {
         ctx.throw(404, 'User not found');
@@ -196,7 +196,7 @@ async function getUserById(ctx: Context): Promise<void> {
 async function findByIds(ctx: Context): Promise<void> {
     logger.info('Find by ids');
     ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
-    const data: IUser[] = await AuthService.getUsersByIds(ctx.request.body.ids);
+    const data: IUser[] = await UserService.getUsersByIds(ctx.request.body.ids);
     ctx.body = {
         data
     };
@@ -204,7 +204,7 @@ async function findByIds(ctx: Context): Promise<void> {
 
 async function getIdsByRole(ctx: Context): Promise<void> {
     logger.info(`[getIdsByRole] Get ids by role: ${ctx.params.role}`);
-    const data: Types.ObjectId[] = await AuthService.getIdsByRole(ctx.params.role);
+    const data: Types.ObjectId[] = await UserService.getIdsByRole(ctx.params.role);
     ctx.body = { data };
 }
 
@@ -213,7 +213,7 @@ async function updateUser(ctx: Context): Promise<void> {
     ctx.assert(ctx.params.id, 400, 'Id param required');
 
     const user: IUser = Utils.getUser(ctx);
-    const userUpdate: IUser = await AuthService.updateUser(ctx.params.id, ctx.request.body, user);
+    const userUpdate: IUser = await UserService.updateUser(ctx.params.id, ctx.request.body, user);
     if (!userUpdate) {
         ctx.throw(404, 'User not found');
         return;
@@ -225,7 +225,7 @@ async function updateMe(ctx: Context): Promise<void> {
     logger.info(`Update user me`);
 
     const user: IUser = Utils.getUser(ctx);
-    const userUpdate: IUser = await AuthService.updateUser(user.id, ctx.request.body, user);
+    const userUpdate: IUser = await UserService.updateUser(user.id, ctx.request.body, user);
     if (!userUpdate) {
         ctx.throw(404, 'User not found');
         return;
@@ -237,7 +237,7 @@ async function deleteUser(ctx: Context, next:Next): Promise<void> {
     logger.info(`Delete user with id ${ctx.params.id}`);
     ctx.assert(ctx.params.id, 400, 'Id param required');
 
-    const deletedUser: IUser = await AuthService.deleteUser(ctx.params.id);
+    const deletedUser: IUser = await UserService.deleteUser(ctx.params.id);
     if (!deletedUser) {
         ctx.throw(404, 'User not found');
         return;
@@ -271,7 +271,7 @@ async function createUser(ctx: Context): Promise<void> {
         return;
     }
 
-    const exist: boolean = await AuthService.existEmail(body.email);
+    const exist: boolean = await UserService.emailExists(body.email);
     if (exist) {
         ctx.throw(400, 'Email exists');
         return;
@@ -285,7 +285,7 @@ async function createUser(ctx: Context): Promise<void> {
         }
     }
 
-    await AuthService.createUserWithoutPassword(ctx.request.body, ctx.state.generalConfig);
+    await UserService.createUserWithoutPassword(ctx.request.body, ctx.state.generalConfig);
     ctx.body = {};
 
 }
@@ -380,7 +380,7 @@ async function signUp(ctx: Context): Promise<void> {
         error = 'Password and Repeat password not equal';
     }
 
-    const exist: boolean = await AuthService.existEmail(ctx.request.body.email);
+    const exist: boolean = await UserService.emailExists(ctx.request.body.email);
     if (exist) {
         error = 'Email exists';
     }
@@ -399,7 +399,7 @@ async function signUp(ctx: Context): Promise<void> {
     }
 
     try {
-        const data: IUserTemp = await AuthService.createUser(ctx.request.body, ctx.state.generalConfig);
+        const data: IUserTemp = await UserService.createUser(ctx.request.body, ctx.state.generalConfig);
         if (ctx.request.type === 'application/json') {
             ctx.response.type = 'application/json';
             ctx.body = UserTempSerializer.serialize(data);
@@ -428,7 +428,7 @@ async function getSignUp(ctx: Context): Promise<void> {
 
 async function confirmUser(ctx: Context): Promise<void> {
     logger.info('Confirming user');
-    const user: IUser = await AuthService.confirmUser(ctx.params.token);
+    const user: IUser = await UserService.confirmUser(ctx.params.token);
     if (!user) {
         ctx.throw(400, 'User expired or token not found');
         return;
@@ -534,7 +534,7 @@ async function redirectLogin(ctx: Context): Promise<void> {
 }
 
 async function resetPasswordView(ctx: Context): Promise<void> {
-    const renew: IRenew = await AuthService.getRenewModel(ctx.params.token);
+    const renew: IRenew = await UserService.getRenewModel(ctx.params.token);
     let error: string = null;
     if (!renew) {
         error = 'Token expired';
@@ -568,7 +568,7 @@ async function sendResetMail(ctx: Context): Promise<void> {
     }
 
     const originApp: string = Utils.getOriginApp(ctx);
-    const renew: IRenew = await AuthService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
+    const renew: IRenew = await UserService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
     if (!renew) {
         if (ctx.request.type === 'application/json') {
             throw new UnprocessableEntityError('User not found');
@@ -603,9 +603,9 @@ async function updateApplications(ctx: Context): Promise<void> {
         if (ctx.session && ctx.session.applications) {
             let user: IUser = Utils.getUser(ctx);
             if (user.role === 'USER') {
-                user = await AuthService.updateApplicationsUser(user.id, ctx.session.applications);
+                user = await UserService.updateApplicationsForUser(user.id, ctx.session.applications);
             } else {
-                user = await AuthService.getUserById(user.id);
+                user = await UserService.getUserById(user.id);
             }
             delete ctx.session.applications;
             if (user) {
@@ -640,7 +640,7 @@ async function resetPassword(ctx: Context): Promise<void> {
     if (ctx.request.body.password !== ctx.request.body.repeatPassword) {
         error = 'Password and Repeat password not equal';
     }
-    const exist: IRenew = await AuthService.getRenewModel(ctx.params.token);
+    const exist: IRenew = await UserService.getRenewModel(ctx.params.token);
     if (!exist) {
         error = 'Token expired';
     }
@@ -658,7 +658,7 @@ async function resetPassword(ctx: Context): Promise<void> {
 
         return;
     }
-    const user: IUser = await AuthService.updatePassword(ctx.params.token, ctx.request.body.password);
+    const user: IUser = await UserService.updatePassword(ctx.params.token, ctx.request.body.password);
     if (user) {
         if (ctx.request.type === 'application/json') {
             ctx.response.type = 'application/json';

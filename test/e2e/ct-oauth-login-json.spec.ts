@@ -2,8 +2,8 @@ import nock from 'nock';
 import chai from 'chai';
 
 import UserModel, { IUser } from 'models/user.model';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken, createUserInDB } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { createUserAndToken, createUserInDB } from './utils/helpers';
 import type request from 'superagent';
 
 chai.should();

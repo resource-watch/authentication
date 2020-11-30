@@ -6,7 +6,7 @@ import UserModel, { IUser } from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import type request from 'superagent';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { closeTestAgent, getTestAgent } from './utils/test-server';
 
 chai.should();
 

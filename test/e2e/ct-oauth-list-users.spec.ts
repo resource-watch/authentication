@@ -3,8 +3,8 @@ import chai from 'chai';
 
 import UserModel, { IUser } from 'models/user.model';
 
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken, createUserInDB, ensureHasPaginationElements } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { createUserAndToken, createUserInDB, ensureHasPaginationElements } from './utils/helpers';
 import type request from 'superagent';
 
 chai.should();

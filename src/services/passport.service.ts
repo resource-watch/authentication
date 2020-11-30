@@ -101,7 +101,7 @@ export default async function registerStrategies(): Promise<void> {
     ): Promise<void> {
         logger.info('[passportService] Registering user', profile);
 
-        const user: IUser = await UserService.findOne({
+        const user: IUser = await UserService.getUser({
             provider: 'twitter',
             providerId: profile.id,
         });
