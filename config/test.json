@@ -4,13 +4,23 @@
     "host": "localhost",
     "port": 27017
   },
+  "server": {
+    "internalUrl": "http://authorization.com",
+    "publicUrl": "http://authorization.com"
+  },
   "settings": {
     "defaultApp": "rw",
     "local": {
       "confirmUrlRedirect": null,
-      "gfw": { "confirmUrlRedirect": null },
-      "rw": { "confirmUrlRedirect": null },
-      "prep": { "confirmUrlRedirect": null }
+      "gfw": {
+        "confirmUrlRedirect": null
+      },
+      "rw": {
+        "confirmUrlRedirect": null
+      },
+      "prep": {
+        "confirmUrlRedirect": null
+      }
     },
     "thirdParty": {
       "rw": {
@@ -24,7 +34,9 @@
           "clientID": "test",
           "active": true
         },
-        "apple": { "active": false },
+        "apple": {
+          "active": false
+        },
         "twitter": {
           "consumerSecret": "test",
           "consumerKey": "test",
@@ -32,9 +44,19 @@
         }
       },
       "gfw": {
-        "facebook": { "active": false },
-        "google": { "active": false },
-        "apple": { "active": false },
+        "facebook": {
+          "active": false
+        },
+        "google": {
+          "active": false
+        },
+        "apple": {
+          "active": true,
+          "teamId": "APPLE_TEAM_ID",
+          "keyId": "APPLE_KEY_ID",
+          "clientId": "APPLE_SERVICE_ID",
+          "privateKeyString": "APPLE_AUTH_KEY"
+        },
         "twitter": {
           "consumerSecret": "test",
           "consumerKey": "test",
@@ -42,9 +64,15 @@
         }
       },
       "prep": {
-        "facebook": { "active": false },
-        "google": { "active": false },
-        "apple": { "active": false },
+        "facebook": {
+          "active": false
+        },
+        "google": {
+          "active": false
+        },
+        "apple": {
+          "active": false
+        },
         "twitter": {
           "consumerSecret": "test",
           "consumerKey": "test",

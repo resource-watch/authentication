@@ -48,6 +48,12 @@
           "clientSecret": "GFW_GOOGLE_CLIENT_SECRET",
           "clientID": "GFW_GOOGLE_CLIENT_ID"
         },
+        "apple": {
+          "teamId": "APPLE_TEAM_ID",
+          "keyId": "APPLE_KEY_ID",
+          "clientId": "APPLE_SERVICE_ID",
+          "privateKeyString": "APPLE_AUTH_KEY"
+        },
         "twitter": {
           "consumerSecret": "GFW_TWITTER_CONSUMER_SECRET",
           "consumerKey": "GFW_TWITTER_CONSUMER_KEY"

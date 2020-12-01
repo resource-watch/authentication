@@ -8,13 +8,9 @@ import UserModel, { IUser } from 'models/user.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
 
-// tslint:disable-next-line:typedef
 const should: Chai.Should = chai.should();
 
 let requester: ChaiHttp.Agent;
-
-// https://github.com/mochajs/mocha/issues/2683
-let skipTests: boolean = false;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -26,10 +22,6 @@ describe('Facebook auth endpoint tests', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        // Skip tests if correct env vars are not provided
-        if (!process.env.TEST_FACEBOOK_OAUTH2_APP_ID || !process.env.TEST_FACEBOOK_OAUTH2_APP_SECRET) {
-            skipTests = true;
-        }
 
         await UserModel.deleteMany({}).exec();
     });
@@ -39,27 +31,19 @@ describe('Facebook auth endpoint tests', () => {
     });
 
     it('Visiting /auth/facebook while not being logged in should redirect to the login page', async () => {
-        if (skipTests) {
-            return;
-        }
-
         const response: request.Response = await requester.get(`/auth/facebook`).redirects(0);
         response.should.redirect;
         response.should.redirectTo(/^https:\/\/www\.facebook\.com\/v7\.0\/dialog\/oauth/);
     });
 
     it('Visiting /auth/facebook/callback while being logged in should redirect to the login successful page', async () => {
-        if (skipTests) {
-            return;
-        }
-
         const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://graph.facebook.com')
             .post('/v7.0/oauth/access_token', {
                 grant_type: 'authorization_code',
-                redirect_uri: `${process.env.PUBLIC_URL}/auth/facebook/callback`,
+                redirect_uri: `${config.get('server.publicUrl')}/auth/facebook/callback`,
                 client_id: config.get('settings.thirdParty.rw.facebook.clientID'),
                 client_secret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                 code: 'TEST_FACEBOOK_OAUTH2_CALLBACK_CODE'
@@ -111,17 +95,13 @@ describe('Facebook auth endpoint tests', () => {
     });
 
     it('Visiting /auth/facebook/callback while being logged in with a callbackUrl param should redirect to the callback URL page', async () => {
-        if (skipTests) {
-            return;
-        }
-
         const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://graph.facebook.com')
             .post('/v7.0/oauth/access_token', {
                 grant_type: 'authorization_code',
-                redirect_uri: `${process.env.PUBLIC_URL}/auth/facebook/callback`,
+                redirect_uri: `${config.get('server.publicUrl')}/auth/facebook/callback`,
                 client_id: config.get('settings.thirdParty.rw.facebook.clientID'),
                 client_secret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                 code: 'TEST_FACEBOOK_OAUTH2_CALLBACK_CODE'
@@ -180,17 +160,13 @@ describe('Facebook auth endpoint tests', () => {
     });
 
     it('Visiting /auth/facebook/callback while being logged in with an updated callbackUrl param should redirect to the new callback URL page', async () => {
-        if (skipTests) {
-            return;
-        }
-
         const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://graph.facebook.com')
             .post('/v7.0/oauth/access_token', {
                 grant_type: 'authorization_code',
-                redirect_uri: `${process.env.PUBLIC_URL}/auth/facebook/callback`,
+                redirect_uri: `${config.get('server.publicUrl')}/auth/facebook/callback`,
                 client_id: config.get('settings.thirdParty.rw.facebook.clientID'),
                 client_secret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                 code: 'TEST_FACEBOOK_OAUTH2_CALLBACK_CODE'

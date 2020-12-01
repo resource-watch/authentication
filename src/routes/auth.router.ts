@@ -3,10 +3,13 @@ import passport from 'koa-passport';
 import Router from 'koa-router';
 import { cloneDeep } from 'lodash';
 
-import CTAuthRouter from 'routes/ct-oauth.router';
+import LocalProvider from 'providers/local.provider';
 import logger from 'logger';
 import Utils from 'utils';
 import Settings, { IApplication } from "services/settings.service";
+import FacebookProvider from "../providers/facebook.provider";
+import GoogleProvider from "../providers/google.provider";
+import AppleProvider from "../providers/apple.provider";
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     logger.info('Setting callbackUrl');
@@ -72,58 +75,62 @@ async function hasSignUpPermissions(ctx: Context, next: Next): Promise<void> {
 
 const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
-router.get('/google', setCallbackUrl, CTAuthRouter.google);
-router.get('/google/callback', CTAuthRouter.googleCallback, CTAuthRouter.updateApplications);
-router.get('/google/token', CTAuthRouter.googleToken, CTAuthRouter.generateJWT);
+router.get('/google', setCallbackUrl, GoogleProvider.google);
+router.get('/google/callback', GoogleProvider.googleCallback, GoogleProvider.updateApplications);
+router.get('/google/token', GoogleProvider.googleToken, GoogleProvider.generateJWT);
 
-router.get('/facebook/token', CTAuthRouter.facebookToken, CTAuthRouter.generateJWT);
-router.get('/facebook', setCallbackUrl, CTAuthRouter.facebook);
-router.get('/facebook/callback', CTAuthRouter.facebookCallback, CTAuthRouter.updateApplications);
+router.get('/facebook/token', FacebookProvider.facebookToken, FacebookProvider.generateJWT);
+router.get('/facebook', setCallbackUrl, FacebookProvider.facebook);
+router.get('/facebook/callback', FacebookProvider.facebookCallback, FacebookProvider.updateApplications);
 
-router.get('/', setCallbackUrl, CTAuthRouter.redirectLogin);
-// @ts-ignore
-router.get('/basic', passport.authenticate('basic'), CTAuthRouter.success);
-// @ts-ignore
-router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, CTAuthRouter.loginView);
-// @ts-ignore
-router.post('/login', CTAuthRouter.localCallback);
-router.get('/fail', loadApplicationGeneralConfig, CTAuthRouter.failAuth);
+router.get('/apple', setCallbackUrl, AppleProvider.apple);
+router.post('/apple/callback', AppleProvider.appleCallback, AppleProvider.updateApplications);
+router.get('/apple/token', AppleProvider.appleToken, AppleProvider.generateJWT);
 
+router.get('/', setCallbackUrl, LocalProvider.redirectLogin);
 // @ts-ignore
-router.get('/check-logged', CTAuthRouter.checkLogged);
-router.get('/success', loadApplicationGeneralConfig, CTAuthRouter.success);
-router.get('/logout', setCallbackUrlOnlyWithQueryParam, CTAuthRouter.logout);
-
+router.get('/basic', passport.authenticate('basic'), LocalProvider.success);
 // @ts-ignore
-router.get('/sign-up', hasSignUpPermissions, loadApplicationGeneralConfig, CTAuthRouter.getSignUp);
+router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, LocalProvider.loginView);
 // @ts-ignore
-router.post('/sign-up', hasSignUpPermissions, loadApplicationGeneralConfig, CTAuthRouter.signUp);
+router.post('/login', LocalProvider.localCallback);
+router.get('/fail', loadApplicationGeneralConfig, LocalProvider.failAuth);
 
 // @ts-ignore
-router.get('/confirm/:token', CTAuthRouter.confirmUser);
-router.get('/reset-password', loadApplicationGeneralConfig, CTAuthRouter.requestEmailResetView);
-router.post('/reset-password', loadApplicationGeneralConfig, CTAuthRouter.sendResetMail);
-router.get('/reset-password/:token', loadApplicationGeneralConfig, CTAuthRouter.resetPasswordView);
-router.post('/reset-password/:token', loadApplicationGeneralConfig, CTAuthRouter.resetPassword);
-
-router.get('/generate-token', Utils.isLogged, CTAuthRouter.generateJWT);
+router.get('/check-logged', LocalProvider.checkLogged);
+router.get('/success', loadApplicationGeneralConfig, LocalProvider.success);
+router.get('/logout', setCallbackUrlOnlyWithQueryParam, LocalProvider.logout);
 
 // @ts-ignore
-router.get('/user', Utils.isLogged, Utils.isAdmin, CTAuthRouter.getUsers);
-router.get('/user/me', Utils.isLogged, CTAuthRouter.getCurrentUser);
-router.get('/user/from-token', Utils.isLogged, CTAuthRouter.getCurrentUser);
+router.get('/sign-up', hasSignUpPermissions, loadApplicationGeneralConfig, LocalProvider.getSignUp);
 // @ts-ignore
-router.get('/user/:id', Utils.isLogged, Utils.isAdmin, CTAuthRouter.getUserById);
+router.post('/sign-up', hasSignUpPermissions, loadApplicationGeneralConfig, LocalProvider.signUp);
+
 // @ts-ignore
-router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, CTAuthRouter.findByIds);
+router.get('/confirm/:token', LocalProvider.confirmUser);
+router.get('/reset-password', loadApplicationGeneralConfig, LocalProvider.requestEmailResetView);
+router.post('/reset-password', loadApplicationGeneralConfig, LocalProvider.sendResetMail);
+router.get('/reset-password/:token', loadApplicationGeneralConfig, LocalProvider.resetPasswordView);
+router.post('/reset-password/:token', loadApplicationGeneralConfig, LocalProvider.resetPassword);
+
+router.get('/generate-token', Utils.isLogged, LocalProvider.generateJWT);
+
 // @ts-ignore
-router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, CTAuthRouter.getIdsByRole);
+router.get('/user', Utils.isLogged, Utils.isAdmin, LocalProvider.getUsers);
+router.get('/user/me', Utils.isLogged, LocalProvider.getCurrentUser);
+router.get('/user/from-token', Utils.isLogged, LocalProvider.getCurrentUser);
 // @ts-ignore
-router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, CTAuthRouter.createUser);
-router.patch('/user/me', Utils.isLogged, CTAuthRouter.updateMe);
+router.get('/user/:id', Utils.isLogged, Utils.isAdmin, LocalProvider.getUserById);
 // @ts-ignore
-router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, CTAuthRouter.updateUser);
+router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, LocalProvider.findByIds);
 // @ts-ignore
-router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, CTAuthRouter.deleteUser);
+router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, LocalProvider.getIdsByRole);
+// @ts-ignore
+router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, LocalProvider.createUser);
+router.patch('/user/me', Utils.isLogged, LocalProvider.updateMe);
+// @ts-ignore
+router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, LocalProvider.updateUser);
+// @ts-ignore
+router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, LocalProvider.deleteUser);
 
 export default router;

@@ -1,5 +1,6 @@
 import nock from 'nock';
 import chai from 'chai';
+import config from 'config';
 import { isEqual } from 'lodash';
 import sinon, { SinonSandbox } from "sinon";
 
@@ -27,7 +28,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         requester = await getTestAgent(true);
 
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'settings.allowPublicRegistration': false });
+        stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw' });
 
         await UserModel.deleteMany({}).exec();
         await UserTempModel.deleteMany({}).exec();
@@ -110,7 +111,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlConfirm').and.include(`${process.env.PUBLIC_URL}/auth/confirm/`);
+                body.substitution_data.should.have.property('urlConfirm').and.include(`${config.get('server.publicUrl')}/auth/confirm/`);
 
                 delete body.substitution_data.urlConfirm;
 
@@ -228,7 +229,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlConfirm').and.include(`${process.env.PUBLIC_URL}/auth/confirm/`);
+                body.substitution_data.should.have.property('urlConfirm').and.include(`${config.get('server.publicUrl')}/auth/confirm/`);
 
                 delete body.substitution_data.urlConfirm;
 
@@ -291,7 +292,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlConfirm').and.include(`${process.env.PUBLIC_URL}/auth/confirm/`);
+                body.substitution_data.should.have.property('urlConfirm').and.include(`${config.get('server.publicUrl')}/auth/confirm/`);
 
                 delete body.substitution_data.urlConfirm;
 

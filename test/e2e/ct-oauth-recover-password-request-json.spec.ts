@@ -1,12 +1,12 @@
 import nock from 'nock';
 import chai from 'chai';
 import { isEqual } from 'lodash';
-
 import UserModel from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel from 'models/renew.model';
 import type request from 'superagent';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
+import config from 'config';
 
 chai.should();
 
@@ -84,7 +84,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlRecover').and.include(`${process.env.PUBLIC_URL}/auth/reset-password/`);
+                body.substitution_data.should.have.property('urlRecover').and.include(`${config.get('server.publicUrl')}/auth/reset-password/`);
                 body.substitution_data.should.have.property('urlRecover').and.include('origin=rw');
 
                 delete body.substitution_data.urlRecover;
@@ -141,7 +141,7 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlRecover').and.include(`${process.env.PUBLIC_URL}/auth/reset-password/`);
+                body.substitution_data.should.have.property('urlRecover').and.include(`${config.get('server.publicUrl')}/auth/reset-password/`);
                 body.substitution_data.should.have.property('urlRecover').and.include('origin=gfw');
 
                 delete body.substitution_data.urlRecover;

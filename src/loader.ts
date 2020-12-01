@@ -5,14 +5,22 @@ import jwt, { Options } from "koa-jwt";
 import logger from 'logger';
 import UserService from "services/user.service";
 import Settings from "services/settings.service";
-import registerStrategies from "services/passport.service";
 import AuthRouter from 'routes/auth.router';
 import { router as TwitterRouter } from 'routes/auth/twitter.router';
+import FacebookProvider from "providers/facebook.provider";
+import LocalProvider from "providers/local.provider";
+import GoogleProvider from "providers/google.provider";
+import AppleProvider from "providers/apple.provider";
+import TwitterProvider from "providers/twitter.provider";
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
 
-    await registerStrategies();
+    FacebookProvider.registerStrategies();
+    TwitterProvider.registerStrategies();
+    GoogleProvider.registerStrategies();
+    AppleProvider.registerStrategies();
+    LocalProvider.registerStrategies();
 
     app.use(passport.initialize());
     app.use(passport.session());

@@ -1,5 +1,6 @@
 import nock from 'nock';
 import chai from 'chai';
+import config from 'config';
 import JWT from 'jsonwebtoken';
 import chaiString from "chai-string";
 import UserModel, { IUser } from 'models/user.model';
@@ -13,9 +14,6 @@ chai.use(chaiString);
 
 let requester: ChaiHttp.Agent;
 
-// https://github.com/mochajs/mocha/issues/2683
-let skipTests: boolean = false;
-
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
@@ -24,10 +22,6 @@ describe('Google auth endpoint tests', () => {
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
-        }
-
-        if (!process.env.TEST_GOOGLE_OAUTH2_CLIENT_ID) {
-            skipTests = true;
         }
 
         await UserModel.deleteMany({}).exec();
@@ -40,36 +34,26 @@ describe('Google auth endpoint tests', () => {
     });
 
     it('Visiting /auth/google while not being logged in should redirect to the login page', async () => {
-        if (skipTests) {
-            return;
-        }
-
         const response: request.Response = await requester
             .get(`/auth/google`)
             .redirects(0);
 
-        response.status.should.equal(200);
-        response.header['content-type'].should.equalIgnoreCase('text/html; charset=UTF-8');
-        response.redirects.should.be.an('array').and.not.be.empty;
-        response.redirects.forEach((redirect) => {
-            redirect.should.match(/^https:\/\/accounts\.google\.com\//);
-        });
+        response.status.should.equal(302);
+        response.header['content-type'].should.equalIgnoreCase('text/plain; charset=UTF-8');
+        response.should.redirectTo(/^https:\/\/accounts\.google\.com\//);
     });
 
     it('Visiting /auth/google/callback while being logged in should redirect to the login successful page', async () => {
-        if (skipTests) {
-            return;
-        }
-
-        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.not.exist(missingUser);
 
         nock('https://www.googleapis.com')
             .post('/oauth2/v4/token', {
                 grant_type: 'authorization_code',
-                redirect_uri: `${process.env.PUBLIC_URL}/auth/google/callback`,
-                client_id: process.env.TEST_GOOGLE_OAUTH2_CLIENT_ID,
-                client_secret: 'TEST_GOOGLE_OAUTH2_CLIENT_SECRET',
+                redirect_uri: `${config.get('server.publicUrl')}/auth/google/callback`,
+                client_id: config.get('settings.thirdParty.rw.google.clientID'),
+                client_secret: config.get('settings.thirdParty.rw.google.clientSecret'),
                 code: 'TEST_GOOGLE_OAUTH2_CALLBACK_CODE'
             })
             .reply(200, {
@@ -112,30 +96,40 @@ describe('Google auth endpoint tests', () => {
         responseTwo.should.be.html;
         responseTwo.text.should.include('Welcome to the RW API');
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.exist(confirmedUser);
-        confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
-        confirmedUser.should.have.property('name').and.equal('John Doe');
-        confirmedUser.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        confirmedUser.should.have.property('role').and.equal('USER');
-        confirmedUser.should.have.property('provider').and.equal('google');
-        confirmedUser.should.have.property('providerId').and.equal('113994825016233013735');
+        confirmedUser.should.have.property('email')
+            .and
+            .equal('john.doe@vizzuality.com');
+        confirmedUser.should.have.property('name')
+            .and
+            .equal('John Doe');
+        confirmedUser.should.have.property('photo')
+            .and
+            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
+        confirmedUser.should.have.property('role')
+            .and
+            .equal('USER');
+        confirmedUser.should.have.property('provider')
+            .and
+            .equal('google');
+        confirmedUser.should.have.property('providerId')
+            .and
+            .equal('113994825016233013735');
     });
 
     it('Visiting /auth/google/callback while being logged in with a callbackUrl param should redirect to the callback URL page', async () => {
-        if (skipTests) {
-            return;
-        }
-
-        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.not.exist(missingUser);
 
         nock('https://www.googleapis.com')
             .post('/oauth2/v4/token', {
                 grant_type: 'authorization_code',
-                redirect_uri: `${process.env.PUBLIC_URL}/auth/google/callback`,
-                client_id: process.env.TEST_GOOGLE_OAUTH2_CLIENT_ID,
-                client_secret: 'TEST_GOOGLE_OAUTH2_CLIENT_SECRET',
+                redirect_uri: `${config.get('server.publicUrl')}/auth/google/callback`,
+                client_id: config.get('settings.thirdParty.rw.google.clientID'),
+                client_secret: config.get('settings.thirdParty.rw.google.clientSecret'),
                 code: 'TEST_GOOGLE_OAUTH2_CALLBACK_CODE'
             })
             .reply(200, {
@@ -182,30 +176,40 @@ describe('Google auth endpoint tests', () => {
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.exist(confirmedUser);
-        confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
-        confirmedUser.should.have.property('name').and.equal('John Doe');
-        confirmedUser.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        confirmedUser.should.have.property('role').and.equal('USER');
-        confirmedUser.should.have.property('provider').and.equal('google');
-        confirmedUser.should.have.property('providerId').and.equal('113994825016233013735');
+        confirmedUser.should.have.property('email')
+            .and
+            .equal('john.doe@vizzuality.com');
+        confirmedUser.should.have.property('name')
+            .and
+            .equal('John Doe');
+        confirmedUser.should.have.property('photo')
+            .and
+            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
+        confirmedUser.should.have.property('role')
+            .and
+            .equal('USER');
+        confirmedUser.should.have.property('provider')
+            .and
+            .equal('google');
+        confirmedUser.should.have.property('providerId')
+            .and
+            .equal('113994825016233013735');
     });
 
     it('Visiting /auth/google/callback while being logged in with an updated callbackUrl param should redirect to the new callback URL page', async () => {
-        if (skipTests) {
-            return;
-        }
-
-        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.not.exist(missingUser);
 
         nock('https://www.googleapis.com')
             .post('/oauth2/v4/token', {
                 grant_type: 'authorization_code',
-                redirect_uri: `${process.env.PUBLIC_URL}/auth/google/callback`,
-                client_id: process.env.TEST_GOOGLE_OAUTH2_CLIENT_ID,
-                client_secret: 'TEST_GOOGLE_OAUTH2_CLIENT_SECRET',
+                redirect_uri: `${config.get('server.publicUrl')}/auth/google/callback`,
+                client_id: config.get('settings.thirdParty.rw.google.clientID'),
+                client_secret: config.get('settings.thirdParty.rw.google.clientSecret'),
                 code: 'TEST_GOOGLE_OAUTH2_CALLBACK_CODE'
             })
             .reply(200, {
@@ -255,14 +259,27 @@ describe('Google auth endpoint tests', () => {
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.exist(confirmedUser);
-        confirmedUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
-        confirmedUser.should.have.property('name').and.equal('John Doe');
-        confirmedUser.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        confirmedUser.should.have.property('role').and.equal('USER');
-        confirmedUser.should.have.property('provider').and.equal('google');
-        confirmedUser.should.have.property('providerId').and.equal('113994825016233013735');
+        confirmedUser.should.have.property('email')
+            .and
+            .equal('john.doe@vizzuality.com');
+        confirmedUser.should.have.property('name')
+            .and
+            .equal('John Doe');
+        confirmedUser.should.have.property('photo')
+            .and
+            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
+        confirmedUser.should.have.property('role')
+            .and
+            .equal('USER');
+        confirmedUser.should.have.property('provider')
+            .and
+            .equal('google');
+        confirmedUser.should.have.property('providerId')
+            .and
+            .equal('113994825016233013735');
     });
 
     it('Visiting /auth/google/token with a valid Google OAuth token should generate a new token', async () => {
@@ -275,15 +292,30 @@ describe('Google auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const existingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.exist(existingUser);
-        existingUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
-        existingUser.should.have.property('name').and.equal('John Doe');
-        existingUser.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        existingUser.should.have.property('role').and.equal('USER');
-        existingUser.should.have.property('provider').and.equal('google');
-        existingUser.should.have.property('providerId').and.equal('113994825016233013735');
-        existingUser.should.have.property('userToken').and.equal(undefined);
+        existingUser.should.have.property('email')
+            .and
+            .equal('john.doe@vizzuality.com');
+        existingUser.should.have.property('name')
+            .and
+            .equal('John Doe');
+        existingUser.should.have.property('photo')
+            .and
+            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
+        existingUser.should.have.property('role')
+            .and
+            .equal('USER');
+        existingUser.should.have.property('provider')
+            .and
+            .equal('google');
+        existingUser.should.have.property('providerId')
+            .and
+            .equal('113994825016233013735');
+        existingUser.should.have.property('userToken')
+            .and
+            .equal(undefined);
 
         nock('https://www.googleapis.com')
             .get('/oauth2/v1/userinfo')
@@ -307,23 +339,52 @@ describe('Google auth endpoint tests', () => {
         response.status.should.equal(200);
         response.header['content-type'].should.equalIgnoreCase('application/json; charset=utf-8');
         response.body.should.be.an('object');
-        response.body.should.have.property('token').and.be.a('string');
+        response.body.should.have.property('token')
+            .and
+            .be
+            .a('string');
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData: Record<string, any> = JWT.decode(response.body.token) as Record<string, any>;
+        // @ts-ignore
+        const decodedTokenData: Record<string, any> = JWT.verify(response.body.token, process.env.JWT_SECRET);
         const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
-        const userWithToken: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const userWithToken: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+            .exec();
         should.exist(userWithToken);
-        userWithToken.should.have.property('email').and.equal('john.doe@vizzuality.com').and.equal(decodedTokenData.email);
-        userWithToken.should.have.property('name').and.equal('John Doe').and.equal(decodedTokenData.name);
-        userWithToken.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260').and.equal(decodedTokenData.photo);
-        userWithToken.should.have.property('role').and.equal('USER').and.equal(decodedTokenData.role);
-        userWithToken.should.have.property('provider').and.equal('google').and.equal(decodedTokenData.provider);
-        userWithToken.should.have.property('providerId').and.equal('113994825016233013735');
-        userWithToken.should.have.property('userToken').and.equal(response.body.token);
+        userWithToken.should.have.property('email')
+            .and
+            .equal('john.doe@vizzuality.com')
+            .and
+            .equal(decodedTokenData.email);
+        userWithToken.should.have.property('name')
+            .and
+            .equal('John Doe')
+            .and
+            .equal(decodedTokenData.name);
+        userWithToken.should.have.property('photo')
+            .and
+            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260')
+            .and
+            .equal(decodedTokenData.photo);
+        userWithToken.should.have.property('role')
+            .and
+            .equal('USER')
+            .and
+            .equal(decodedTokenData.role);
+        userWithToken.should.have.property('provider')
+            .and
+            .equal('google')
+            .and
+            .equal(decodedTokenData.provider);
+        userWithToken.should.have.property('providerId')
+            .and
+            .equal('113994825016233013735');
+        userWithToken.should.have.property('userToken')
+            .and
+            .equal(response.body.token);
     });
 
     it('Visiting /auth/google/token with a valid Google OAuth token should generate a new token - account with no email address', async () => {
@@ -335,14 +396,27 @@ describe('Google auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser: IUser = await UserModel.findOne({ _id: savedUser.id }).exec();
+        const existingUser: IUser = await UserModel.findOne({ _id: savedUser.id })
+            .exec();
         should.exist(existingUser);
-        existingUser.should.have.property('name').and.equal('John Doe');
-        existingUser.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        existingUser.should.have.property('role').and.equal('USER');
-        existingUser.should.have.property('provider').and.equal('google');
-        existingUser.should.have.property('providerId').and.equal('113994825016233013735');
-        existingUser.should.have.property('userToken').and.equal(undefined);
+        existingUser.should.have.property('name')
+            .and
+            .equal('John Doe');
+        existingUser.should.have.property('photo')
+            .and
+            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
+        existingUser.should.have.property('role')
+            .and
+            .equal('USER');
+        existingUser.should.have.property('provider')
+            .and
+            .equal('google');
+        existingUser.should.have.property('providerId')
+            .and
+            .equal('113994825016233013735');
+        existingUser.should.have.property('userToken')
+            .and
+            .equal(undefined);
 
         nock('https://www.googleapis.com')
             .get('/oauth2/v1/userinfo')
@@ -365,22 +439,47 @@ describe('Google auth endpoint tests', () => {
         response.status.should.equal(200);
         response.header['content-type'].should.equalIgnoreCase('application/json; charset=utf-8');
         response.body.should.be.an('object');
-        response.body.should.have.property('token').and.be.a('string');
+        response.body.should.have.property('token')
+            .and
+            .be
+            .a('string');
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const decodedTokenData: Record<string, any> = JWT.decode(response.body.token) as Record<string, any>;
+        // @ts-ignore
+        const decodedTokenData: Record<string, any> = JWT.verify(response.body.token, process.env.JWT_SECRET);
         const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
-        const userWithToken: IUser = await UserModel.findOne({ _id: savedUser.id }).exec();
+        const userWithToken: IUser = await UserModel.findOne({ _id: savedUser.id })
+            .exec();
         should.exist(userWithToken);
-        userWithToken.should.have.property('name').and.equal('John Doe').and.equal(decodedTokenData.name);
-        userWithToken.should.have.property('photo').and.equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260').and.equal(decodedTokenData.photo);
-        userWithToken.should.have.property('role').and.equal('USER').and.equal(decodedTokenData.role);
-        userWithToken.should.have.property('provider').and.equal('google').and.equal(decodedTokenData.provider);
-        userWithToken.should.have.property('providerId').and.equal('113994825016233013735');
-        userWithToken.should.have.property('userToken').and.equal(response.body.token);
+        userWithToken.should.have.property('name')
+            .and
+            .equal('John Doe')
+            .and
+            .equal(decodedTokenData.name);
+        userWithToken.should.have.property('photo')
+            .and
+            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260')
+            .and
+            .equal(decodedTokenData.photo);
+        userWithToken.should.have.property('role')
+            .and
+            .equal('USER')
+            .and
+            .equal(decodedTokenData.role);
+        userWithToken.should.have.property('provider')
+            .and
+            .equal('google')
+            .and
+            .equal(decodedTokenData.provider);
+        userWithToken.should.have.property('providerId')
+            .and
+            .equal('113994825016233013735');
+        userWithToken.should.have.property('userToken')
+            .and
+            .equal(response.body.token);
     });
 
     afterEach(() => {
@@ -388,7 +487,8 @@ describe('Google auth endpoint tests', () => {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        UserModel.deleteMany({}).exec();
+        UserModel.deleteMany({})
+            .exec();
 
         closeTestAgent();
     });

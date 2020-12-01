@@ -141,80 +141,80 @@ export default class Settings {
                 rw: {confirmUrlRedirect: config.get('settings.local.rw.confirmUrlRedirect')},
                 prep: {confirmUrlRedirect: config.get('settings.local.prep.confirmUrlRedirect')}
             },
-            publicUrl: process.env.PUBLIC_URL,
+            publicUrl: config.get('server.publicUrl'),
             defaultApp: config.get('settings.defaultApp'),
             thirdParty: {
-                "rw": {
-                    "facebook": {
-                        "scope": ["email"],
-                        "clientSecret": config.get('settings.thirdParty.rw.facebook.clientSecret'),
-                        "clientID": config.get('settings.thirdParty.rw.facebook.clientID'),
-                        "active": config.get('settings.thirdParty.rw.facebook.active')
+                rw: {
+                    facebook: {
+                        scope: ["email"],
+                        clientSecret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
+                        clientID: config.get('settings.thirdParty.rw.facebook.clientID'),
+                        active: config.get('settings.thirdParty.rw.facebook.active')
                     },
-                    "google": {
-                        "scope": [
+                    google: {
+                        scope: [
                             "https://www.googleapis.com/auth/plus.me",
                             "https://www.googleapis.com/auth/userinfo.email"
                         ],
-                        "clientSecret": config.get('settings.thirdParty.rw.google.clientSecret'),
-                        "clientID": config.get('settings.thirdParty.rw.google.clientID'),
-                        "active": config.get('settings.thirdParty.rw.google.active')
+                        clientSecret: config.get('settings.thirdParty.rw.google.clientSecret'),
+                        clientID: config.get('settings.thirdParty.rw.google.clientID'),
+                        active: config.get('settings.thirdParty.rw.google.active')
                     },
-                    "twitter": {
-                        "consumerSecret": config.get('settings.thirdParty.rw.twitter.consumerSecret'),
-                        "consumerKey": config.get('settings.thirdParty.rw.twitter.consumerKey'),
-                        "active": config.get('settings.thirdParty.rw.twitter.active')
+                    twitter: {
+                        consumerSecret: config.get('settings.thirdParty.rw.twitter.consumerSecret'),
+                        consumerKey: config.get('settings.thirdParty.rw.twitter.consumerKey'),
+                        active: config.get('settings.thirdParty.rw.twitter.active')
                     }
                 },
-                "gfw": {
-                    "facebook": {
-                        "scope": ["email"],
-                        "clientSecret": process.env.GFW_FACEBOOK_CLIENT_SECRET,
-                        "clientID": process.env.GFW_FACEBOOK_CLIENT_ID,
-                        "active": config.get('settings.thirdParty.gfw.facebook.active')
+                gfw: {
+                    facebook: {
+                        scope: ["email"],
+                        clientSecret: process.env.GFW_FACEBOOK_CLIENT_SECRET,
+                        clientID: process.env.GFW_FACEBOOK_CLIENT_ID,
+                        active: config.get('settings.thirdParty.gfw.facebook.active')
                     },
-                    "google": {
-                        "scope": [
+                    google: {
+                        scope: [
                             "https://www.googleapis.com/auth/plus.me",
                             "https://www.googleapis.com/auth/userinfo.email"
                         ],
-                        "clientSecret": process.env.GFW_GOOGLE_CLIENT_SECRET,
-                        "clientID": process.env.GFW_GOOGLE_CLIENT_ID,
-                        "active": config.get('settings.thirdParty.gfw.google.active')
+                        clientSecret: process.env.GFW_GOOGLE_CLIENT_SECRET,
+                        clientID: process.env.GFW_GOOGLE_CLIENT_ID,
+                        active: config.get('settings.thirdParty.gfw.google.active')
                     },
-                    "apple": {
-                        "active": config.get('settings.thirdParty.gfw.apple.active'),
-                        "teamId": process.env.GFW_APPLE_TEAM_ID,
-                        "keyId": process.env.GFW_APPLE_KEY_ID,
-                        "clientId": process.env.GFW_APPLE_CLIENT_ID,
-                        "privateKeyString": process.env.GFW_APPLE_PRIVATE_KEY,
+                    apple: {
+                        active: config.get('settings.thirdParty.gfw.apple.active'),
+                        teamId: process.env.GFW_APPLE_TEAM_ID,
+                        keyId: process.env.GFW_APPLE_KEY_ID,
+                        clientId: process.env.GFW_APPLE_CLIENT_ID,
+                        privateKeyString: process.env.GFW_APPLE_PRIVATE_KEY,
                     },
-                    "twitter": {
-                        "consumerSecret": config.get('settings.thirdParty.gfw.twitter.consumerSecret'),
-                        "consumerKey": config.get('settings.thirdParty.gfw.twitter.consumerKey'),
-                        "active": config.get('settings.thirdParty.gfw.twitter.active')
+                    twitter: {
+                        consumerSecret: config.get('settings.thirdParty.gfw.twitter.consumerSecret'),
+                        consumerKey: config.get('settings.thirdParty.gfw.twitter.consumerKey'),
+                        active: config.get('settings.thirdParty.gfw.twitter.active')
                     }
                 },
-                "prep": {
-                    "facebook": {
-                        "scope": ["email"],
-                        "clientSecret": process.env.PREP_FACEBOOK_CLIENT_SECRET,
-                        "clientID": process.env.PREP_FACEBOOK_CLIENT_ID,
-                        "active": config.get('settings.thirdParty.prep.facebook.active')
+                prep: {
+                    facebook: {
+                        scope: ["email"],
+                        clientSecret: process.env.PREP_FACEBOOK_CLIENT_SECRET,
+                        clientID: process.env.PREP_FACEBOOK_CLIENT_ID,
+                        active: config.get('settings.thirdParty.prep.facebook.active')
                     },
-                    "google": {
-                        "scope": [
+                    google: {
+                        scope: [
                             "https://www.googleapis.com/auth/plus.me",
                             "https://www.googleapis.com/auth/userinfo.email"
                         ],
-                        "clientSecret": process.env.PREP_GOOGLE_CLIENT_SECRET,
-                        "clientID": process.env.PREP_GOOGLE_CLIENT_ID,
-                        "active": config.get('settings.thirdParty.prep.google.active')
+                        clientSecret: process.env.PREP_GOOGLE_CLIENT_SECRET,
+                        clientID: process.env.PREP_GOOGLE_CLIENT_ID,
+                        active: config.get('settings.thirdParty.prep.google.active')
                     },
-                    "twitter": {
-                        "consumerSecret": config.get('settings.thirdParty.prep.twitter.consumerSecret'),
-                        "consumerKey": config.get('settings.thirdParty.prep.twitter.consumerKey'),
-                        "active": config.get('settings.thirdParty.prep.twitter.active')
+                    twitter: {
+                        consumerSecret: config.get('settings.thirdParty.prep.twitter.consumerSecret'),
+                        consumerKey: config.get('settings.thirdParty.prep.twitter.consumerKey'),
+                        active: config.get('settings.thirdParty.prep.twitter.active')
                     }
                 }
             }

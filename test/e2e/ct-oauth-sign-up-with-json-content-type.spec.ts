@@ -2,6 +2,7 @@ import nock from 'nock';
 import chai from 'chai';
 import { isEqual } from 'lodash';
 
+import config from 'config';
 import UserModel, { IUser } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
@@ -111,7 +112,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlConfirm').and.include(`${process.env.PUBLIC_URL}/auth/confirm/`);
+                body.substitution_data.should.have.property('urlConfirm').and.include(`${config.get('server.publicUrl')}/auth/confirm/`);
 
                 delete body.substitution_data.urlConfirm;
 
@@ -248,7 +249,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlConfirm').and.include(`${process.env.PUBLIC_URL}/auth/confirm/`);
+                body.substitution_data.should.have.property('urlConfirm').and.include(`${config.get('server.publicUrl')}/auth/confirm/`);
 
                 delete body.substitution_data.urlConfirm;
 
@@ -313,7 +314,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
                 };
 
                 body.should.have.property('substitution_data').and.be.an('object');
-                body.substitution_data.should.have.property('urlConfirm').and.include(`${process.env.PUBLIC_URL}/auth/confirm/`);
+                body.substitution_data.should.have.property('urlConfirm').and.include(`${config.get('server.publicUrl')}/auth/confirm/`);
 
                 delete body.substitution_data.urlConfirm;
 
