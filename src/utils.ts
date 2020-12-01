@@ -1,5 +1,5 @@
 import config from 'config';
-import { Context, Middleware, Next } from "koa";
+import { Context, Next } from "koa";
 
 import logger from 'logger';
 import Settings, { IApplication } from "services/settings.service";
@@ -24,7 +24,7 @@ export default class Utils {
 
     static async isAdmin(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin');
-        const user:IUser = Utils.getUser(ctx);
+        const user: IUser = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -41,7 +41,7 @@ export default class Utils {
 
     static async isAdminOrManager(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin or manager');
-        const user:IUser = Utils.getUser(ctx);
+        const user: IUser = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -57,7 +57,7 @@ export default class Utils {
 
     static async isMicroservice(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is a microservice');
-        const user:IUser = Utils.getUser(ctx);
+        const user: IUser = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -98,7 +98,7 @@ export default class Utils {
     }
 
     static getApplicationsConfig(ctx: Context): IApplication {
-        const app:string = Utils.getOriginApp(ctx);
+        const app: string = Utils.getOriginApp(ctx);
         return Settings.getSettings().applications && Settings.getSettings().applications[app];
     }
 

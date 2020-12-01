@@ -123,7 +123,7 @@ export default class UserService {
         return UserModel.paginate(filteredQuery, paginationOptions);
     }
 
-    static async getUser(conditions:Record<string, any>): Promise<IUser> {
+    static async getUser(conditions: Record<string, any>): Promise<IUser> {
         return UserModel.findOne(conditions).exec();
     }
 
@@ -410,12 +410,12 @@ export default class UserService {
         return user;
     }
 
-    static async migrateToUsernameAndPassword(user:IUser, email:string, password:string):Promise<IUser> {
+    static async migrateToUsernameAndPassword(user: IUser, email: string, password: string): Promise<IUser> {
         if (!user) {
             return null;
         }
 
-        const salt:string = bcrypt.genSaltSync();
+        const salt: string = bcrypt.genSaltSync();
 
         user.provider = 'local';
         delete user.providerId;

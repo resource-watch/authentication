@@ -52,7 +52,7 @@ interface IBasicAuth {
     active: boolean;
 }
 
-interface ILocalAuth extends Record<string,any> {
+interface ILocalAuth extends Record<string, any> {
     confirmUrlRedirect: string;
     sparkpostKey: string;
     active: boolean;
@@ -137,9 +137,9 @@ export default class Settings {
                 confirmUrlRedirect: config.get('settings.local.confirmUrlRedirect'),
                 sparkpostKey: process.env.SPARKPOST_KEY,
                 active: true,
-                gfw: {confirmUrlRedirect: config.get('settings.local.gfw.confirmUrlRedirect')},
-                rw: {confirmUrlRedirect: config.get('settings.local.rw.confirmUrlRedirect')},
-                prep: {confirmUrlRedirect: config.get('settings.local.prep.confirmUrlRedirect')}
+                gfw: { confirmUrlRedirect: config.get('settings.local.gfw.confirmUrlRedirect') },
+                rw: { confirmUrlRedirect: config.get('settings.local.rw.confirmUrlRedirect') },
+                prep: { confirmUrlRedirect: config.get('settings.local.prep.confirmUrlRedirect') }
             },
             publicUrl: config.get('server.publicUrl'),
             defaultApp: config.get('settings.defaultApp'),

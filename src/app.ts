@@ -18,9 +18,9 @@ import { loadRoutes } from 'loader';
 import ErrorSerializer from 'serializers/errorSerializer';
 import mongooseDefaultOptions, { MongooseOptions } from '../config/mongoose';
 
-const mongoUri:string = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
+const mongoUri: string = process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`;
 
-let retries:number = 10;
+let retries: number = 10;
 
 let mongooseOptions: MongooseOptions = { ...mongooseDefaultOptions };
 if (mongoUri.indexOf('replicaSet') > -1) {
@@ -50,7 +50,7 @@ interface IInit {
     app: Koa;
 }
 
-const init:() => Promise<IInit> = async ():Promise<IInit> => {
+const init: () => Promise<IInit> = async (): Promise<IInit> => {
     return new Promise((resolve, reject) => {
         async function onDbReady(err: Error): Promise<void> {
             if (err) {
@@ -68,7 +68,7 @@ const init:() => Promise<IInit> = async ():Promise<IInit> => {
                 return;
             }
 
-            const app:Koa = new Koa();
+            const app: Koa = new Koa();
 
             app.use(koaBody({
                 multipart: true,
@@ -115,7 +115,7 @@ const init:() => Promise<IInit> = async ():Promise<IInit> => {
             app.use(koaLogger());
             await loadRoutes(app);
 
-            const server:Server = app.listen(process.env.PORT);
+            const server: Server = app.listen(process.env.PORT);
             logger.info('Server started in ', process.env.PORT);
             resolve({ app, server });
         }

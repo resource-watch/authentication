@@ -233,7 +233,7 @@ async function updateMe(ctx: Context): Promise<void> {
     ctx.body = UserSerializer.serialize(userUpdate);
 }
 
-async function deleteUser(ctx: Context, next:Next): Promise<void> {
+async function deleteUser(ctx: Context, next: Next): Promise<void> {
     logger.info(`Delete user with id ${ctx.params.id}`);
     ctx.assert(ctx.params.id, 400, 'Id param required');
 

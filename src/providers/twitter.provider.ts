@@ -9,8 +9,9 @@ import { IUser } from "models/user.model";
 import NoTwitterAccountError from "errors/noTwitterAccount.error";
 import { Strategy } from "passport";
 import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
+import BaseProvider from "./base.provider";
 
-export class TwitterProvider {
+export class TwitterProvider extends BaseProvider {
 
     static async registerUserBasicTwitter(
         accessToken: string,
@@ -97,38 +98,6 @@ export class TwitterProvider {
         await passport.authenticate(`twitter:${app}`, {
             failureRedirect: '/auth/fail',
         })(ctx, next);
-    }
-
-    static async updateApplications(ctx: Context): Promise<void> {
-        try {
-            if (ctx.session && ctx.session.applications) {
-                let user: IUser = Utils.getUser(ctx);
-                if (user.role === 'USER') {
-                    user = await UserService.updateApplicationsForUser(user.id, ctx.session.applications);
-                } else {
-                    user = await UserService.getUserById(user.id);
-                }
-                delete ctx.session.applications;
-                if (user) {
-                    await ctx.login({
-                        id: user._id,
-                        provider: user.provider,
-                        providerId: user.providerId,
-                        role: user.role,
-                        createdAt: user.createdAt,
-                        extraUserData: user.extraUserData,
-                        email: user.email,
-                        photo: user.photo,
-                        name: user.name
-                    });
-                }
-            }
-            ctx.redirect('/auth/success');
-        } catch (err) {
-            logger.info(err);
-            ctx.redirect('/auth/fail');
-        }
-
     }
 }
 

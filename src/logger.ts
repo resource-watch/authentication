@@ -19,7 +19,7 @@ if (config.get('logger.toFile')) {
     });
 }
 
-const logger:Logger = bunyan.createLogger({
+const logger: Logger = bunyan.createLogger({
     name: config.get('logger.name'),
     src: true,
     streams,

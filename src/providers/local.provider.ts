@@ -19,8 +19,9 @@ import bcrypt from "bcrypt";
 import { Strategy } from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import { BasicStrategy } from "passport-http";
+import BaseProvider from "./base.provider";
 
-export class LocalProvider {
+export class LocalProvider extends BaseProvider {
 
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         logger.info('[passportService] Registering user', profile);
@@ -174,21 +175,6 @@ export class LocalProvider {
                     .catch(() => ctx.redirect('/auth/fail?error=true'));
             }
         })(ctx, next);
-    }
-
-    static async createToken(ctx: Context, createInUser: boolean): Promise<string> {
-        logger.info('Generating token');
-        return UserService.createToken(Utils.getUser(ctx), createInUser);
-    }
-
-    static async generateJWT(ctx: Context): Promise<void> {
-        logger.info('Generating token');
-        try {
-            const token: string = await LocalProvider.createToken(ctx, true);
-            ctx.body = { token };
-        } catch (e) {
-            logger.info(e);
-        }
     }
 
     static async checkLogged(ctx: Context): Promise<void> {

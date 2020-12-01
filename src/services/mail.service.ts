@@ -7,7 +7,7 @@ export default class MailService {
     private client: SparkPost;
     private publicUrl: string;
 
-    async setup():Promise<void> {
+    async setup(): Promise<void> {
         if (Settings.getSettings().local.sparkpostKey) {
             this.client = new SparkPost(Settings.getSettings().local.sparkpostKey);
         }
@@ -20,7 +20,7 @@ export default class MailService {
         generalConfig: Record<string, any>
     ): Promise<any> {
         logger.info('[MailService] Sending confirmation mail to ', recipients);
-        const reqOpts:SparkPost.CreateTransmission = {
+        const reqOpts: SparkPost.CreateTransmission = {
             substitution_data: {
                 urlConfirm: `${this.publicUrl}/auth/confirm/${data.confirmationToken}`,
                 fromEmail: generalConfig.application.emailSender,
@@ -52,7 +52,7 @@ export default class MailService {
         generalConfig: Record<string, any>
     ): Promise<any> {
         logger.info('[MailService] Sending confirmation mail to ', recipients);
-        const reqOpts:SparkPost.CreateTransmission = {
+        const reqOpts: SparkPost.CreateTransmission = {
             substitution_data: {
                 urlConfirm: `${this.publicUrl}/auth/confirm/${data.confirmationToken}?${data.callbackUrl ? `callbackUrl=${data.callbackUrl}` : ''}`,
                 password: data.password,
@@ -86,7 +86,7 @@ export default class MailService {
         originApp: string
     ): Promise<any> {
         logger.info('[MailService] Sending confirmation mail to ', recipients);
-        const reqOpts:SparkPost.CreateTransmission = {
+        const reqOpts: SparkPost.CreateTransmission = {
             substitution_data: {
                 urlRecover: `${this.publicUrl}/auth/reset-password/${data.token}?origin=${originApp}`,
                 fromEmail: generalConfig.application.emailSender,

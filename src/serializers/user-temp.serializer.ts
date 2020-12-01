@@ -15,7 +15,7 @@ export default class UserTempSerializer {
         };
     }
 
-    static serialize(data: IUserTemp|IUserTemp[]): ISerializedResponse {
+    static serialize(data: IUserTemp | IUserTemp[]): ISerializedResponse {
         const result: ISerializedResponse = { data: undefined };
 
         if (data && Array.isArray(data) && data.length === 0) {

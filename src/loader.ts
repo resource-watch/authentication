@@ -25,7 +25,7 @@ export async function loadRoutes(app: Application): Promise<void> {
     app.use(passport.initialize());
     app.use(passport.session());
 
-    const getToken:(ctx: Context, opts: Options) => string = (ctx: Context, opts: Options) => {
+    const getToken: (ctx: Context, opts: Options) => string = (ctx: Context, opts: Options) => {
         // External requests use the standard 'authorization' header, but internal requests use 'authentication' instead
         // so we need a custom function to load the token. Why don't we use authorization on both will always elude me...
 
@@ -37,11 +37,11 @@ export async function loadRoutes(app: Application): Promise<void> {
             return ctx.headers.authentication;
         }
 
-        const parts:string[] = ctx.headers.authorization.split(' ');
+        const parts: string[] = ctx.headers.authorization.split(' ');
 
         if (parts.length === 2) {
-            const scheme:string = parts[0];
-            const credentials:string = parts[1];
+            const scheme: string = parts[0];
+            const credentials: string = parts[1];
 
             if (/^Bearer$/i.test(scheme)) {
                 return credentials;

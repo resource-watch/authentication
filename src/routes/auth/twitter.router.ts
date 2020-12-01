@@ -6,11 +6,11 @@ import UserService from "services/user.service";
 import { IUser } from "models/user.model";
 import { Context, Next } from "koa";
 
-const router:Router = new Router({ prefix: '/auth/twitter' });
+const router: Router = new Router({ prefix: '/auth/twitter' });
 
 const getUser: (ctx: Context) => IUser = (ctx: Context) => ctx.request.query.user || ctx.state.user;
 
-const getOriginApp:(ctx: Context, config: ISettings) => string = (ctx: Context, config: ISettings) => {
+const getOriginApp: (ctx: Context, config: ISettings) => string = (ctx: Context, config: ISettings) => {
     if (ctx.query.origin) {
         return ctx.query.origin;
     }
@@ -24,41 +24,41 @@ const getOriginApp:(ctx: Context, config: ISettings) => string = (ctx: Context, 
 
 class TwitterRouter {
 
-    static async redirectStart(ctx: Context):Promise<void> {
+    static async redirectStart(ctx: Context): Promise<void> {
         ctx.redirect('/auth/twitter/start');
     }
 
-    static async startMigration(ctx: Context):Promise<void> {
+    static async startMigration(ctx: Context): Promise<void> {
         return ctx.render('start', {
             error: false,
             generalConfig: ctx.state.generalConfig,
         });
     }
 
-    static async twitter(ctx: Context, next: Next):Promise<void> {
-        const app:string = getOriginApp(ctx, Settings.getSettings());
+    static async twitter(ctx: Context, next: Next): Promise<void> {
+        const app: string = getOriginApp(ctx, Settings.getSettings());
         // @ts-ignore
         await passport.authenticate(`twitter:${app}`)(ctx, next);
     }
 
-    static async twitterCallbackAuthentication(ctx: Context, next: Next):Promise<void> {
-        const app:string = getOriginApp(ctx, Settings.getSettings());
+    static async twitterCallbackAuthentication(ctx: Context, next: Next): Promise<void> {
+        const app: string = getOriginApp(ctx, Settings.getSettings());
         // @ts-ignore
         await passport.authenticate(`twitter:${app}`, { failureRedirect: '/auth/fail' })(ctx, next);
     }
 
-    static async redirectToMigrate(ctx: Context):Promise<void> {
+    static async redirectToMigrate(ctx: Context): Promise<void> {
         await ctx.login(getUser(ctx));
         ctx.redirect('/auth/twitter/migrate');
     }
 
-    static async migrateView(ctx: Context):Promise<void> {
+    static async migrateView(ctx: Context): Promise<void> {
         if (!ctx.session) {
             logger.info('No session found. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
         }
 
-        const user:IUser = getUser(ctx);
+        const user: IUser = getUser(ctx);
         if (!user) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
@@ -71,20 +71,20 @@ class TwitterRouter {
         });
     }
 
-    static async migrate(ctx: Context):Promise<void> {
+    static async migrate(ctx: Context): Promise<void> {
         if (!ctx.session) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
         }
 
-        const sessionUser:IUser = getUser(ctx);
+        const sessionUser: IUser = getUser(ctx);
         if (!sessionUser) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
         }
 
         logger.info('Migrating user');
-        let error:string = null;
+        let error: string = null;
         if (!ctx.request.body.email || !ctx.request.body.password || !ctx.request.body.repeatPassword) {
             error = 'Email, Password and Repeat password are required';
         }
@@ -107,7 +107,7 @@ class TwitterRouter {
             error = 'Could not find a valid user account for the current session';
         }
 
-        const migratedUser:IUser = await UserService.migrateToUsernameAndPassword(user, ctx.request.body.email, ctx.request.body.password);
+        const migratedUser: IUser = await UserService.migrateToUsernameAndPassword(user, ctx.request.body.email, ctx.request.body.password);
 
         if (error) {
             await ctx.render('migrate', {
@@ -124,13 +124,13 @@ class TwitterRouter {
         return ctx.redirect('/auth/twitter/finished');
     }
 
-    static async finished(ctx: Context):Promise<void> {
+    static async finished(ctx: Context): Promise<void> {
         if (!ctx.session) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
         }
 
-        const sessionUser:IUser = getUser(ctx);
+        const sessionUser: IUser = getUser(ctx);
         if (!sessionUser) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
@@ -141,7 +141,7 @@ class TwitterRouter {
         });
     }
 
-    static async failAuth(ctx: Context):Promise<void> {
+    static async failAuth(ctx: Context): Promise<void> {
         logger.info('Not authenticated');
 
         return ctx.render('start', {
@@ -152,10 +152,10 @@ class TwitterRouter {
 }
 
 async function loadApplicationGeneralConfig(ctx: Context, next: Next): Promise<void> {
-    const config:ISettings = await Settings.getSettings();
+    const config: ISettings = await Settings.getSettings();
 
-    const app:string = getOriginApp(ctx, config);
-    const applicationConfig:IApplication = config.applications && config.applications[app];
+    const app: string = getOriginApp(ctx, config);
+    const applicationConfig: IApplication = config.applications && config.applications[app];
 
     if (applicationConfig) {
         ctx.state.application = applicationConfig;
