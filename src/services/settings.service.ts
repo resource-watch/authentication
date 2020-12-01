@@ -63,7 +63,6 @@ export interface IThirdPartyAuth {
 
 export interface ISettings {
     applications: Record<string, IApplication>;
-    allowPublicRegistration: boolean;
     publicUrl: string;
     jwt: IJwtAuth;
     local: ILocalAuth;
@@ -118,7 +117,6 @@ export default class Settings {
                     confirmUrlRedirect: "https://www.wri.org/our-work/project/forest-atlases"
                 }
             },
-            allowPublicRegistration: config.get('settings.allowPublicRegistration'),
             jwt: {
                 expiresInMinutes: 0.0,
                 passthrough: true,

@@ -34,21 +34,10 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         await UserTempModel.deleteMany({}).exec();
     });
 
-    it('Registering a user without being logged in returns an 401 error (JSON format)', async () => {
-        const response: request.Response = await requester.post(`/auth/sign-up`);
-        response.status.should.equal(401);
-        response.should.be.json;
-        response.body.should.have.property('errors').and.be.an('array');
-        response.body.errors[0].should.have.property('detail').and.equal(`Not authenticated`);
-    });
-
     it('Registering a user without the actual data returns a 200 error (TODO: this should return a 422)', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
-
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
-            .type('form')
-            .set('Authorization', `Bearer ${token}`);
+            .type('form');
 
         response.status.should.equal(200);
         response.text.should.include('Email, Password and Repeat password are required');

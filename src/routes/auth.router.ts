@@ -64,18 +64,6 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: Next): Promi
     await next();
 }
 
-async function hasSignUpPermissions(ctx: Context, next: Next): Promise<void> {
-    if (!Settings.getSettings().allowPublicRegistration) {
-        await Utils.isLogged(ctx, () => {
-            return new Promise(resolve => resolve(null));
-        });
-        await Utils.isAdmin(ctx, () => {
-            return new Promise(resolve => resolve(null));
-        });
-    }
-    await next();
-}
-
 const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
 router.get('/google', setCallbackUrl, GoogleProvider.google);
@@ -105,9 +93,9 @@ router.get('/success', loadApplicationGeneralConfig, LocalProvider.success);
 router.get('/logout', setCallbackUrlOnlyWithQueryParam, LocalProvider.logout);
 
 // @ts-ignore
-router.get('/sign-up', hasSignUpPermissions, loadApplicationGeneralConfig, LocalProvider.getSignUp);
+router.get('/sign-up', loadApplicationGeneralConfig, LocalProvider.getSignUp);
 // @ts-ignore
-router.post('/sign-up', hasSignUpPermissions, loadApplicationGeneralConfig, LocalProvider.signUp);
+router.post('/sign-up', loadApplicationGeneralConfig, LocalProvider.signUp);
 
 // @ts-ignore
 router.get('/confirm/:token', LocalProvider.confirmUser);
