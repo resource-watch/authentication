@@ -10,6 +10,7 @@ import Settings, { IApplication } from "services/settings.service";
 import FacebookProvider from "../providers/facebook.provider";
 import GoogleProvider from "../providers/google.provider";
 import AppleProvider from "../providers/apple.provider";
+import config from "config";
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     logger.info('Setting callbackUrl');
@@ -34,7 +35,9 @@ async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
 }
 
 async function loadApplicationGeneralConfig(ctx: Context, next: Next): Promise<void> {
-    const generalConfig: { mongoUri: string, application: string } = Utils.getGeneralConfig();
+    const generalConfig: { application: string } = {
+        application: config.get('application')
+    };
 
     ctx.state.generalConfig = cloneDeep(generalConfig); // avoiding a bug when changes in DB are not applied
     const applicationConfig: IApplication = Utils.getApplicationsConfig(ctx);

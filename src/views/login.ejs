@@ -75,9 +75,7 @@
                                 <input type="password" name="password" placeholder="Password" required >
                             </label >
                             <button class="button" type="submit" >Login</button >
-                            <% if (allowPublicRegistration) { %>
-                                <a class="register" href="/auth/sign-up" >Register</a >
-                            <% } %>
+                            <a class="register" href="/auth/sign-up" >Register</a >
                             <a class="recover" href="/auth/reset-password" >Recover password</a >
                         </form >
                         <% if (thirdParty.twitter || thirdParty.google || thirdParty.facebook || thirdParty.basic) { %>
@@ -93,9 +91,8 @@
                                 <% if (thirdParty.google) { %>
                                     <a href="/auth/google" ><i class="fa fa-google-plus" aria-hidden="true" ></i >Google</a >
                                 <% } %>
-                                <% if (thirdParty.basic) { %>
-                                    <a href="/auth/basic" ><i class="fa fa-google-plus"
-                                                              aria-hidden="true" ></i >Basic</a >
+                                <% if (thirdParty.apple) { %>
+                                    <a href="/auth/apple" ><i class="fa fa-apple" aria-hidden="true" ></i >Apple</a >
                                 <% } %>
                             </div >
                         <% } %>
@@ -103,7 +100,6 @@
 
                 </div >
             </div >
-            <!-- <a href="/auth/twitter">Twitter</a> -->
         </div >
     </div >
 </div >

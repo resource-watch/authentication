@@ -81,23 +81,6 @@ export class LocalProvider extends BaseProvider {
         });
     }
 
-    static async registerUserBasic(userId: string, password: string, done: (error: any, user?: any) => void): Promise<void> {
-        try {
-            logger.info('[passportService] Verifying basic auth');
-            if (userId === Settings.getSettings().basic.userId && password === Settings.getSettings().basic.password) {
-                done(null, {
-                    id: '57ab3917d1d5fb2f00b20f2d',
-                    provider: 'basic',
-                    role: Settings.getSettings().basic.role,
-                });
-            } else {
-                done(null, false);
-            }
-        } catch (e) {
-            logger.info(e);
-        }
-    }
-
     static registerStrategies(): void {
         passport.serializeUser((user, done) => {
             done(null, user);
@@ -136,13 +119,6 @@ export class LocalProvider extends BaseProvider {
             }, login);
             passport.use(localStrategy);
         }
-
-        if (Settings.getSettings().basic && Settings.getSettings().basic.active) {
-            logger.info('[passportService] Loading basic strategy');
-            const basicStrategy: BasicStrategy = new BasicStrategy(LocalProvider.registerUserBasic);
-            passport.use(basicStrategy);
-        }
-
     }
 
     static async localCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
@@ -413,17 +389,15 @@ export class LocalProvider extends BaseProvider {
             thirdParty.facebook = appConfig.facebook.active;
         }
 
-        if (Settings.getSettings().basic && Settings.getSettings().basic.active) {
-            thirdParty.basic = Settings.getSettings().basic.active;
+        if (appConfig.apple && appConfig.apple.active) {
+            thirdParty.apple = appConfig.apple.active;
         }
 
-        const { allowPublicRegistration } = Settings.getSettings();
         if (ctx.query.error) {
             await ctx.render('login', {
                 error: true,
                 thirdParty,
-                generalConfig: ctx.state.generalConfig,
-                allowPublicRegistration
+                generalConfig: ctx.state.generalConfig
             });
         } else {
             ctx.throw(401, 'Not authenticated');
@@ -570,17 +544,11 @@ export class LocalProvider extends BaseProvider {
             thirdParty.facebook = Settings.getSettings().thirdParty[originApp].facebook.active;
         }
 
-        if (Settings.getSettings().basic && Settings.getSettings().basic.active) {
-            thirdParty.basic = Settings.getSettings().basic.active;
-        }
-
-        const { allowPublicRegistration } = Settings.getSettings();
         logger.info(thirdParty);
         await ctx.render('login', {
             error: false,
             thirdParty,
-            generalConfig: ctx.state.generalConfig,
-            allowPublicRegistration
+            generalConfig: ctx.state.generalConfig
         });
     }
 

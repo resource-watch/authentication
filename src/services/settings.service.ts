@@ -45,13 +45,6 @@ interface IJwtAuth {
     active: boolean;
 }
 
-interface IBasicAuth {
-    role: string;
-    password: string;
-    userId: string;
-    active: boolean;
-}
-
 interface ILocalAuth extends Record<string, any> {
     confirmUrlRedirect: string;
     sparkpostKey: string;
@@ -73,15 +66,20 @@ export interface ISettings {
     allowPublicRegistration: boolean;
     publicUrl: string;
     jwt: IJwtAuth;
-    basic: IBasicAuth;
     local: ILocalAuth;
     defaultApp: string;
     thirdParty: Record<string, IThirdPartyAuth>;
 }
 
 export default class Settings {
+    private static settings:ISettings = null;
+
     static getSettings(): ISettings {
-        return {
+        if (Settings.settings && process.env.NODE_ENV !== 'test') {
+            return Settings.settings;
+        }
+
+        Settings.settings = {
             applications: {
                 rw: {
                     name: "RW API",
@@ -124,18 +122,12 @@ export default class Settings {
             jwt: {
                 expiresInMinutes: 0.0,
                 passthrough: true,
-                secret: process.env.JWT_SECRET,
+                secret: config.get('jwt.token'),
                 active: true
-            },
-            basic: {
-                role: "ADMIN",
-                password: process.env.BASICAUTH_PASSWORD,
-                userId: "vizzuality",
-                active: false
             },
             local: {
                 confirmUrlRedirect: config.get('settings.local.confirmUrlRedirect'),
-                sparkpostKey: process.env.SPARKPOST_KEY,
+                sparkpostKey: config.get('settings.local.sparkpostKey'),
                 active: true,
                 gfw: { confirmUrlRedirect: config.get('settings.local.gfw.confirmUrlRedirect') },
                 rw: { confirmUrlRedirect: config.get('settings.local.rw.confirmUrlRedirect') },
@@ -169,8 +161,8 @@ export default class Settings {
                 gfw: {
                     facebook: {
                         scope: ["email"],
-                        clientSecret: process.env.GFW_FACEBOOK_CLIENT_SECRET,
-                        clientID: process.env.GFW_FACEBOOK_CLIENT_ID,
+                        clientSecret: config.get('settings.thirdParty.gfw.facebook.clientSecret'),
+                        clientID: config.get('settings.thirdParty.gfw.facebook.clientID'),
                         active: config.get('settings.thirdParty.gfw.facebook.active')
                     },
                     google: {
@@ -178,16 +170,16 @@ export default class Settings {
                             "https://www.googleapis.com/auth/plus.me",
                             "https://www.googleapis.com/auth/userinfo.email"
                         ],
-                        clientSecret: process.env.GFW_GOOGLE_CLIENT_SECRET,
-                        clientID: process.env.GFW_GOOGLE_CLIENT_ID,
+                        clientSecret: config.get('settings.thirdParty.gfw.google.clientSecret'),
+                        clientID: config.get('settings.thirdParty.gfw.google.clientID'),
                         active: config.get('settings.thirdParty.gfw.google.active')
                     },
                     apple: {
                         active: config.get('settings.thirdParty.gfw.apple.active'),
-                        teamId: process.env.GFW_APPLE_TEAM_ID,
-                        keyId: process.env.GFW_APPLE_KEY_ID,
-                        clientId: process.env.GFW_APPLE_CLIENT_ID,
-                        privateKeyString: process.env.GFW_APPLE_PRIVATE_KEY,
+                        teamId: config.get('settings.thirdParty.gfw.apple.teamId'),
+                        keyId: config.get('settings.thirdParty.gfw.apple.keyId'),
+                        clientId: config.get('settings.thirdParty.gfw.apple.clientId'),
+                        privateKeyString: config.get('settings.thirdParty.gfw.apple.privateKeyString')
                     },
                     twitter: {
                         consumerSecret: config.get('settings.thirdParty.gfw.twitter.consumerSecret'),
@@ -198,8 +190,8 @@ export default class Settings {
                 prep: {
                     facebook: {
                         scope: ["email"],
-                        clientSecret: process.env.PREP_FACEBOOK_CLIENT_SECRET,
-                        clientID: process.env.PREP_FACEBOOK_CLIENT_ID,
+                        clientSecret: config.get('settings.thirdParty.prep.facebook.clientSecret'),
+                        clientID: config.get('settings.thirdParty.prep.facebook.clientID'),
                         active: config.get('settings.thirdParty.prep.facebook.active')
                     },
                     google: {
@@ -207,8 +199,8 @@ export default class Settings {
                             "https://www.googleapis.com/auth/plus.me",
                             "https://www.googleapis.com/auth/userinfo.email"
                         ],
-                        clientSecret: process.env.PREP_GOOGLE_CLIENT_SECRET,
-                        clientID: process.env.PREP_GOOGLE_CLIENT_ID,
+                        clientSecret: config.get('settings.thirdParty.prep.google.clientSecret'),
+                        clientID: config.get('settings.thirdParty.prep.google.clientID'),
                         active: config.get('settings.thirdParty.prep.google.active')
                     },
                     twitter: {
@@ -219,5 +211,7 @@ export default class Settings {
                 }
             }
         };
+
+        return Settings.settings;
     }
 }

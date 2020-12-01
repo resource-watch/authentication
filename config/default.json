@@ -39,29 +39,82 @@
     "defaultApp": "gfw",
     "allowPublicRegistration": true,
     "local": {
+      "sparkpostKey": "",
       "confirmUrlRedirect": "http://www.globalforestwatch.org",
-      "gfw": { "confirmUrlRedirect": "http://www.globalforestwatch.org" },
-      "rw": { "confirmUrlRedirect": "https://resourcewatch.org/myrw/areas" },
-      "prep": { "confirmUrlRedirect": null }
+      "gfw": {
+        "confirmUrlRedirect": "http://www.globalforestwatch.org"
+      },
+      "rw": {
+        "confirmUrlRedirect": "https://resourcewatch.org/myrw/areas"
+      },
+      "prep": {
+        "confirmUrlRedirect": null
+      }
     },
     "thirdParty": {
       "rw": {
-        "facebook": { "active": true },
-        "google": { "active": true },
-        "apple": { "active": false },
-        "twitter": { "active": true }
+        "facebook": {
+          "active": true,
+          "clientSecret": "",
+          "clientID": ""
+        },
+        "google": {
+          "active": true,
+          "clientSecret": "",
+          "clientID": ""
+        },
+        "apple": {
+          "active": false
+        },
+        "twitter": {
+          "active": true,
+          "consumerSecret": "",
+          "consumerKey": ""
+        }
       },
       "gfw": {
-        "facebook": { "active": true },
-        "google": { "active": true },
-        "apple": { "active": true },
-        "twitter": { "active": true }
+        "facebook": {
+          "active": true,
+          "clientSecret": "",
+          "clientID": ""
+        },
+        "google": {
+          "active": true,
+          "clientSecret": "",
+          "clientID": ""
+        },
+        "apple": {
+          "active": true,
+          "teamId": "",
+          "keyId": "",
+          "clientId": "",
+          "privateKeyString": ""
+        },
+        "twitter": {
+          "active": true,
+          "consumerSecret": "",
+          "consumerKey": ""
+        }
       },
       "prep": {
-        "facebook": { "active": true },
-        "google": { "active": true },
-        "apple": { "active": false },
-        "twitter": { "active": true }
+        "facebook": {
+          "active": true,
+          "clientSecret": "",
+          "clientID": ""
+        },
+        "google": {
+          "active": true,
+          "clientSecret": "",
+          "clientID": ""
+        },
+        "apple": {
+          "active": false
+        },
+        "twitter": {
+          "active": true,
+          "consumerSecret": "",
+          "consumerKey": ""
+        }
       }
     }
   }

@@ -333,7 +333,7 @@ async function failAuth(ctx: Context): Promise<void> {
         twitter: false,
         google: false,
         facebook: false,
-        basic: false
+        apple: false
     };
 
     if (appConfig.twitter && appConfig.twitter.active) {
@@ -348,17 +348,15 @@ async function failAuth(ctx: Context): Promise<void> {
         thirdParty.facebook = appConfig.facebook.active;
     }
 
-    if (Settings.getSettings().basic && Settings.getSettings().basic.active) {
-        thirdParty.basic = Settings.getSettings().basic.active;
+    if (appConfig.apple && appConfig.apple.active) {
+        thirdParty.apple = appConfig.apple.active;
     }
 
-    const { allowPublicRegistration } = Settings.getSettings();
     if (ctx.query.error) {
         await ctx.render('login', {
             error: true,
             thirdParty,
-            generalConfig: ctx.state.generalConfig,
-            allowPublicRegistration
+            generalConfig: ctx.state.generalConfig
         });
     } else {
         ctx.throw(401, 'Not authenticated');
@@ -505,17 +503,20 @@ async function loginView(ctx: Context): Promise<void> {
         thirdParty.facebook = Settings.getSettings().thirdParty[originApp].facebook.active;
     }
 
-    if (Settings.getSettings().basic && Settings.getSettings().basic.active) {
-        thirdParty.basic = Settings.getSettings().basic.active;
+    if (
+        Settings.getSettings().thirdParty &&
+        Settings.getSettings().thirdParty[originApp] &&
+        Settings.getSettings().thirdParty[originApp].apple &&
+        Settings.getSettings().thirdParty[originApp].apple.active
+    ) {
+        thirdParty.apple = Settings.getSettings().thirdParty[originApp].apple.active;
     }
 
-    const { allowPublicRegistration } = Settings.getSettings();
     logger.info(thirdParty);
     await ctx.render('login', {
         error: false,
         thirdParty,
-        generalConfig: ctx.state.generalConfig,
-        allowPublicRegistration
+        generalConfig: ctx.state.generalConfig
     });
 }
 

@@ -1,6 +1,4 @@
-import config from 'config';
 import { Context, Next } from "koa";
-
 import logger from 'logger';
 import Settings, { IApplication } from "services/settings.service";
 import { IUser } from "./models/user.model";
@@ -88,13 +86,6 @@ export default class Utils {
             a.push(`${k}=${encodeURIComponent(obj[k])}`);
             return a;
         }, []).join('&');
-    }
-
-    static getGeneralConfig(): { mongoUri: string, application: string } {
-        return {
-            mongoUri: process.env.CT_MONGO_URI || `mongodb://${config.get('mongodb.host')}:${config.get('mongodb.port')}/${config.get('mongodb.database')}`,
-            application: config.get('application'),
-        };
     }
 
     static getApplicationsConfig(ctx: Context): IApplication {

@@ -24,6 +24,9 @@
     "token": "JWT_SECRET"
   },
   "settings": {
+    "local": {
+      "sparkpostKey": "SPARKPOST_KEY"
+    },
     "thirdParty": {
       "rw": {
         "facebook": {

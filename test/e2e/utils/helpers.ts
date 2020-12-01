@@ -5,6 +5,7 @@ import Sinon, { SinonSandbox } from "sinon";
 
 import UserModel, { IUser } from 'models/user.model';
 import TempUserModel, { IUserTemp } from 'models/user-temp.model';
+import Settings from "../../../src/services/settings.service";
 
 const { ObjectId } = mongoose.Types;
 
