@@ -378,6 +378,8 @@ describe('Apple auth endpoint tests', () => {
     });
 
     after(() => {
-        sandbox.restore();
+        if (sandbox) {
+            sandbox.restore();
+        }
     });
 });
