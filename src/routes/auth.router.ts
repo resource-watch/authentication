@@ -40,7 +40,9 @@ async function loadApplicationGeneralConfig(ctx: Context, next: Next): Promise<v
     };
 
     ctx.state.generalConfig = cloneDeep(generalConfig); // avoiding a bug when changes in DB are not applied
-    const applicationConfig: IApplication = Utils.getApplicationsConfig(ctx);
+
+    const app: string = Utils.getOriginApp(ctx);
+    const applicationConfig: IApplication = Settings.getSettings().applications && Settings.getSettings().applications[app];
 
     if (applicationConfig) {
         ctx.state.generalConfig.application = { ...ctx.state.generalConfig.application, ...applicationConfig };

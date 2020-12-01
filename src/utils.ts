@@ -87,10 +87,4 @@ export default class Utils {
             return a;
         }, []).join('&');
     }
-
-    static getApplicationsConfig(ctx: Context): IApplication {
-        const app: string = Utils.getOriginApp(ctx);
-        return Settings.getSettings().applications && Settings.getSettings().applications[app];
-    }
-
 }
