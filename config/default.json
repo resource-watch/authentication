@@ -54,65 +54,65 @@
       "rw": {
         "facebook": {
           "active": true,
-          "clientSecret": "",
-          "clientID": ""
+          "clientSecret": null,
+          "clientID": null
         },
         "google": {
           "active": true,
-          "clientSecret": "",
-          "clientID": ""
+          "clientSecret": null,
+          "clientID": null
         },
         "apple": {
           "active": false
         },
         "twitter": {
           "active": true,
-          "consumerSecret": "",
-          "consumerKey": ""
+          "consumerSecret": null,
+          "consumerKey": null
         }
       },
       "gfw": {
         "facebook": {
           "active": true,
-          "clientSecret": "",
-          "clientID": ""
+          "clientSecret": null,
+          "clientID": null
         },
         "google": {
           "active": true,
-          "clientSecret": "",
-          "clientID": ""
+          "clientSecret": null,
+          "clientID": null
         },
         "apple": {
           "active": true,
-          "teamId": "",
-          "keyId": "",
-          "clientId": "",
-          "privateKeyString": ""
+          "teamId": null,
+          "keyId": null,
+          "clientId": null,
+          "privateKeyString": null
         },
         "twitter": {
           "active": true,
-          "consumerSecret": "",
-          "consumerKey": ""
+          "consumerSecret": null,
+          "consumerKey": null
         }
       },
       "prep": {
         "facebook": {
           "active": true,
-          "clientSecret": "",
-          "clientID": ""
+          "clientSecret": null,
+          "clientID": null
         },
         "google": {
           "active": true,
-          "clientSecret": "",
-          "clientID": ""
+          "clientSecret": null,
+          "clientID": null
         },
         "apple": {
           "active": false
         },
         "twitter": {
           "active": true,
-          "consumerSecret": "",
-          "consumerKey": ""
+          "consumerSecret": null,
+          "consumerKey": null
         }
       }
     }

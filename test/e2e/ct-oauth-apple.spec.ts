@@ -9,11 +9,13 @@ import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
 import { stubConfigValue } from "./utils/helpers";
+import config from "config";
 
 const should: Chai.Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 let sandbox: SinonSandbox;
+let b64string:string;
 
 const { expect } = chai;
 
@@ -28,36 +30,45 @@ describe('Apple auth endpoint tests', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        if (!process.env.TEST_APPLE_CLIENT_ID || !process.env.TEST_APPLE_TEAM_ID || !process.env.TEST_APPLE_KEY_ID || !process.env.TEST_APPLE_PRIVATE_KEY_SECRET) {
+        if (
+            !config.get('settings.thirdParty.gfw.apple.teamId') ||
+            !config.get('settings.thirdParty.gfw.apple.keyId') ||
+            !config.get('settings.thirdParty.gfw.apple.clientId') ||
+            !config.get('settings.thirdParty.gfw.apple.privateKeyString')
+        ) {
             this.skip();
         }
 
+        b64string = config.get('settings.thirdParty.gfw.apple.privateKeyString');
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw', 'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString() });
+
         requester = await getTestAgent(true);
 
-        UserModel.deleteMany({}).exec();
+        return UserModel.deleteMany({}).exec();
     });
 
     beforeEach(async () => {
         requester = await getTestAgent(true);
-        sandbox = sinon.createSandbox();
     });
 
     it('Visiting /auth/apple while not being logged in should redirect to the login page', async () => {
-        stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw' });
         const response: request.Response = await requester.get(`/auth/apple`).redirects(0);
         response.should.redirect;
         response.should.redirectTo(/^https:\/\/appleid\.apple\.com\/auth\/authorize/);
     });
 
     it('Visiting /auth/apple/callback with valid data should redirect to the login successful page', async () => {
+        // stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw', 'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString() });
+
         const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://appleid.apple.com')
             .post('/auth/token', (body) => {
                 expect(body).to.have.property('grant_type').and.equal('authorization_code');
-                expect(body).to.have.property('redirect_uri').and.equal(`${process.env.PUBLIC_URL}/auth/apple/callback`);
-                expect(body).to.have.property('client_id').and.equal(process.env.TEST_APPLE_CLIENT_ID);
+                expect(body).to.have.property('redirect_uri').and.equal(`${config.get('server.publicUrl')}/auth/apple/callback`);
+                expect(body).to.have.property('client_id').and.equal(config.get('settings.thirdParty.gfw.apple.clientId'));
                 expect(body).to.have.property('code').and.be.a('string');
                 expect(body).to.have.property('client_secret').and.be.a('string');
                 return true;
@@ -96,8 +107,8 @@ describe('Apple auth endpoint tests', () => {
         nock('https://appleid.apple.com')
             .post('/auth/token', (body) => {
                 expect(body).to.have.property('grant_type').and.equal('authorization_code');
-                expect(body).to.have.property('redirect_uri').and.equal(`${process.env.PUBLIC_URL}/auth/apple/callback`);
-                expect(body).to.have.property('client_id').and.equal(process.env.TEST_APPLE_CLIENT_ID);
+                expect(body).to.have.property('redirect_uri').and.equal(`${config.get('server.publicUrl')}/auth/apple/callback`);
+                expect(body).to.have.property('client_id').and.equal(config.get('settings.thirdParty.gfw.apple.clientId'));
                 expect(body).to.have.property('code').and.be.a('string');
                 expect(body).to.have.property('client_secret').and.be.a('string');
                 return true;
@@ -149,8 +160,8 @@ describe('Apple auth endpoint tests', () => {
         nock('https://appleid.apple.com')
             .post('/auth/token', (body) => {
                 expect(body).to.have.property('grant_type').and.equal('authorization_code');
-                expect(body).to.have.property('redirect_uri').and.equal(`${process.env.PUBLIC_URL}/auth/apple/callback`);
-                expect(body).to.have.property('client_id').and.equal(process.env.TEST_APPLE_CLIENT_ID);
+                expect(body).to.have.property('redirect_uri').and.equal(`${config.get('server.publicUrl')}/auth/apple/callback`);
+                expect(body).to.have.property('client_id').and.equal(config.get('settings.thirdParty.gfw.apple.clientId'));
                 expect(body).to.have.property('code').and.be.a('string');
                 expect(body).to.have.property('client_secret').and.be.a('string');
                 return true;
@@ -364,5 +375,9 @@ describe('Apple auth endpoint tests', () => {
         UserModel.deleteMany({}).exec();
 
         closeTestAgent();
+    });
+
+    after(() => {
+        sandbox.restore();
     });
 });

@@ -71,7 +71,7 @@ export interface ISettings {
 }
 
 export default class Settings {
-    private static settings:ISettings = null;
+    private static settings: ISettings = null;
 
     static getSettings(): ISettings {
         if (Settings.settings && process.env.NODE_ENV !== 'test') {
@@ -139,7 +139,11 @@ export default class Settings {
                         scope: ["email"],
                         clientSecret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                         clientID: config.get('settings.thirdParty.rw.facebook.clientID'),
-                        active: config.get('settings.thirdParty.rw.facebook.active')
+                        active: (
+                            config.get('settings.thirdParty.rw.facebook.active') &&
+                            config.get('settings.thirdParty.rw.facebook.clientSecret') &&
+                            config.get('settings.thirdParty.rw.facebook.clientID')
+                        )
                     },
                     google: {
                         scope: [
@@ -148,12 +152,20 @@ export default class Settings {
                         ],
                         clientSecret: config.get('settings.thirdParty.rw.google.clientSecret'),
                         clientID: config.get('settings.thirdParty.rw.google.clientID'),
-                        active: config.get('settings.thirdParty.rw.google.active')
+                        active: (
+                            config.get('settings.thirdParty.rw.google.active') &&
+                            config.get('settings.thirdParty.rw.google.clientSecret') &&
+                            config.get('settings.thirdParty.rw.google.clientID')
+                        )
                     },
                     twitter: {
                         consumerSecret: config.get('settings.thirdParty.rw.twitter.consumerSecret'),
                         consumerKey: config.get('settings.thirdParty.rw.twitter.consumerKey'),
-                        active: config.get('settings.thirdParty.rw.twitter.active')
+                        active: (
+                            config.get('settings.thirdParty.rw.twitter.active') &&
+                            config.get('settings.thirdParty.rw.twitter.consumerSecret') &&
+                            config.get('settings.thirdParty.rw.twitter.consumerKey')
+                        )
                     }
                 },
                 gfw: {
@@ -161,7 +173,11 @@ export default class Settings {
                         scope: ["email"],
                         clientSecret: config.get('settings.thirdParty.gfw.facebook.clientSecret'),
                         clientID: config.get('settings.thirdParty.gfw.facebook.clientID'),
-                        active: config.get('settings.thirdParty.gfw.facebook.active')
+                        active: (
+                            config.get('settings.thirdParty.gfw.facebook.active') &&
+                            config.get('settings.thirdParty.gfw.facebook.clientSecret') &&
+                            config.get('settings.thirdParty.gfw.facebook.clientID')
+                        )
                     },
                     google: {
                         scope: [
@@ -170,10 +186,20 @@ export default class Settings {
                         ],
                         clientSecret: config.get('settings.thirdParty.gfw.google.clientSecret'),
                         clientID: config.get('settings.thirdParty.gfw.google.clientID'),
-                        active: config.get('settings.thirdParty.gfw.google.active')
+                        active: (
+                            config.get('settings.thirdParty.gfw.google.active') &&
+                            config.get('settings.thirdParty.gfw.google.clientSecret') &&
+                            config.get('settings.thirdParty.gfw.google.clientID')
+                        )
                     },
                     apple: {
-                        active: config.get('settings.thirdParty.gfw.apple.active'),
+                        active: (
+                            config.get('settings.thirdParty.gfw.apple.active') &&
+                            config.get('settings.thirdParty.gfw.apple.teamId') &&
+                            config.get('settings.thirdParty.gfw.apple.keyId') &&
+                            config.get('settings.thirdParty.gfw.apple.clientId') &&
+                            config.get('settings.thirdParty.gfw.apple.privateKeyString')
+                        ),
                         teamId: config.get('settings.thirdParty.gfw.apple.teamId'),
                         keyId: config.get('settings.thirdParty.gfw.apple.keyId'),
                         clientId: config.get('settings.thirdParty.gfw.apple.clientId'),
@@ -182,7 +208,11 @@ export default class Settings {
                     twitter: {
                         consumerSecret: config.get('settings.thirdParty.gfw.twitter.consumerSecret'),
                         consumerKey: config.get('settings.thirdParty.gfw.twitter.consumerKey'),
-                        active: config.get('settings.thirdParty.gfw.twitter.active')
+                        active: (
+                            config.get('settings.thirdParty.gfw.twitter.active') &&
+                            config.get('settings.thirdParty.gfw.twitter.consumerSecret') &&
+                            config.get('settings.thirdParty.gfw.twitter.consumerKey')
+                        )
                     }
                 },
                 prep: {
@@ -190,7 +220,12 @@ export default class Settings {
                         scope: ["email"],
                         clientSecret: config.get('settings.thirdParty.prep.facebook.clientSecret'),
                         clientID: config.get('settings.thirdParty.prep.facebook.clientID'),
-                        active: config.get('settings.thirdParty.prep.facebook.active')
+                        active: (
+                            config.get('settings.thirdParty.prep.facebook.active') &&
+                            config.get('settings.thirdParty.prep.facebook.clientSecret') &&
+                            config.get('settings.thirdParty.prep.facebook.clientID')
+
+                        )
                     },
                     google: {
                         scope: [
@@ -199,12 +234,20 @@ export default class Settings {
                         ],
                         clientSecret: config.get('settings.thirdParty.prep.google.clientSecret'),
                         clientID: config.get('settings.thirdParty.prep.google.clientID'),
-                        active: config.get('settings.thirdParty.prep.google.active')
+                        active: (
+                            config.get('settings.thirdParty.prep.google.active') &&
+                            config.get('settings.thirdParty.prep.google.clientSecret') &&
+                            config.get('settings.thirdParty.prep.google.clientID')
+                        )
                     },
                     twitter: {
                         consumerSecret: config.get('settings.thirdParty.prep.twitter.consumerSecret'),
                         consumerKey: config.get('settings.thirdParty.prep.twitter.consumerKey'),
-                        active: config.get('settings.thirdParty.prep.twitter.active')
+                        active: (
+                            config.get('settings.thirdParty.prep.twitter.active') &&
+                            config.get('settings.thirdParty.prep.twitter.consumerSecret') &&
+                            config.get('settings.thirdParty.prep.twitter.consumerKey')
+                        )
                     }
                 }
             }

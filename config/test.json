@@ -52,10 +52,10 @@
         },
         "apple": {
           "active": true,
-          "teamId": "APPLE_TEAM_ID",
-          "keyId": "APPLE_KEY_ID",
-          "clientId": "APPLE_SERVICE_ID",
-          "privateKeyString": "APPLE_AUTH_KEY"
+          "teamId": null,
+          "keyId": null,
+          "clientId": null,
+          "privateKeyString": null
         },
         "twitter": {
           "consumerSecret": "test",

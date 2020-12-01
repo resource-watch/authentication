@@ -84,4 +84,5 @@ export const stubConfigValue: (sandbox: Sinon.SinonSandbox, stubMap: Record<stri
     Object.keys(stubMap).forEach(key => {
         stub.withArgs(key).returns(stubMap[key]);
     });
+    stub.callThrough();
 };
