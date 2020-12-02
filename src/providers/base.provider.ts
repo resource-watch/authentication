@@ -1,8 +1,8 @@
 import { Context } from "koa";
-import logger from "../logger";
-import UserService from "../services/user.service";
-import Utils from "../utils";
-import { IUser } from "../models/user.model";
+import logger from "logger";
+import UserService from "services/user.service";
+import Utils from "utils";
+import { IUser } from "models/user.model";
 
 abstract class BaseProvider {
     static async createToken(ctx: Context, createInUser: boolean): Promise<string> {

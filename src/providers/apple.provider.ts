@@ -3,7 +3,7 @@ import logger from "logger";
 import Utils from "utils";
 import Settings, { IThirdPartyAuth } from "services/settings.service";
 import { IUser } from "models/user.model";
-import UserModel from "../models/user.model";
+import UserModel from "models/user.model";
 import passport from "koa-passport";
 // @ts-ignore
 import Verifier from 'apple-signin-verify-token';

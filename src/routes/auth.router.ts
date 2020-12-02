@@ -7,9 +7,9 @@ import LocalProvider from 'providers/local.provider';
 import logger from 'logger';
 import Utils from 'utils';
 import Settings, { IApplication } from "services/settings.service";
-import FacebookProvider from "../providers/facebook.provider";
-import GoogleProvider from "../providers/google.provider";
-import AppleProvider from "../providers/apple.provider";
+import FacebookProvider from "providers/facebook.provider";
+import GoogleProvider from "providers/google.provider";
+import AppleProvider from "providers/apple.provider";
 import config from "config";
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
