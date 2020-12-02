@@ -7,7 +7,7 @@ import UserModel, { IUser } from "models/user.model";
 import passport from "koa-passport";
 import { Strategy as FacebookStrategy, StrategyOption } from "passport-facebook";
 import FacebookTokenStrategy from "passport-facebook-token";
-import BaseProvider from "./base.provider";
+import BaseProvider from "providers/base.provider";
 
 export class FacebookProvider extends BaseProvider {
 

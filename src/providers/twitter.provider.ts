@@ -9,7 +9,7 @@ import { IUser } from "models/user.model";
 import NoTwitterAccountError from "errors/noTwitterAccount.error";
 import { Strategy } from "passport";
 import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
-import BaseProvider from "./base.provider";
+import BaseProvider from "providers/base.provider";
 
 export class TwitterProvider extends BaseProvider {
 

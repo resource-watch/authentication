@@ -18,8 +18,7 @@ import UserModel, { IUser } from "models/user.model";
 import bcrypt from "bcrypt";
 import { Strategy } from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
-import { BasicStrategy } from "passport-http";
-import BaseProvider from "./base.provider";
+import BaseProvider from "providers/base.provider";
 
 export class LocalProvider extends BaseProvider {
 

@@ -2,15 +2,14 @@ import { Context, Next } from "koa";
 import logger from "logger";
 import Utils from "utils";
 import Settings, { IThirdPartyAuth } from "services/settings.service";
-import { IUser } from "models/user.model";
-import UserModel from "models/user.model";
+import UserModel, { IUser } from "models/user.model";
 import passport from "koa-passport";
 // @ts-ignore
 import Verifier from 'apple-signin-verify-token';
 import AppleStrategy, { DecodedIdToken, Profile, VerifyCallback } from 'passport-apple';
 import { Request } from 'express';
 import { RouterContext } from "koa-router";
-import BaseProvider from "./base.provider";
+import BaseProvider from "providers/base.provider";
 
 export class AppleProvider extends BaseProvider {
 
