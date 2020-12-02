@@ -179,7 +179,7 @@ export default class UserService {
             if (data.role) {
                 user.role = data.role;
             }
-            if (data.extraUserData && data.extraUserData.apps) {
+            if (data.extraUserData?.apps) {
                 user.extraUserData = { ...user.extraUserData, apps: data.extraUserData.apps };
             }
         }

@@ -22,7 +22,7 @@ abstract class BaseProvider {
 
     static async updateApplications(ctx: Context): Promise<void> {
         try {
-            if (ctx.session && ctx.session.applications) {
+            if (ctx.session?.applications) {
                 let user: IUser = Utils.getUser(ctx);
                 if (user.role === 'USER') {
                     user = await UserService.updateApplicationsForUser(user.id, ctx.session.applications);

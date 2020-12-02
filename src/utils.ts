@@ -74,7 +74,7 @@ export default class Utils {
             return ctx.query.origin;
         }
 
-        if (ctx.session && ctx.session.originApplication) {
+        if (ctx.session?.originApplication) {
             return ctx.session.originApplication;
         }
 

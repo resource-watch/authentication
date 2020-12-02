@@ -68,8 +68,8 @@ export class FacebookProvider extends BaseProvider {
             let photo: string = null;
             if (profile) {
                 name = profile.displayName;
-                photo = profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null;
-                if (profile.emails && profile.emails.length > 0) {
+                photo = profile.photos?.length > 0 ? profile.photos[0].value : null;
+                if (profile.emails?.length > 0) {
                     email = profile.emails[0].value;
                 } else if (profile.email) {
                     ({ email } = profile);
@@ -85,7 +85,7 @@ export class FacebookProvider extends BaseProvider {
         } else {
             let email: string = null;
             if (profile) {
-                if (profile.emails && profile.emails.length > 0) {
+                if (profile.emails?.length > 0) {
                     email = profile.emails[0].value;
                 } else if (profile.email) {
                     ({ email } = profile);

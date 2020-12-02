@@ -31,7 +31,7 @@ export class AppleProvider extends BaseProvider {
                 logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
 
-                if (app.apple && app.apple.active) {
+                if (app.apple?.active) {
                     logger.info(`[passportService] Loading apple strategy ${apps[i]}`);
                     const configApple: AppleStrategy.AuthenticateOptionsWithRequest = {
                         clientID: app.apple.clientId,

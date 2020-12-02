@@ -38,8 +38,8 @@ export class LocalProvider extends BaseProvider {
             let photo: string = null;
             if (profile) {
                 name = profile.displayName;
-                photo = profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null;
-                if (profile.emails && profile.emails.length > 0) {
+                photo = profile.photos?.length > 0 ? profile.photos[0].value : null;
+                if (profile.emails?.length > 0) {
                     email = profile.emails[0].value;
                 } else if (profile.email) {
                     ({ email } = profile);
@@ -55,7 +55,7 @@ export class LocalProvider extends BaseProvider {
         } else {
             let email: string = null;
             if (profile) {
-                if (profile.emails && profile.emails.length > 0) {
+                if (profile.emails?.length > 0) {
                     email = profile.emails[0].value;
                 } else if (profile.email) {
                     ({ email } = profile);
@@ -90,14 +90,14 @@ export class LocalProvider extends BaseProvider {
             done(null, user);
         });
 
-        if (Settings.getSettings().local && Settings.getSettings().local.active) {
+        if (Settings.getSettings().local?.active) {
             logger.info('[passportService] Loading local strategy');
             const login: (username: string, password: string, done: (error: any, user?: any) => void) => Promise<void> = async (username: string, password: string, done: (error: any, user?: any) => void): Promise<void> => {
                 const user: IUser = await UserModel.findOne({
                     email: username,
                     provider: 'local'
                 }).exec();
-                if (user && user.salt && user.password === bcrypt.hashSync(password, user.salt)) {
+                if (user?.salt && user?.password === bcrypt.hashSync(password, user.salt)) {
                     done(null, {
                         id: user._id,
                         name: user.name,
@@ -377,19 +377,19 @@ export class LocalProvider extends BaseProvider {
             basic: false
         };
 
-        if (appConfig.twitter && appConfig.twitter.active) {
+        if (appConfig.twitter?.active) {
             thirdParty.twitter = appConfig.twitter.active;
         }
 
-        if (appConfig.google && appConfig.google.active) {
+        if (appConfig.google?.active) {
             thirdParty.google = appConfig.google.active;
         }
 
-        if (appConfig.facebook && appConfig.facebook.active) {
+        if (appConfig.facebook?.active) {
             thirdParty.facebook = appConfig.facebook.active;
         }
 
-        if (appConfig.apple && appConfig.apple.active) {
+        if (appConfig.apple?.active) {
             thirdParty.apple = appConfig.apple.active;
         }
 
@@ -477,9 +477,9 @@ export class LocalProvider extends BaseProvider {
             return;
         }
 
-        const userFirstApp: string = (user && user.extraUserData && user.extraUserData.apps && user.extraUserData.apps.length > 0) ? user.extraUserData.apps[0] : null;
+        const userFirstApp: string = (user?.extraUserData?.apps?.length > 0) ? user.extraUserData.apps[0] : null;
 
-        if (userFirstApp && Settings.getSettings().local[userFirstApp] && Settings.getSettings().local[userFirstApp].confirmUrlRedirect) {
+        if (userFirstApp && Settings.getSettings().local[userFirstApp]?.confirmUrlRedirect) {
             ctx.redirect(Settings.getSettings().local[userFirstApp].confirmUrlRedirect);
             return;
         }

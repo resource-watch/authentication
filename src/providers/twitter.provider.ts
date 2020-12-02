@@ -32,7 +32,7 @@ export class TwitterProvider extends BaseProvider {
             done(new NoTwitterAccountError());
         } else {
             let email: string = null;
-            if (profile && profile.emails && profile.emails.length > 0) {
+            if (profile?.emails?.length > 0) {
                 email = profile.emails[0].value;
             }
             if (email && email !== user.email) {
@@ -71,7 +71,7 @@ export class TwitterProvider extends BaseProvider {
             for (let i: number = 0, { length } = apps; i < length; i += 1) {
                 logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
-                if (app.twitter && app.twitter.active) {
+                if (app.twitter?.active) {
                     logger.info(`[passportService] Loading twitter strategy of ${apps[i]}`);
                     const configTwitter: IStrategyOption = {
                         consumerKey: app.twitter.consumerKey,

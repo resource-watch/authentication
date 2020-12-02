@@ -28,8 +28,8 @@ export class GoogleProvider extends BaseProvider {
             let photo: string = null;
             if (profile) {
                 name = profile.displayName;
-                photo = profile.photos && profile.photos.length > 0 ? profile.photos[0].value : null;
-                if (profile.emails && profile.emails.length > 0) {
+                photo = profile.photos?.length > 0 ? profile.photos[0].value : null;
+                if (profile.emails?.length > 0) {
                     email = profile.emails[0].value;
                 } else if (profile.email) {
                     ({ email } = profile);
@@ -45,7 +45,7 @@ export class GoogleProvider extends BaseProvider {
         } else {
             let email: string = null;
             if (profile) {
-                if (profile.emails && profile.emails.length > 0) {
+                if (profile.emails?.length > 0) {
                     email = profile.emails[0].value;
                 } else if (profile.email) {
                     ({ email } = profile);
@@ -87,7 +87,7 @@ export class GoogleProvider extends BaseProvider {
             for (let i: number = 0, { length } = apps; i < length; i += 1) {
                 logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
-                if (app.google && app.google.active) {
+                if (app.google?.active) {
                     logger.info(`[passportService] Loading google strategy ${apps[i]}`);
                     const configGoogle: StrategyOptions = {
                         clientID: app.google.clientID,
@@ -115,8 +115,7 @@ export class GoogleProvider extends BaseProvider {
     static async google(ctx: Context & RouterContext, next: Next): Promise<void> {
         const app: string = Utils.getOriginApp(ctx);
         await passport.authenticate(`google:${app}`, {
-            scope: (Settings.getSettings().thirdParty[app] && Settings.getSettings().thirdParty[app].google.scope)
-                ? Settings.getSettings().thirdParty[app].google.scope : ['openid'],
+            scope: Settings.getSettings().thirdParty[app]?.google?.scope ? Settings.getSettings().thirdParty[app].google.scope : ['openid']
         })(ctx, next);
     }
 
