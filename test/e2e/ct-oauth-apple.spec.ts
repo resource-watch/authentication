@@ -59,8 +59,6 @@ describe('Apple auth endpoint tests', () => {
     });
 
     it('Visiting /auth/apple/callback with valid data should redirect to the login successful page', async () => {
-        // stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw', 'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString() });
-
         const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
