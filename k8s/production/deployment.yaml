@@ -57,6 +57,11 @@ spec:
           value: http://www.wri.org/sites/all/themes/wri/images/logo.png
         - name: APP_COLOR
           value: '#f1b319'
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              key: REDIS_URL
+              name: authorization
         - name: CT_MONGO_URI
           valueFrom:
             secretKeyRef:
