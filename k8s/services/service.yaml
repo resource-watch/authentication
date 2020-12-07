@@ -7,9 +7,6 @@ metadata:
   name: authorization
 spec:
   ports:
-    - name: http
-      protocol: TCP
-      port: 80
-      targetPort: 9000
+    - port: 9000
   selector:
     name: authorization
