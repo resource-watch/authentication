@@ -74,6 +74,26 @@ spec:
             secretKeyRef:
               key: JWT_SECRET
               name: authorization
+        - name: GFW_APPLE_TEAM_ID
+          valueFrom:
+            secretKeyRef:
+              key: GFW_APPLE_TEAM_ID
+              name: authorization
+        - name: GFW_APPLE_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              key: GFW_APPLE_KEY_ID
+              name: authorization
+        - name: GFW_APPLE_SERVICE_ID
+          valueFrom:
+            secretKeyRef:
+              key: GFW_APPLE_SERVICE_ID
+              name: authorization
+        - name: GFW_APPLE_AUTH_KEY
+          valueFrom:
+            secretKeyRef:
+              key: GFW_APPLE_AUTH_KEY
+              name: authorization
         - name: GFW_TWITTER_CONSUMER_KEY
           valueFrom:
             secretKeyRef:
@@ -163,11 +183,6 @@ spec:
           valueFrom:
             secretKeyRef:
               key: PREP_GOOGLE_CLIENT_SECRET
-              name: authorization
-        - name: BASICAUTH_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              key: BASICAUTH_PASSWORD
               name: authorization
         - name: SPARKPOST_KEY
           valueFrom:
