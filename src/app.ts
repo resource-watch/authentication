@@ -69,6 +69,8 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                 return;
             }
 
+            logger.info(`Connection to MongoDB successful`);
+
             const app: Koa = new Koa();
 
             app.use(koaBody({
@@ -87,7 +89,6 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
 
             app.use(cors({ credentials: true }));
 
-            // Manage errors middleware
             app.use(async (ctx: { status: number; response: { type: string; }; body: any; }, next: () => any) => {
                 try {
                     await next();
@@ -123,7 +124,6 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                 skipGetLoggedUser: true
             }));
 
-            // Load other stuff
             app.use(koaLogger());
             await loadRoutes(app);
 
