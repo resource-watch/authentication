@@ -1,0 +1,16 @@
+{
+  "name": "#(service.name)",
+  "tags": [
+    "authorization"
+  ],
+  "endpoints": [
+    {
+      "path": "/auth/user/me",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/user/me"
+      }
+    }
+  ]
+}

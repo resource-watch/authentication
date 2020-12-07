@@ -1,4 +1,5 @@
 import chai from 'chai';
+import nock from 'nock';
 import ChaiHttp from 'chai-http';
 
 let requester:ChaiHttp.Agent;
@@ -17,6 +18,12 @@ export const getTestAgent: (forceNew?: boolean) => Promise<ChaiHttp.Agent> = asy
 
     if (requester) {
         return requester;
+    }
+
+    if (process.env.CT_REGISTER_MODE === 'auto') {
+        nock(process.env.CT_URL)
+            .post(`/api/v1/microservice`)
+            .reply(200);
     }
 
     const { init } = await import('app');

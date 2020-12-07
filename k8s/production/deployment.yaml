@@ -57,6 +57,23 @@ spec:
           value: http://www.wri.org/sites/all/themes/wri/images/logo.png
         - name: APP_COLOR
           value: '#f1b319'
+        - name: CT_REGISTER_MODE
+          valueFrom:
+            secretKeyRef:
+              key: CT_REGISTER_MODE
+              name: authorization
+        - name: CT_TOKEN
+          valueFrom:
+            secretKeyRef:
+              key: CT_TOKEN
+              name: authorization
+        - name: LOCAL_URL
+          value: 'http://authorization.core.svc.cluster.local:9000'
+        - name: CT_URL
+          valueFrom:
+            secretKeyRef:
+              key: CT_URL
+              name: authorization
         - name: REDIS_URL
           valueFrom:
             secretKeyRef:

@@ -544,7 +544,6 @@ export class LocalProvider extends BaseProvider {
             thirdParty.apple = Settings.getSettings().thirdParty[originApp].apple.active;
         }
 
-        logger.info(thirdParty);
         await ctx.render('login', {
             error: false,
             thirdParty,

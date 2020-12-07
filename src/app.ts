@@ -5,6 +5,7 @@ import koaBody from 'koa-body';
 import koaLogger from 'koa-logger';
 import mongoose from 'mongoose';
 import sleep from 'sleep';
+import { RWAPIMicroservice } from 'rw-api-microservice-node';
 // @ts-ignore
 import cors from '@koa/cors';
 // @ts-ignore
@@ -111,13 +112,34 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                 }
             });
 
+            app.use(RWAPIMicroservice.bootstrap({
+                name: 'authorization',
+                info: require('../microservice/register.json'),
+                swagger: {},
+                logger,
+                baseURL: process.env.CT_URL,
+                url: process.env.LOCAL_URL,
+                token: process.env.CT_TOKEN,
+                skipGetLoggedUser: true
+            }));
+
             // Load other stuff
             app.use(koaLogger());
             await loadRoutes(app);
 
-            const port:string = process.env.PORT || '9000';
+            const port: string = process.env.PORT || '9000';
 
-            const server: Server = app.listen(port);
+            const server: Server = app.listen(process.env.PORT, () => {
+                if (process.env.CT_REGISTER_MODE === 'auto') {
+                    RWAPIMicroservice.register().then(() => {
+                        logger.info('CT registration process started');
+                    }, (error) => {
+                        logger.error(error);
+                        process.exit(1);
+                    });
+                }
+            });
+
             logger.info('Server started in ', port);
             resolve({ app, server });
         }
