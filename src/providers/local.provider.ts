@@ -513,34 +513,35 @@ export class LocalProvider extends BaseProvider {
             twitter: false,
             google: false,
             facebook: false,
-            basic: false
+            apple: false
         };
 
         if (
             Settings.getSettings().thirdParty &&
-            Settings.getSettings().thirdParty[originApp] &&
-            Settings.getSettings().thirdParty[originApp].twitter &&
-            Settings.getSettings().thirdParty[originApp].twitter.active
+            Settings.getSettings().thirdParty[originApp]?.twitter?.active
         ) {
             thirdParty.twitter = Settings.getSettings().thirdParty[originApp].twitter.active;
         }
 
         if (
             Settings.getSettings().thirdParty &&
-            Settings.getSettings().thirdParty[originApp] &&
-            Settings.getSettings().thirdParty[originApp].google &&
-            Settings.getSettings().thirdParty[originApp].google.active
+            Settings.getSettings().thirdParty[originApp]?.google?.active
         ) {
             thirdParty.google = Settings.getSettings().thirdParty[originApp].google.active;
         }
 
         if (
             Settings.getSettings().thirdParty &&
-            Settings.getSettings().thirdParty[originApp] &&
-            Settings.getSettings().thirdParty[originApp].facebook &&
-            Settings.getSettings().thirdParty[originApp].facebook.active
+            Settings.getSettings().thirdParty[originApp]?.facebook?.active
         ) {
             thirdParty.facebook = Settings.getSettings().thirdParty[originApp].facebook.active;
+        }
+
+        if (
+            Settings.getSettings().thirdParty &&
+            Settings.getSettings().thirdParty[originApp]?.apple?.active
+        ) {
+            thirdParty.apple = Settings.getSettings().thirdParty[originApp].apple.active;
         }
 
         logger.info(thirdParty);
