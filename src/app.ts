@@ -115,8 +115,10 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
             app.use(koaLogger());
             await loadRoutes(app);
 
-            const server: Server = app.listen(process.env.PORT);
-            logger.info('Server started in ', process.env.PORT);
+            const port:string = process.env.PORT || '9000';
+
+            const server: Server = app.listen(port);
+            logger.info('Server started in ', port);
             resolve({ app, server });
         }
 
