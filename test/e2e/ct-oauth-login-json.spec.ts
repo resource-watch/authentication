@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel, { IUserDocument } from 'models/user.model';
+import UserModel, { IUserModel } from 'models/user.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { createUserAndToken, createUserInDB } from './utils/helpers';
 import type request from 'superagent';
@@ -123,7 +123,7 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with valid credentials should return a 200 HTTP code and the user details', async () => {
-        const user: Partial<IUserDocument> = await createUserInDB({
+        const user: Partial<IUserModel> = await createUserInDB({
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
             salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
@@ -163,7 +163,7 @@ describe('Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in successfully with POST /auth/login with callbackUrl should not redirect to the callback page', async () => {
-        const user: Partial<IUserDocument> = await createUserInDB({
+        const user: Partial<IUserModel> = await createUserInDB({
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
             salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'

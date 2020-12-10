@@ -1,11 +1,11 @@
 import { Context, Next } from "koa";
 import logger from 'logger';
 import Settings from "services/settings.service";
-import { IUserDocument } from "models/user.model";
+import { IUserModel } from "models/user.model";
 
 export default class Utils {
 
-    static getUser(ctx: Context): IUserDocument {
+    static getUser(ctx: Context): IUserModel {
         // @ts-ignore
         return ctx.req.user || ctx.state.user || ctx.state.microservice;
     }
@@ -22,7 +22,7 @@ export default class Utils {
 
     static async isAdmin(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin');
-        const user: IUserDocument = Utils.getUser(ctx);
+        const user: IUserModel = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -39,7 +39,7 @@ export default class Utils {
 
     static async isAdminOrManager(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin or manager');
-        const user: IUserDocument = Utils.getUser(ctx);
+        const user: IUserModel = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');
@@ -55,7 +55,7 @@ export default class Utils {
 
     static async isMicroservice(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is a microservice');
-        const user: IUserDocument = Utils.getUser(ctx);
+        const user: IUserModel = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
             ctx.throw(401, 'Not authenticated');

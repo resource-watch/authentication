@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel, { IUserDocument } from 'models/user.model';
+import UserModel, { IUserModel } from 'models/user.model';
 import { createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
@@ -13,7 +13,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const assertTokenInfo: (response: ChaiHttp.Response, user: (IUserDocument | Partial<IUserDocument>)) => void = (response: ChaiHttp.Response, user: IUserDocument | Partial<IUserDocument>) => {
+const assertTokenInfo: (response: ChaiHttp.Response, user: (IUserModel | Partial<IUserModel>)) => void = (response: ChaiHttp.Response, user: IUserModel | Partial<IUserModel>) => {
     response.status.should.equal(200);
     response.body.should.have.property('_id').and.equal(user.id.toString());
     response.body.should.have.property('extraUserData').and.be.an('object');

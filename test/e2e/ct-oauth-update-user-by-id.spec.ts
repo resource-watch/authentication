@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 import chaiDateTime from "chai-datetime";
-import UserModel, { IUserDocument } from 'models/user.model';
+import UserModel, { IUserModel } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { createUserAndToken } from './utils/helpers';
@@ -136,7 +136,7 @@ describe('Auth endpoints tests - Update user by id', () => {
         (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
         (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
 
-        const updatedUser: IUserDocument = await UserModel.findOne({ email: user.email }).exec();
+        const updatedUser: IUserModel = await UserModel.findOne({ email: user.email }).exec();
 
         response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });

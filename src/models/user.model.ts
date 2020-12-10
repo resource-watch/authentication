@@ -1,7 +1,7 @@
 import mongoose, { Document, Schema } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate';
 
-export interface IUserDocument extends Document {
+export interface IUser {
     name?: string;
     photo?: string;
     provider: string;
@@ -15,6 +15,13 @@ export interface IUserDocument extends Document {
     extraUserData: { apps: string[]; };
     userToken?: string;
 }
+
+export interface IUserPayload extends IUser {
+    apps?: string[];
+    callbackUrl: string;
+}
+
+export interface IUserModel extends IUser, Document {}
 
 const UserSchema: Schema = new Schema({
     name: { type: String, required: false, trim: true },
@@ -37,4 +44,4 @@ const UserSchema: Schema = new Schema({
 
 UserSchema.plugin(mongoosePaginate);
 
-export default mongoose.model<IUserDocument>('User', UserSchema);
+export default mongoose.model<IUserModel>('User', UserSchema);
