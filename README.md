@@ -40,6 +40,9 @@ yarn install
 ```
 yarn start
 ```
+
+Alternatively, you can use `yarn watch` to start a development server with hot-reloading. This means that every time you save a file, the TS server will be reloaded automatically.
+
 Authorization API should now be up and accessible. To confirm, open [http://localhost:9000/auth](http://localhost:9000/auth) (assuming the default settings) on your browser, which should show you the authorization sign-in page.
 
 ### Using Docker
