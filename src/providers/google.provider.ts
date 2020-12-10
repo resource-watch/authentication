@@ -4,7 +4,7 @@ import passport from "koa-passport";
 import logger from "logger";
 import Utils from "utils";
 import Settings, { IThirdPartyAuth } from "services/settings.service";
-import UserModel, { IUser } from "models/user.model";
+import UserModel, { IUserModel } from "models/user.model";
 import { Strategy } from "passport";
 import BaseProvider from "providers/base.provider";
 import { Strategy as GoogleStrategy, StrategyOptions } from "passport-google-oauth20";
@@ -16,7 +16,7 @@ export class GoogleProvider extends BaseProvider {
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         logger.info('[passportService] Registering user', profile);
 
-        let user: IUser = await UserModel.findOne({
+        let user: IUserModel = await UserModel.findOne({
             provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
             providerId: profile.id,
         }).exec();

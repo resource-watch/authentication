@@ -3,7 +3,7 @@ import chai from 'chai';
 import config from 'config';
 import JWT from 'jsonwebtoken';
 import chaiString from "chai-string";
-import UserModel, { IUser } from 'models/user.model';
+import UserModel, { IUserModel } from 'models/user.model';
 import UserService from 'services/user.service';
 
 import { closeTestAgent, getTestAgent } from './utils/test-server';
@@ -44,7 +44,7 @@ describe('Google auth endpoint tests', () => {
     });
 
     it('Visiting /auth/google/callback while being logged in should redirect to the login successful page', async () => {
-        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const missingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.not.exist(missingUser);
 
@@ -96,7 +96,7 @@ describe('Google auth endpoint tests', () => {
         responseTwo.should.be.html;
         responseTwo.text.should.include('Welcome to the RW API');
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email')
@@ -120,7 +120,7 @@ describe('Google auth endpoint tests', () => {
     });
 
     it('Visiting /auth/google/callback while being logged in with a callbackUrl param should redirect to the callback URL page', async () => {
-        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const missingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.not.exist(missingUser);
 
@@ -176,7 +176,7 @@ describe('Google auth endpoint tests', () => {
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email')
@@ -200,7 +200,7 @@ describe('Google auth endpoint tests', () => {
     });
 
     it('Visiting /auth/google/callback while being logged in with an updated callbackUrl param should redirect to the new callback URL page', async () => {
-        const missingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const missingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.not.exist(missingUser);
 
@@ -259,7 +259,7 @@ describe('Google auth endpoint tests', () => {
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email')
@@ -292,7 +292,7 @@ describe('Google auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const existingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.exist(existingUser);
         existingUser.should.have.property('email')
@@ -351,7 +351,7 @@ describe('Google auth endpoint tests', () => {
         const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
-        const userWithToken: IUser = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const userWithToken: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.exist(userWithToken);
         userWithToken.should.have.property('email')
@@ -388,7 +388,7 @@ describe('Google auth endpoint tests', () => {
     });
 
     it('Visiting /auth/google/token with a valid Google OAuth token should generate a new token - account with no email address', async () => {
-        const savedUser: IUser = await new UserModel({
+        const savedUser: IUserModel = await new UserModel({
             name: 'John Doe',
             role: 'USER',
             provider: 'google',
@@ -396,7 +396,7 @@ describe('Google auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser: IUser = await UserModel.findOne({ _id: savedUser.id })
+        const existingUser: IUserModel = await UserModel.findOne({ _id: savedUser.id })
             .exec();
         should.exist(existingUser);
         existingUser.should.have.property('name')
@@ -451,7 +451,7 @@ describe('Google auth endpoint tests', () => {
         const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
         isTokenRevoked.should.equal(false);
 
-        const userWithToken: IUser = await UserModel.findOne({ _id: savedUser.id })
+        const userWithToken: IUserModel = await UserModel.findOne({ _id: savedUser.id })
             .exec();
         should.exist(userWithToken);
         userWithToken.should.have.property('name')
