@@ -3,7 +3,7 @@ import chai from 'chai';
 import { isEqual } from 'lodash';
 
 import config from 'config';
-import UserModel, { IUser } from 'models/user.model';
+import UserModel, { IUserModel } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
@@ -193,7 +193,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -202,7 +202,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
     });
 
     it('Registering a user with an existing email address (confirmed user) returns a 422 error', async () => {
-        const user: IUser = await new UserModel({
+        const user: IUserModel = await new UserModel({
             email: 'someemail@gmail.com',
             confirmationToken: 'myToken',
             extraUserData: { apps: [] }
@@ -372,7 +372,7 @@ describe('OAuth endpoints tests - Sign up with JSON content type', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someotheremail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');

@@ -4,7 +4,7 @@ import config from 'config';
 import { isEqual } from 'lodash';
 import sinon, { SinonSandbox } from "sinon";
 
-import UserModel, { IUser } from 'models/user.model';
+import UserModel, { IUserModel } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import { createTempUser, createUserAndToken, stubConfigValue } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
@@ -165,7 +165,7 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');

@@ -8,7 +8,7 @@ import { isEqual } from 'lodash';
 import logger from 'logger';
 import MailService from 'services/mail.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
-import UserModel, { IUser, IUserPayload } from 'models/user.model';
+import UserModel, { IUserModel, IUserPayload } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import Settings from "services/settings.service";
@@ -57,14 +57,14 @@ export default class UserService {
         return filteredQuery;
     }
 
-    static async createToken(user: IUser, saveInUser: boolean): Promise<string> {
+    static async createToken(user: IUserModel, saveInUser: boolean): Promise<string> {
         try {
             const options: SignOptions = {};
             if (Settings.getSettings().jwt.expiresInMinutes && Settings.getSettings().jwt.expiresInMinutes > 0) {
                 options.expiresIn = Settings.getSettings().jwt.expiresInMinutes * 60;
             }
 
-            const userData: IUser = await UserModel.findById(user.id);
+            const userData: IUserModel = await UserModel.findById(user.id);
             let token: string;
 
             if (userData) {
@@ -97,7 +97,7 @@ export default class UserService {
         }
     }
 
-    static async getUsers(app: string[], query: Record<string, string>): Promise<PaginateResult<IUser>> {
+    static async getUsers(app: string[], query: Record<string, string>): Promise<PaginateResult<IUserModel>> {
         logger.info('[UserService] Get users with app', app);
 
         const filteredQuery: Record<string, any> = UserService.getFilteredQuery({ ...query });
@@ -123,11 +123,11 @@ export default class UserService {
         return UserModel.paginate(filteredQuery, paginationOptions);
     }
 
-    static async getUser(conditions: Record<string, any>): Promise<IUser> {
+    static async getUser(conditions: Record<string, any>): Promise<IUserModel> {
         return UserModel.findOne(conditions).exec();
     }
 
-    static async getUserById(id: string): Promise<IUser> {
+    static async getUserById(id: string): Promise<IUserModel> {
         const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
@@ -137,7 +137,7 @@ export default class UserService {
         return UserModel.findById(id).select('-password -salt -userToken -__v').exec();
     }
 
-    static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
+    static async getUsersByIds(ids: string[] = []): Promise<IUserModel[]> {
         const newIds: Types.ObjectId[] = ids.filter(ObjectId.isValid).map((id) => new ObjectId(id));
         return UserModel.find({
             _id: {
@@ -151,11 +151,11 @@ export default class UserService {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
         }
 
-        const data: IUser[] = await UserModel.find({ role }).exec();
+        const data: IUserModel[] = await UserModel.find({ role }).exec();
         return data.map((el) => el._id);
     }
 
-    static async updateUser(id: string, data: IUser, requestUser: IUser): Promise<IUser> {
+    static async updateUser(id: string, data: IUserModel, requestUser: IUserModel): Promise<IUserModel> {
         const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
@@ -163,7 +163,7 @@ export default class UserService {
             throw new UnprocessableEntityError(`Invalid id ${id} provided`);
         }
 
-        const user: IUser = await UserModel.findById(id).exec();
+        const user: IUserModel = await UserModel.findById(id).exec();
         if (!user) {
             return null;
         }
@@ -189,7 +189,7 @@ export default class UserService {
         return user.save();
     }
 
-    static async deleteUser(id: string): Promise<IUser> {
+    static async deleteUser(id: string): Promise<IUserModel> {
         const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
 
         if (!isValidId) {
@@ -197,7 +197,7 @@ export default class UserService {
             throw new UnprocessableEntityError(`Invalid id ${id} provided`);
         }
 
-        let user: IUser;
+        let user: IUserModel;
         try {
             user = await UserModel.findById(id).exec();
         } catch (e) {
@@ -214,7 +214,7 @@ export default class UserService {
     }
 
     static async emailExists(email: string): Promise<boolean> {
-        const exist: IUser = await UserModel.findOne({ email });
+        const exist: IUserModel = await UserModel.findOne({ email });
         const existTemp: IUserTemp = await UserTempModel.findOne({ email });
         return !!(exist || existTemp);
     }
@@ -288,12 +288,12 @@ export default class UserService {
 
     }
 
-    static async confirmUser(confirmationToken: string): Promise<IUser> {
+    static async confirmUser(confirmationToken: string): Promise<IUserModel> {
         const exist: IUserTemp = await UserTempModel.findOne({ confirmationToken });
         if (!exist) {
             return null;
         }
-        const user: IUser = await new UserModel({
+        const user: IUserModel = await new UserModel({
             email: exist.email,
             password: exist.password,
             salt: exist.salt,
@@ -316,7 +316,7 @@ export default class UserService {
     static async sendResetMail(email: string, generalConfig: Record<string, any>, originApp: string): Promise<IRenew> {
         logger.info('[UserService] Generating token to email', email);
 
-        const user: IUser = await UserModel.findOne({ email });
+        const user: IUserModel = await UserModel.findOne({ email });
         if (!user) {
             logger.info('[UserService] User not found');
             return null;
@@ -341,14 +341,14 @@ export default class UserService {
         return renew;
     }
 
-    static async updatePassword(token: string, newPassword: string): Promise<IUser> {
+    static async updatePassword(token: string, newPassword: string): Promise<IUserModel> {
         logger.info('[UserService] Updating password');
         const renew: IRenew = await RenewModel.findOne({ token });
         if (!renew) {
             logger.info('[UserService] Token not found');
             return null;
         }
-        const user: IUser = await UserModel.findById(renew.userId);
+        const user: IUserModel = await UserModel.findById(renew.userId);
         if (!user) {
             logger.info('[UserService] User not found');
             return null;
@@ -367,7 +367,7 @@ export default class UserService {
         if (payload.id !== 'microservice') {
             const checkList: string[] = ['id', 'role', 'extraUserData', 'email'];
 
-            const user: IUser = await UserModel.findById(payload.id);
+            const user: IUserModel = await UserModel.findById(payload.id);
 
             if (!user) {
                 logger.info('[UserService] User ID in token does not match an existing user');
@@ -386,9 +386,9 @@ export default class UserService {
         return isRevoked;
     }
 
-    static async updateApplicationsForUser(id: string, applications: string[]): Promise<IUser> {
+    static async updateApplicationsForUser(id: string, applications: string[]): Promise<IUserModel> {
         logger.info('[UserService] Searching user with id ', id, applications);
-        const user: IUser = await UserModel.findById(id);
+        const user: IUserModel = await UserModel.findById(id);
         if (!user) {
             logger.info('[UserService] User not found');
             return null;
@@ -410,7 +410,7 @@ export default class UserService {
         return user;
     }
 
-    static async migrateToUsernameAndPassword(user: IUser, email: string, password: string): Promise<IUser> {
+    static async migrateToUsernameAndPassword(user: IUserModel, email: string, password: string): Promise<IUserModel> {
         if (!user) {
             return null;
         }
