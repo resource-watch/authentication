@@ -10,6 +10,7 @@ import AppleStrategy, { DecodedIdToken, Profile, VerifyCallback } from 'passport
 import { Request } from 'express';
 import { RouterContext } from "koa-router";
 import BaseProvider from "providers/base.provider";
+import UserSerializer from "../serializers/user.serializer";
 
 export class AppleProvider extends BaseProvider {
 
@@ -134,7 +135,7 @@ export class AppleProvider extends BaseProvider {
 
         // This places the user data in the ctx object as Passport would
         // @ts-ignore
-        ctx.req.user = user;
+        ctx.req.user = UserSerializer.serializeElement(user);
         ctx.status = 200;
 
         return next();

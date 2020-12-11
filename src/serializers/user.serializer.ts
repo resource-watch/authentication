@@ -9,8 +9,8 @@ export default class UserSerializer {
             email: el.email,
             name: el.name,
             photo: el.photo,
-            createdAt: el.createdAt.toISOString(),
-            updatedAt: el.updatedAt.toISOString(),
+            createdAt: el.createdAt ? el.createdAt.toISOString() : null,
+            updatedAt: el.updatedAt ? el.updatedAt.toISOString() : null,
             role: el.role,
             extraUserData: el.extraUserData
         };
