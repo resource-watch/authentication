@@ -212,6 +212,11 @@ export class LocalProvider extends BaseProvider {
 
         logger.info('Get current user: ', requestUser.id);
 
+        if (requestUser.id && requestUser.id.toLowerCase() === 'microservice') {
+            ctx.body = requestUser;
+            return;
+        }
+
         const user: IUser = await UserService.getUserById(requestUser.id);
 
         if (!user) {

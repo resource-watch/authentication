@@ -3,7 +3,7 @@ import chai from 'chai';
 
 import UserModel from 'models/user.model';
 
-import { createUserAndToken } from './utils/helpers';
+import { createTokenForUser, createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
 
@@ -52,7 +52,7 @@ describe('GET current user details', () => {
         response.body.should.have.property('provider').and.equal(user.provider);
     });
 
-    it('Getting my user while being logged in with ADMIN role returns', async () => {
+    it('Getting my user while being logged in with ADMIN role returns the user', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
         const response: request.Response = await requester
@@ -68,6 +68,18 @@ describe('GET current user details', () => {
         response.body.should.have.property('createdAt');
         response.body.should.have.property('role').and.equal(user.role);
         response.body.should.have.property('provider').and.equal(user.provider);
+    });
+
+    it('Getting my user while being logged in with MICROSERVICE id returns the user', async () => {
+        const token:string = await createTokenForUser({ id: 'microservice' });
+
+        const response: request.Response = await requester
+            .get(`/auth/user/me`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+
+        response.body.should.have.property('id').and.equal('microservice');
     });
 
     after(closeTestAgent);
