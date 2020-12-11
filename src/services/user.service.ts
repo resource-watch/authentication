@@ -12,6 +12,7 @@ import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import Settings from "services/settings.service";
+import OktaService, { OktaUser } from "services/okta.service";
 
 const { ObjectId } = mongoose.Types;
 
@@ -97,7 +98,7 @@ export default class UserService {
         }
     }
 
-    static async getUsers(app: string[], query: Record<string, string>): Promise<PaginateResult<UserDocument>> {
+    static async getUsers(app: string[], query: Record<string, string>): Promise<PaginateResult<IUser>> {
         logger.info('[UserService] Get users with app', app);
 
         const filteredQuery: Record<string, any> = UserService.getFilteredQuery({ ...query });
@@ -109,18 +110,15 @@ export default class UserService {
         const page: number = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
         const limit: number = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
 
-        const paginationOptions: Record<string, any> = {
-            page,
-            limit,
-            select: {
-                __v: 0,
-                password: 0,
-                salt: 0,
-                userToken: 0
-            }
-        };
+        const users: OktaUser[] = await OktaService.getUsers(filteredQuery, { limit, page });
+        const processedUsers = users.map(OktaService.convertOktaUserToIUser);
 
-        return UserModel.paginate(filteredQuery, paginationOptions);
+        // TODO: BC alert: total cannot be obtained from Okta's API
+        return {
+            docs: processedUsers,
+            total: 0,
+            limit,
+        };
     }
 
     static async getUser(conditions: Record<string, any>): Promise<UserDocument> {
