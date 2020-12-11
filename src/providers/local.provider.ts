@@ -14,7 +14,7 @@ import UserTempSerializer from "serializers/user-temp.serializer";
 import UserSerializer from "serializers/user.serializer";
 import UnprocessableEntityError from "errors/unprocessableEntity.error";
 import UnauthorizedError from "errors/unauthorized.error";
-import UserModel, { IUserModel } from "models/user.model";
+import UserModel, {IUser, IUserModel} from "models/user.model";
 import bcrypt from "bcrypt";
 import { Strategy } from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
@@ -194,7 +194,7 @@ export class LocalProvider extends BaseProvider {
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
-        let users: PaginateResult<IUserModel>;
+        let users: PaginateResult<IUser>;
 
         if (query.app === 'all') {
             users = await UserService.getUsers(null, omit(query, ['app']));

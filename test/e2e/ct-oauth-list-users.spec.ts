@@ -1,5 +1,6 @@
-import nock from 'nock';
 import chai from 'chai';
+import config from 'config';
+import nock from 'nock';
 
 import UserModel, { IUserModel } from 'models/user.model';
 
@@ -24,7 +25,6 @@ describe('List users', () => {
         requester = await getTestAgent();
 
         await UserModel.deleteMany({}).exec();
-
     });
 
     it('Visiting /auth/user while not logged in should return a 401 error', async () => {
@@ -36,7 +36,6 @@ describe('List users', () => {
         response.should.be.json;
         response.body.should.have.property('errors').and.be.an('array');
         response.body.errors[0].should.have.property('detail').and.equal(`Not authenticated`);
-
     });
 
     it('Visiting /auth/user while logged in as USER should return a 403 error', async () => {
@@ -66,7 +65,46 @@ describe('List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - just current user', async () => {
-        const { token, user } = await createUserAndToken({ role: 'ADMIN' });
+        const { token } = await createUserAndToken({ role: 'ADMIN' });
+
+        // Mock Okta API calls
+        nock(config.get('okta.url'))
+            .get('/api/v1/users')
+            .query({ limit: 10 })
+            .reply(200, [
+                {
+                    "id": "00uk4x3281Yka1zn85d5",
+                    "status": "PROVISIONED",
+                    "created": "2020-11-05T22:24:09.000Z",
+                    "activated": "2020-11-05T22:24:09.000Z",
+                    "statusChanged": "2020-11-05T22:24:09.000Z",
+                    "lastLogin": null,
+                    "lastUpdated": "2020-11-05T22:24:09.000Z",
+                    "passwordChanged": null,
+                    "type": { "id": "otyjopi3SIPJtvlbL5d5" },
+                    "profile": {
+                        id: '1',
+                        login: "example@wri.org",
+                        email: "example@wri.org",
+                        role: 'ADMIN',
+                        provider: 'okta',
+                        extraUserData: { apps: [] },
+                        firstName: "Example",
+                        lastName: "User",
+                    },
+                    "credentials": {
+                        "provider": {
+                            "type": "OKTA",
+                            "name": "OKTA"
+                        }
+                    },
+                    "_links": {
+                        "self": {
+                            "href": "https://wri.okta.com/api/v1/users/00uk4x3281Yka1zn85d5"
+                        }
+                    }
+                }
+            ]);
 
         const response: request.Response = await requester
             .get(`/auth/user`)
@@ -75,9 +113,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(1);
-
-        response.body.data[0].should.have.property('id').and.equal(user.id.toString());
-
+        response.body.data[0].should.have.property('id').and.equal('1');
         ensureHasPaginationElements(response);
     });
 

@@ -35,6 +35,9 @@
   "jwt": {
     "token": ""
   },
+  "okta": {
+    "url": "https://wri-admin.okta.com"
+  },
   "settings": {
     "defaultApp": "gfw",
     "local": {
