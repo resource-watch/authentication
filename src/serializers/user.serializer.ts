@@ -45,11 +45,6 @@ export default class UserSerializer {
                 prev: `${link}page[number]=${data.page - 1 > 0 ? data.page - 1 : data.page}&page[size]=${data.limit}`,
                 next: `${link}page[number]=${data.page + 1 < data.pages ? data.page + 1 : data.pages}&page[size]=${data.limit}`,
             };
-            result.meta = {
-                'total-pages': data.pages,
-                'total-items': data.total,
-                size: data.limit
-            };
         }
         return result;
     }
