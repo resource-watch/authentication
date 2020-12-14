@@ -7,6 +7,7 @@ import UserModel, { IUserModel } from 'models/user.model';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
+import {getMockOktaUser, mockOktaListUsers} from "../utils/okta.mocks";
 
 const should: Chai.Should = chai.should();
 chai.use(ChaiString);
@@ -317,6 +318,9 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
+        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
+
         const response: request.Response = await requester
             .post(`/auth/twitter/migrate`)
             .send({
@@ -326,7 +330,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
             })
             .redirects(0);
 
-response.should.redirect;
+        response.should.redirect;
         response.should.redirectTo(/\/auth\/twitter\/finished$/);
 
         const confirmedUser: IUserModel = await UserModel.findById(user.id)

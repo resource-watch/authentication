@@ -1,11 +1,11 @@
 import nock from 'nock';
 import chai from 'chai';
+import type request from 'superagent';
 
 import UserModel from 'models/user.model';
-
-import { createTokenForUser, createUserAndToken } from './utils/helpers';
+import { assertTokenInfo, createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
-import type request from 'superagent';
+import { getMockOktaUser, mockOktaListUsers } from "./utils/okta.mocks";
 
 chai.should();
 
@@ -24,50 +24,27 @@ describe('GET current user details', () => {
         requester = await getTestAgent();
 
         await UserModel.deleteMany({}).exec();
-
     });
 
     it('Getting my user without being logged in returns a 401', async () => {
-        const response: request.Response = await requester
-            .get(`/auth/user/me`);
-
+        const response: request.Response = await requester.get(`/auth/user/me`);
         response.status.should.equal(401);
     });
 
     it('Getting my user while being logged in with USER role returns the user', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
-
-        const response: request.Response = await requester
-            .get(`/auth/user/me`)
-            .set('Authorization', `Bearer ${token}`);
-
-        response.status.should.equal(200);
-
-        response.body.should.have.property('_id').and.equal(user.id.toString());
-        response.body.should.have.property('extraUserData').and.be.an('object');
-        response.body.extraUserData.should.have.property('apps').and.be.an('array').and.deep.equal(user.extraUserData.apps);
-        response.body.should.have.property('email').and.equal(user.email);
-        response.body.should.have.property('createdAt');
-        response.body.should.have.property('role').and.equal(user.role);
-        response.body.should.have.property('provider').and.equal(user.provider);
+        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        assertTokenInfo(response, user);
     });
 
     it('Getting my user while being logged in with ADMIN role returns the user', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
-
-        const response: request.Response = await requester
-            .get(`/auth/user/me`)
-            .set('Authorization', `Bearer ${token}`);
-
-        response.status.should.equal(200);
-
-        response.body.should.have.property('_id').and.equal(user.id.toString());
-        response.body.should.have.property('extraUserData').and.be.an('object');
-        response.body.extraUserData.should.have.property('apps').and.be.an('array').and.deep.equal(user.extraUserData.apps);
-        response.body.should.have.property('email').and.equal(user.email);
-        response.body.should.have.property('createdAt');
-        response.body.should.have.property('role').and.equal(user.role);
-        response.body.should.have.property('provider').and.equal(user.provider);
+        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        assertTokenInfo(response, user);
     });
 
     it('Getting my user while being logged in with MICROSERVICE id returns the user', async () => {

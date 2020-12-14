@@ -3,7 +3,7 @@ import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import Sinon, { SinonSandbox } from "sinon";
 
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { IUser, IUserModel } from 'models/user.model';
 import TempUserModel, { IUserTemp } from 'models/user-temp.model';
 
 const { ObjectId } = mongoose.Types;
@@ -79,4 +79,16 @@ export const stubConfigValue: (sandbox: Sinon.SinonSandbox, stubMap: Record<stri
         stub.withArgs(key).returns(stubMap[key]);
     });
     stub.callThrough();
+};
+
+export const assertTokenInfo: (response: ChaiHttp.Response, user: (IUser | Partial<IUser>)) => void = (response: ChaiHttp.Response, user: IUser | Partial<IUser>) => {
+    response.status.should.equal(200);
+    response.body.should.have.property('_id').and.equal(user.id.toString());
+    response.body.should.have.property('extraUserData').and.be.an('object');
+    response.body.extraUserData.should.have.property('apps').and.be.an('array').and.deep.equal(user.extraUserData.apps);
+    response.body.should.have.property('email').and.equal(user.email);
+    response.body.should.have.property('role').and.equal(user.role);
+    response.body.should.have.property('provider').and.equal(user.provider);
+    response.body.should.have.property('createdAt');
+    response.body.should.have.property('updatedAt');
 };

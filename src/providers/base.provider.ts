@@ -1,8 +1,9 @@
 import { Context } from "koa";
 import logger from "logger";
-import UserService from "services/user.service";
 import Utils from "utils";
-import { IUserModel } from "models/user.model";
+
+import UserService from "services/user.service";
+import { IUser } from "models/user.model";
 
 abstract class BaseProvider {
     static async createToken(ctx: Context, createInUser: boolean): Promise<string> {
@@ -23,7 +24,7 @@ abstract class BaseProvider {
     static async updateApplications(ctx: Context): Promise<void> {
         try {
             if (ctx.session?.applications) {
-                let user: IUserModel = Utils.getUser(ctx);
+                let user: IUser = Utils.getUser(ctx);
                 if (user.role === 'USER') {
                     user = await UserService.updateApplicationsForUser(user.id, ctx.session.applications);
                 } else {
@@ -32,7 +33,7 @@ abstract class BaseProvider {
                 delete ctx.session.applications;
                 if (user) {
                     await ctx.login({
-                        id: user._id,
+                        id: user.id,
                         provider: user.provider,
                         providerId: user.providerId,
                         role: user.role,

@@ -3,7 +3,7 @@ import logger from 'logger';
 import passport from 'koa-passport';
 import Settings, { IApplication, ISettings } from "services/settings.service";
 import UserService from "services/user.service";
-import { IUserModel } from "models/user.model";
+import {IUser, IUserModel} from "models/user.model";
 import { Context, Next } from "koa";
 
 const router: Router = new Router({ prefix: '/auth/twitter' });
@@ -102,7 +102,7 @@ class TwitterRouter {
             return;
         }
 
-        const user: IUserModel = await UserService.getUserById(sessionUser.id);
+        const user: IUser = await UserService.getUserById(sessionUser.id);
         if (!user) {
             error = 'Could not find a valid user account for the current session';
         }
@@ -119,7 +119,7 @@ class TwitterRouter {
             return;
         }
 
-        ctx.login(migratedUser);
+        await ctx.login(migratedUser);
 
         return ctx.redirect('/auth/twitter/finished');
     }
