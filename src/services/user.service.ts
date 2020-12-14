@@ -77,14 +77,16 @@ export default class UserService {
         return UserModel.findOne(conditions).exec();
     }
 
-    static async getUserById(id: string): Promise<UserDocument> {
-        const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
-
-        if (!isValidId) {
-            logger.info(`[Auth Service - getUserById] - Invalid id ${id} provided`);
-            throw new UnprocessableEntityError(`Invalid id ${id} provided`);
+    static async getUserById(id: string): Promise<IUser> {
+        try {
+            const search: string = OktaService.getOktaSearchCriteria({ id });
+            const users = await OktaService.getUsers(search, { limit: 1 });
+            return OktaService.convertOktaUserToIUser(users[0]);
+        } catch (err) {
+            logger.error('Error getting user by ID from Okta Users API: ');
+            logger.error(err);
+            return null;
         }
-        return UserModel.findById(id).select('-password -salt -userToken -__v').exec();
     }
 
     static async getUsersByIds(ids: string[] = []): Promise<UserDocument[]> {
@@ -360,22 +362,22 @@ export default class UserService {
         return user;
     }
 
-    static async migrateToUsernameAndPassword(user: UserDocument, email: string, password: string): Promise<UserDocument> {
+    static async migrateToUsernameAndPassword(user: IUser, email: string, password: string): Promise<UserDocument> {
         if (!user) {
             return null;
         }
+        const dbUser = await UserService.getUser({ _id: user.id });
 
         const salt: string = bcrypt.genSaltSync();
 
-        user.provider = 'local';
-        delete user.providerId;
-        user.salt = salt;
-        user.email = email;
-        user.password = bcrypt.hashSync(password, salt);
+        dbUser.provider = 'local';
+        delete dbUser.providerId;
+        dbUser.email = email;
+        dbUser.password = bcrypt.hashSync(password, salt);
 
-        user.updatedAt = new Date();
+        dbUser.updatedAt = new Date();
 
-        return user.save();
+        return dbUser.save();
     }
 
 

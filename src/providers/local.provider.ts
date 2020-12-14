@@ -4,9 +4,9 @@ import passport from "koa-passport";
 import { URL } from "url";
 import logger from "logger";
 import Utils from "utils";
-import { PaginateResult, Types } from "mongoose";
+import { Types } from "mongoose";
 import { omit } from "lodash";
-import UserService from "services/user.service";
+import UserService, {PaginatedIUserResult} from "services/user.service";
 import Settings, { IApplication, IThirdPartyAuth } from "services/settings.service";
 import { IUserTemp } from "models/user-temp.model";
 import { IRenew } from "models/renew.model";
@@ -156,7 +156,7 @@ export class LocalProvider extends BaseProvider {
     static async checkLogged(ctx: Context): Promise<void> {
         if (Utils.getUser(ctx)) {
             const userToken: UserDocument = Utils.getUser(ctx);
-            const user: UserDocument = await UserService.getUserById(userToken.id);
+            const user: IUser = await UserService.getUserById(userToken.id);
 
             ctx.body = UserSerializer.serializeElement(user);
             ctx.body.providerId = user.providerId;
@@ -185,7 +185,7 @@ export class LocalProvider extends BaseProvider {
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
-        let users: PaginateResult<IUser>;
+        let users: PaginatedIUserResult;
 
         if (query.app === 'all') {
             users = await UserService.getUsers(null, omit(query, ['app']));
@@ -208,7 +208,7 @@ export class LocalProvider extends BaseProvider {
             return;
         }
 
-        const user: UserDocument = await UserService.getUserById(requestUser.id);
+        const user: IUser = await UserService.getUserById(requestUser.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
@@ -220,7 +220,7 @@ export class LocalProvider extends BaseProvider {
     static async getUserById(ctx: Context): Promise<void> {
         logger.info('Get User by id: ', ctx.params.id);
 
-        const user: UserDocument = await UserService.getUserById(ctx.params.id);
+        const user: IUser = await UserService.getUserById(ctx.params.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
@@ -628,7 +628,7 @@ export class LocalProvider extends BaseProvider {
     static async updateApplications(ctx: Context): Promise<void> {
         try {
             if (ctx.session && ctx.session.applications) {
-                let user: UserDocument = Utils.getUser(ctx);
+                let user: IUser = Utils.getUser(ctx);
                 if (user.role === 'USER') {
                     user = await UserService.updateApplicationsForUser(user.id, ctx.session.applications);
                 } else {
@@ -637,7 +637,7 @@ export class LocalProvider extends BaseProvider {
                 delete ctx.session.applications;
                 if (user) {
                     await ctx.login({
-                        id: user._id,
+                        id: user.id,
                         provider: user.provider,
                         providerId: user.providerId,
                         role: user.role,
