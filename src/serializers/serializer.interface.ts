@@ -6,14 +6,7 @@ export interface ILinks {
     next: string;
 }
 
-export interface IMeta {
-    'total-pages': number;
-    'total-items': number;
-    size: number;
-}
-
 export interface ISerializedResponse {
     data: Record<string, any>;
     links?: ILinks;
-    meta?: IMeta;
 }

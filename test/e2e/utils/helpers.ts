@@ -65,11 +65,6 @@ export const createTempUser: (userData: Partial<IUserTemp>) => Promise<IUserTemp
 }).save());
 
 export const ensureHasPaginationElements: (response: ChaiHttp.Response) => void = (response: ChaiHttp.Response) => {
-    response.body.should.have.property('meta').and.be.an('object');
-    response.body.meta.should.have.property('total-pages').and.be.a('number');
-    response.body.meta.should.have.property('total-items').and.be.a('number');
-    response.body.meta.should.have.property('size').and.equal(10);
-
     response.body.should.have.property('links').and.be.an('object');
     response.body.links.should.have.property('self').and.be.a('string');
     response.body.links.should.have.property('first').and.be.a('string');
