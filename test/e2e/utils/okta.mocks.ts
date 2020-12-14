@@ -4,7 +4,7 @@ import faker from 'faker';
 
 import { OktaUser, OktaUserProfile } from "services/okta.service";
 
-export const getMockOktaUser: (override: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
+export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
     const email = faker.internet.email();
     return {
         "id": faker.random.uuid(),
@@ -41,9 +41,13 @@ export const getMockOktaUser: (override: Partial<OktaUserProfile>) => OktaUser =
     }
 };
 
-export const mockOktaListUsers = (query = {}, users: OktaUser[] = []) => {
+export const mockOktaListUsers = (
+    query = {},
+    users: OktaUser[] = [],
+    statusCode = 200,
+) => {
     nock(config.get('okta.url'))
         .get('/api/v1/users')
         .query(query)
-        .reply(200, users);
+        .reply(statusCode, users);
 }
