@@ -2,6 +2,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 import mongoosePaginate from 'mongoose-paginate';
 
 export interface IUser {
+    id: string;
     name?: string;
     photo?: string;
     provider: string;

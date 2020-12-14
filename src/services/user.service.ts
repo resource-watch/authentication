@@ -2,13 +2,13 @@ import { Context } from "koa";
 import JWT, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import mongoose, { PaginateResult, Types } from 'mongoose';
+import mongoose, { Types } from 'mongoose';
 import { isEqual } from 'lodash';
 
 import logger from 'logger';
 import MailService from 'services/mail.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
-import UserModel, {IUser, IUserModel, IUserPayload} from 'models/user.model';
+import UserModel, { IUser, IUserModel, IUserPayload } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import Settings from "services/settings.service";
@@ -16,52 +16,12 @@ import OktaService, { OktaUser } from "services/okta.service";
 
 const { ObjectId } = mongoose.Types;
 
-interface IUserPayload extends IUserDocument {
-    apps?: string[];
-    callbackUrl: string;
+export interface PaginatedIUserResult {
+    docs: IUser[];
+    limit: number;
 }
 
 export default class UserService {
-
-    private static getFilteredQuery(query: Record<string, any>): Record<string, any> {
-        const allowedSearchFields: string[] = ['name', 'provider', 'email', 'role'];
-        logger.info('[UserService] getFilteredQuery');
-        logger.debug('[UserService] getFilteredQuery Object.keys(query)', Object.keys(query));
-        const filteredSearchFields: string[] = Object.keys(query).filter((param) => allowedSearchFields.includes(param));
-        const filteredQuery: Record<string, any> = {};
-
-        filteredSearchFields.forEach((param: string) => {
-            // @ts-ignore
-            switch (UserModel.schema.paths[param].instance) {
-
-                case 'String':
-                    filteredQuery[param] = {
-                        $regex: query[param],
-                        $options: 'i'
-                    };
-                    break;
-                case 'Array':
-                    if (query[param].indexOf('@') >= 0) {
-                        filteredQuery[param] = {
-                            $all: query[param].split('@').map((elem: string) => elem.trim())
-                        };
-                    } else {
-                        filteredQuery[param] = {
-                            $in: query[param].split(',').map((elem: string) => elem.trim())
-                        };
-                    }
-                    break;
-                case 'Mixed':
-                    filteredQuery[param] = { $ne: null };
-                    break;
-                default:
-                    filteredQuery[param] = query[param];
-
-            }
-        });
-        logger.debug(filteredQuery);
-        return filteredQuery;
-    }
 
     static async createToken(user: IUserModel, saveInUser: boolean): Promise<string> {
         try {
@@ -103,27 +63,14 @@ export default class UserService {
         }
     }
 
-    static async getUsers(app: string[], query: Record<string, string>): Promise<PaginateResult<IUser>> {
-        logger.info('[UserService] Get users with app', app);
-
-        const filteredQuery: Record<string, any> = UserService.getFilteredQuery({ ...query });
-
-        if (app) {
-            filteredQuery['extraUserData.apps'] = { $in: app };
-        }
-
-        const page: number = query['page[number]'] ? parseInt(query['page[number]'], 10) : 1;
+    static async getUsers(apps: string[], query: Record<string, string>): Promise<PaginatedIUserResult> {
+        logger.info('[UserService] Get users with apps', apps);
         const limit: number = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
-
-        const users: OktaUser[] = await OktaService.getUsers(filteredQuery, { limit, page });
-        const processedUsers = users.map(OktaService.convertOktaUserToIUser);
-
-        // TODO: BC alert: total cannot be obtained from Okta's API
-        return {
-            docs: processedUsers,
-            total: 0,
-            limit,
-        };
+        const before: string = query['page[before]'];
+        const after: string = query['page[after]'];
+        const search: string = OktaService.getOktaSearchCriteria({ ...query, apps });
+        const users: OktaUser[] = await OktaService.getUsers(search, { limit, before, after });
+        return { docs: users.map(OktaService.convertOktaUserToIUser), limit };
     }
 
     static async getUser(conditions: Record<string, any>): Promise<IUserModel> {

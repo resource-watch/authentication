@@ -1,7 +1,8 @@
 import axios from 'axios';
 import config from 'config';
 import logger from 'logger';
-import { IUser } from "../models/user.model";
+
+import { IUser } from "models/user.model";
 
 export interface OktaUserProfile {
     login: string;
@@ -35,15 +36,13 @@ export interface OktaUser {
 
 export interface OktaPaginationOptions {
     limit: number;
-    page: number;
+    before: string;
+    after: string;
 }
 
 export default class OktaService {
 
-    static async getUsers(
-        filteredQuery: Record<string, any>,
-        pageOptions: OktaPaginationOptions,
-    ): Promise<OktaUser[]> {
+    static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
         try {
             const { data } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
                 headers: {
@@ -53,8 +52,9 @@ export default class OktaService {
                 },
                 params: {
                     limit: pageOptions.limit,
-                    // TODO: missing support for cursors
-                    // after: pageOptions.page,
+                    ...(search && { search }),
+                    ...(pageOptions.after && { after: pageOptions.after }),
+                    ...(pageOptions.before && { before: pageOptions.before }),
                 }
             });
             return data;
@@ -64,13 +64,63 @@ export default class OktaService {
         }
     }
 
+    static getOktaSearchCriteria(query: Record<string, any>): string {
+        logger.debug('[UserService] getOktaSearchCriteria Object.keys(query)', Object.keys(query));
+
+        const searchCriteria: string[] = [];
+        Object.keys(query)
+            .filter((param) => ['name', 'provider', 'email', 'role', 'apps'].includes(param))
+            .forEach((field: string) => {
+                if (field === 'apps') {
+                    searchCriteria.push(OktaService.getAppsSearchCriteria(query[field]));
+                } else {
+                    searchCriteria.push(`(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${query[field]}")`);
+                }
+            });
+
+        return searchCriteria
+            .filter(el => el !== '')
+            .join(' and ');
+    }
+
     static convertOktaUserToIUser(user: OktaUser): IUser {
         return {
             ...user.profile,
+            id: user.profile.legacyId,
             extraUserData: { apps: user.profile.apps },
             createdAt: new Date(user.created),
             updatedAt: new Date(user.lastUpdated),
         };
+    }
+
+    private static getOktaProfileFieldName(userField: string) {
+        switch (userField) {
+            case 'name':
+                return 'profile.displayName';
+
+            default:
+                return `profile.${userField}`;
+        }
+    }
+
+    private static getOktaFieldOperator(userField: string) {
+        switch (userField) {
+            case 'apps':
+            case 'role':
+            case 'provider':
+                return 'eq';
+
+            default:
+                return 'sw';
+        }
+    }
+
+    private static getAppsSearchCriteria(apps: string[]): string {
+        if (!apps) {
+            return '';
+        }
+
+        return `(${apps.map(app => `(profile.apps eq "${app}")`).join(' or ')})`;
     }
 
 }
