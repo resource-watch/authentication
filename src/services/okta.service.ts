@@ -4,23 +4,23 @@ import logger from 'logger';
 import { IUser } from "../models/user.model";
 
 export interface OktaUserProfile {
-    id: string;
     login: string;
     email: string;
-    role: string;
-    provider: string;
-    extraUserData: { apps: string[]; };
-    firstName?: string;
-    lastName?: string;
+    displayName?: string;
     mobilePhone?: string;
     secondEmail?: string;
+    legacyId: string;
+    role: string;
+    provider: string;
+    apps: string[];
+    photo?: string;
 }
 
 export interface OktaUser {
     id: string;
     status: string;
     created: string;
-    activated: Date;
+    activated: string;
     statusChanged: string;
     lastLogin: string|null;
     lastUpdated: string;
@@ -67,6 +67,7 @@ export default class OktaService {
     static convertOktaUserToIUser(user: OktaUser): IUser {
         return {
             ...user.profile,
+            extraUserData: { apps: user.profile.apps },
             createdAt: new Date(user.created),
             updatedAt: new Date(user.lastUpdated),
         };
