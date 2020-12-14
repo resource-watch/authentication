@@ -65,7 +65,7 @@ describe('List users', () => {
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - just current user', async () => {
         const user = getMockOktaUser({});
-        mockOktaListUsers({ limit: 10, search: 'profile.apps pr "rw"' }, [user]);
+        mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
         const response: request.Response = await requester
@@ -83,7 +83,7 @@ describe('List users', () => {
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - just current user if no other matches the current user\'s apps', async () => {
         const user = getMockOktaUser({});
-        mockOktaListUsers({ limit: 10, search: 'profile.apps pr "rw"' }, [user]);
+        mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
         const response: request.Response = await requester
@@ -105,7 +105,7 @@ describe('List users', () => {
             getMockOktaUser({ email: 'rw-user-two@example.com', apps: ['rw'] }),
             getMockOktaUser({}),
         ];
-        mockOktaListUsers({ limit: 10, search: 'profile.apps pr "rw"' }, users);
+        mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, users);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
         const response: request.Response = await requester
@@ -124,7 +124,7 @@ describe('List users', () => {
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by email address is supported', async () => {
         const user = getMockOktaUser({});
-        mockOktaListUsers({ limit: 10, search: `profile.apps pr "rw" and email sw "${user.profile.email}"` }, [user]);
+        mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
         const response: request.Response = await requester
@@ -140,12 +140,12 @@ describe('List users', () => {
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by email address with plus sign in it is supported as long as it\'s escaped', async () => {
         const user = getMockOktaUser({ email: 'text+email@vizzuality.com' });
-        mockOktaListUsers({ limit: 10, search: `profile.apps pr "rw" and email sw "${user.profile.email}"` }, [user]);
+        mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN', email: 'text+email@vizzuality.com' });
         const response: request.Response = await requester
             .get(`/auth/user`)
-            .query({ email: 'text\\\+email@vizzuality.com' })
+            .query({ email: user.profile.email })
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -160,7 +160,7 @@ describe('List users', () => {
         const localUser = getMockOktaUser({ provider: 'local' });
         const googleUser = getMockOktaUser({ provider: 'google' });
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and provider eq "${localUser.profile.provider}"` },
+            { limit: 10, search: `(profile.provider eq "${localUser.profile.provider}") and ((profile.apps eq "rw"))` },
             [localUser],
         );
 
@@ -176,7 +176,7 @@ describe('List users', () => {
         ensureHasPaginationElements(responseOne);
 
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and provider eq "${googleUser.profile.provider}"` },
+            { limit: 10, search: `(profile.provider eq "${googleUser.profile.provider}") and ((profile.apps eq "rw"))` },
             [googleUser],
         );
 
@@ -196,7 +196,7 @@ describe('List users', () => {
         const userTwo = getMockOktaUser({});
 
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and profile.displayName sw "${userOne.profile.displayName}"` },
+            { limit: 10, search: `(profile.displayName sw "${userOne.profile.displayName}") and ((profile.apps eq "rw"))` },
             [userOne],
         );
 
@@ -212,7 +212,7 @@ describe('List users', () => {
         ensureHasPaginationElements(responseOne);
 
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and profile.displayName sw "${userTwo.profile.displayName}"` },
+            { limit: 10, search: `(profile.displayName sw "${userTwo.profile.displayName}") and ((profile.apps eq "rw"))` },
             [userTwo],
         );
 
@@ -233,7 +233,7 @@ describe('List users', () => {
         const admin = getMockOktaUser({ role: 'ADMIN' });
 
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and profile.role sw "${user.profile.role}"` },
+            { limit: 10, search: `(profile.role eq "${user.profile.role}") and ((profile.apps eq "rw"))` },
             [user],
         );
 
@@ -249,7 +249,7 @@ describe('List users', () => {
         ensureHasPaginationElements(responseOne);
 
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and profile.role sw "${manager.profile.role}"` },
+            { limit: 10, search: `(profile.role eq "${manager.profile.role}") and ((profile.apps eq "rw"))` },
             [manager],
         );
 
@@ -264,8 +264,8 @@ describe('List users', () => {
         ensureHasPaginationElements(responseTwo);
 
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and profile.role sw "${admin.profile.role}"` },
-            [manager],
+            { limit: 10, search: `(profile.role eq "${admin.profile.role}") and ((profile.apps eq "rw"))` },
+            [admin],
         );
 
         const responseThree: request.Response = await requester
@@ -281,7 +281,7 @@ describe('List users', () => {
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by password not supported', async () => {
         const user = getMockOktaUser({});
-        mockOktaListUsers({ limit: 10, search: `profile.apps pr "rw"` }, [user]);
+        mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
         const response: request.Response = await requester
@@ -301,7 +301,7 @@ describe('List users', () => {
         const userThree = getMockOktaUser({ apps: ['fake-app-2'] });
         mockOktaListUsers({ limit: 10 }, [userOne, userTwo, userThree]);
 
-        const { token } = await createUserAndToken({});
+        const { token } = await createUserAndToken({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user?app=all`)
             .set('Content-Type', 'application/json')
@@ -321,7 +321,7 @@ describe('List users', () => {
         const userOne = getMockOktaUser({ apps: ['fake-app'] });
         const userTwo = getMockOktaUser({ apps: ['fake-app-2'] });
         mockOktaListUsers(
-            { limit: 10, search: `profile.apps pr "rw" and (profile.apps pr "fake-app" or profile.apps pr "fake-app-2")` },
+            { limit: 10, search: `((profile.apps eq "fake-app") or (profile.apps eq "fake-app-2"))` },
             [userOne, userTwo]
         );
 
@@ -343,7 +343,7 @@ describe('List users', () => {
     it('Visiting /auth/user while logged in as ADMIN and an invalid query param should return the list of users ignoring the invalid query param', async () => {
         const userOne = getMockOktaUser({});
         const userTwo = getMockOktaUser({});
-        mockOktaListUsers({ limit: 10 }, [userOne, userTwo]);
+        mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [userOne, userTwo]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
         const response: request.Response = await requester
