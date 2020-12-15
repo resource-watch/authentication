@@ -2,7 +2,7 @@ import { Context } from "koa";
 import JWT, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
-import mongoose, { Types } from 'mongoose';
+import mongoose from 'mongoose';
 import { isEqual } from 'lodash';
 
 import logger from 'logger';
@@ -93,13 +93,14 @@ export default class UserService {
         return users.map(OktaService.convertOktaUserToIUser);
     }
 
-    static async getIdsByRole(role: string): Promise<Types.ObjectId[]> {
+    static async getIdsByRole(role: string): Promise<string[]> {
         if (!['SUPERADMIN', 'ADMIN', 'MANAGER', 'USER'].includes(role)) {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
         }
 
-        const data: UserDocument[] = await UserModel.find({ role }).exec();
-        return data.map((el) => el._id);
+        const search: string = OktaService.getOktaSearchCriteria({ role });
+        const users = await OktaService.getUsers(search, { limit: 100 });
+        return users.map(OktaService.convertOktaUserToIUser).map((el) => el.id);
     }
 
     static async updateUser(id: string, data: UserDocument, requestUser: UserDocument): Promise<UserDocument> {
