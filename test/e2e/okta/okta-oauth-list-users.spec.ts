@@ -1,29 +1,32 @@
 import chai from 'chai';
 import nock from 'nock';
 import type request from 'superagent';
+import sinon, { SinonSandbox } from "sinon";
 
-import UserModel, { IUser, UserDocument } from 'models/user.model';
+import { IUser, UserDocument } from 'models/user.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken, ensureHasPaginationElements } from '../utils/helpers';
+import {createUserAndToken, ensureHasPaginationElements, stubConfigValue} from '../utils/helpers';
 import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
 
 chai.should();
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('List users', () => {
+describe('[OKTA] List users', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
-        requester = await getTestAgent();
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        await UserModel.deleteMany({}).exec();
+        requester = await getTestAgent();
     });
 
     it('Visiting /auth/user while not logged in should return a 401 error', async () => {
@@ -357,13 +360,12 @@ describe('List users', () => {
         ensureHasPaginationElements(response);
     });
 
-    after(() => {
-        closeTestAgent();
+    after(async () => {
+        sandbox.restore();
+        await closeTestAgent();
     });
 
     afterEach(async () => {
-        await UserModel.deleteMany({}).exec();
-
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }

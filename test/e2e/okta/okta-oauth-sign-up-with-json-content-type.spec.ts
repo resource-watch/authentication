@@ -15,7 +15,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('OAuth endpoints tests - Sign up with JSON content type', () => {
+describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

@@ -7,6 +7,7 @@
   "redis": {
     "url": "localhost"
   },
+  "authProvider": "CT",
   "logger": {
     "name": "Authorization",
     "level": "debug",

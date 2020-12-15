@@ -15,7 +15,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('OAuth endpoints tests - Recover password request - JSON version', () => {
+describe('[OKTA] OAuth endpoints tests - Recover password request - JSON version', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

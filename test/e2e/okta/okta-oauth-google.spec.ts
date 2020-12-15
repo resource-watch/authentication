@@ -17,7 +17,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Google auth endpoint tests', () => {
+describe('[OKTA] Google auth endpoint tests', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
