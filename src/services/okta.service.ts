@@ -67,10 +67,12 @@ export default class OktaService {
         Object.keys(query)
             .filter((param) => ['id', 'name', 'provider', 'email', 'role', 'apps'].includes(param))
             .forEach((field: string) => {
-                if (field === 'apps') {
-                    searchCriteria.push(OktaService.getAppsSearchCriteria(query[field]));
-                } else {
-                    searchCriteria.push(`(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${query[field]}")`);
+                if (query[field]) {
+                    if (Array.isArray(query[field])) {
+                        searchCriteria.push(OktaService.getSearchCriteriaFromArray(field, query[field]));
+                    } else {
+                        searchCriteria.push(`(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${query[field]}")`);
+                    }
                 }
             });
 
@@ -122,12 +124,12 @@ export default class OktaService {
         }
     }
 
-    private static getAppsSearchCriteria(apps: string[]): string {
-        if (!apps) {
+    private static getSearchCriteriaFromArray(field: string, array: string[]): string {
+        if (!array || array.length <= 0) {
             return '';
         }
 
-        return `(${apps.map(app => `(profile.apps eq "${app}")`).join(' or ')})`;
+        return `(${array.map(item => `(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${item}")`).join(' or ')})`;
     }
 
 }
