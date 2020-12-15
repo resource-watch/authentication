@@ -7,7 +7,7 @@ import UserModel, { UserDocument } from 'models/user.model';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
-import {getMockOktaUser, mockOktaListUsers} from "../utils/okta.mocks";
+import {getMockOktaUser, mockOktaListUsers} from "../okta/okta.mocks";
 
 const should: Chai.Should = chai.should();
 chai.use(ChaiString);
