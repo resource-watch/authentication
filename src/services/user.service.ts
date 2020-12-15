@@ -8,7 +8,7 @@ import { isEqual } from 'lodash';
 import logger from 'logger';
 import MailService from 'services/mail.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
-import UserModel, { UserDocument, IUserPayload } from 'models/user.model';
+import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import Settings from "services/settings.service";
@@ -219,7 +219,7 @@ export default class UserService {
         return !!(exist || existTemp);
     }
 
-    static async createUser(data: IUserPayload, generalConfig: Record<string, any>): Promise<IUserTemp> {
+    static async createUser(data: IUser & { apps: string[]; callbackUrl: string }, generalConfig: Record<string, any>): Promise<IUserTemp> {
         const salt: string = bcrypt.genSaltSync();
 
         const apps: string[] = data.apps || [];
@@ -254,7 +254,7 @@ export default class UserService {
         return user;
     }
 
-    static async createUserWithoutPassword(data: IUserPayload, generalConfig: Record<string, any>): Promise<void> {
+    static async createUserWithoutPassword(data: IUser & { apps: string[]; callbackUrl: string }, generalConfig: Record<string, any>): Promise<void> {
         const salt: string = bcrypt.genSaltSync();
         const pass: string = crypto.randomBytes(8).toString('hex');
         const user: IUserTemp = await new UserTempModel({
