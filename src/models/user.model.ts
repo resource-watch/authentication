@@ -16,11 +16,6 @@ export interface IUser {
     userToken?: string;
 }
 
-export interface IUserPayload extends IUser {
-    apps?: string[];
-    callbackUrl: string;
-}
-
 export interface UserDocument extends IUser, Document {}
 
 const UserSchema: Schema = new Schema({
