@@ -1,4 +1,4 @@
-import { IUser } from "models/user.model";
+import { IUserDocument } from "models/user.model";
 import { ISerializedResponse } from "serializers/serializer.interface";
 
 export default class UserSerializer {
@@ -28,7 +28,7 @@ export default class UserSerializer {
                 while (data.docs.indexOf(undefined) >= 0) {
                     data.docs.splice(data.docs.indexOf(undefined), 1);
                 }
-                result.data = data.docs.map((el: IUser) => UserSerializer.serializeElement(el));
+                result.data = data.docs.map((el: IUserDocument) => UserSerializer.serializeElement(el));
             } else if (Array.isArray(data)) {
                 result.data = data.map((e) => UserSerializer.serializeElement(e));
             } else {

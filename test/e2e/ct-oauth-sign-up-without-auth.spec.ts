@@ -3,7 +3,7 @@ import chai from 'chai';
 import { isEqual } from 'lodash';
 import config from 'config';
 
-import UserModel, { IUser } from 'models/user.model';
+import UserModel, { IUserDocument } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
@@ -160,7 +160,7 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const confirmedUser: IUserDocument = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someemail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -169,7 +169,7 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
     });
 
     it('Registering a user with an existing email address (confirmed user) returns a 200 error (TODO: this should return a 422)', async () => {
-        const user: IUser = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
+        const user: IUserDocument = await UserModel.findOne({ email: 'someemail@gmail.com' }).exec();
         should.exist(user);
 
         const response: request.Response = await requester
@@ -253,7 +253,7 @@ describe('OAuth endpoints tests - Sign up without auth', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUser = await UserModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
+        const confirmedUser: IUserDocument = await UserModel.findOne({ email: 'someotheremail@gmail.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('someotheremail@gmail.com');
         confirmedUser.should.have.property('role').and.equal('USER');

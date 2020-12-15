@@ -2,7 +2,7 @@ import nock from 'nock';
 import chai from 'chai';
 import mongoose from 'mongoose';
 
-import UserModel, { IUser } from 'models/user.model';
+import UserModel, { IUserDocument } from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import type request from 'superagent';
@@ -117,7 +117,7 @@ describe('OAuth endpoints tests - Recover password post - JSON version', () => {
     });
 
     it('Recover password post with correct token and matching passwords should redirect to the configured URL (happy case) - JSON format', async () => {
-        const user: IUser = await new UserModel({
+        const user: IUserDocument = await new UserModel({
             __v: 0,
             email: 'test@example.com',
             password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',

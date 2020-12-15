@@ -5,7 +5,7 @@ import logger from "logger";
 import Utils from "utils";
 import UserService from "services/user.service";
 import Settings, { IThirdPartyAuth } from "services/settings.service";
-import { IUser } from "models/user.model";
+import { IUserDocument } from "models/user.model";
 import NoTwitterAccountError from "errors/noTwitterAccount.error";
 import { Strategy } from "passport";
 import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
@@ -21,7 +21,7 @@ export class TwitterProvider extends BaseProvider {
     ): Promise<void> {
         logger.info('[passportService] Registering user', profile);
 
-        const user: IUser = await UserService.getUser({
+        const user: IUserDocument = await UserService.getUser({
             provider: 'twitter',
             providerId: profile.id,
         });

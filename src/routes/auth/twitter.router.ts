@@ -3,12 +3,12 @@ import logger from 'logger';
 import passport from 'koa-passport';
 import Settings, { IApplication, ISettings } from "services/settings.service";
 import UserService from "services/user.service";
-import { IUser } from "models/user.model";
+import { IUserDocument } from "models/user.model";
 import { Context, Next } from "koa";
 
 const router: Router = new Router({ prefix: '/auth/twitter' });
 
-const getUser: (ctx: Context) => IUser = (ctx: Context) => ctx.request.query.user || ctx.state.user;
+const getUser: (ctx: Context) => IUserDocument = (ctx: Context) => ctx.request.query.user || ctx.state.user;
 
 const getOriginApp: (ctx: Context, config: ISettings) => string = (ctx: Context, config: ISettings) => {
     if (ctx.query.origin) {
@@ -58,7 +58,7 @@ class TwitterRouter {
             return ctx.redirect('/auth/twitter/start');
         }
 
-        const user: IUser = getUser(ctx);
+        const user: IUserDocument = getUser(ctx);
         if (!user) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
@@ -77,7 +77,7 @@ class TwitterRouter {
             return ctx.redirect('/auth/twitter/start');
         }
 
-        const sessionUser: IUser = getUser(ctx);
+        const sessionUser: IUserDocument = getUser(ctx);
         if (!sessionUser) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
@@ -102,12 +102,12 @@ class TwitterRouter {
             return;
         }
 
-        const user: IUser = await UserService.getUserById(sessionUser.id);
+        const user: IUserDocument = await UserService.getUserById(sessionUser.id);
         if (!user) {
             error = 'Could not find a valid user account for the current session';
         }
 
-        const migratedUser: IUser = await UserService.migrateToUsernameAndPassword(user, ctx.request.body.email, ctx.request.body.password);
+        const migratedUser: IUserDocument = await UserService.migrateToUsernameAndPassword(user, ctx.request.body.email, ctx.request.body.password);
 
         if (error) {
             await ctx.render('migrate', {
@@ -130,7 +130,7 @@ class TwitterRouter {
             return ctx.redirect('/auth/twitter/start');
         }
 
-        const sessionUser: IUser = getUser(ctx);
+        const sessionUser: IUserDocument = getUser(ctx);
         if (!sessionUser) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
