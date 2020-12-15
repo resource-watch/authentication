@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { UserDocument } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { createUserAndToken } from './utils/helpers';
@@ -105,7 +105,7 @@ describe('Auth endpoints tests - Update user', () => {
         (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
         (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
 
-        const updatedUser: IUserModel = await UserModel.findOne({ email: user.email }).exec();
+        const updatedUser: UserDocument = await UserModel.findOne({ email: user.email }).exec();
 
         response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });
@@ -152,7 +152,7 @@ describe('Auth endpoints tests - Update user', () => {
         (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
         (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
 
-        const updatedUser: IUserModel = await UserModel.findOne({ email: user.email }).exec();
+        const updatedUser: UserDocument = await UserModel.findOne({ email: user.email }).exec();
 
         response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });

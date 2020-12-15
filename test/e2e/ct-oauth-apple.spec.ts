@@ -4,7 +4,7 @@ import crypto, { KeyPairSyncResult } from 'crypto';
 import JWT from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 import { pem2jwk, RSA_JWK } from 'pem-jwk';
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { UserDocument } from 'models/user.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
@@ -59,7 +59,7 @@ describe('Apple auth endpoint tests', () => {
     });
 
     it('Visiting /auth/apple/callback with valid data should redirect to the login successful page', async () => {
-        const missingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://appleid.apple.com')
@@ -90,7 +90,7 @@ describe('Apple auth endpoint tests', () => {
         response.should.redirect;
         response.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
+        const confirmedUser: UserDocument = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('dj8e99g34n@privaterelay.appleid.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -99,7 +99,7 @@ describe('Apple auth endpoint tests', () => {
     });
 
     it('Visiting /auth/apple/callback while being logged in with a callbackUrl param should redirect to the callback URL page', async () => {
-        const missingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://appleid.apple.com')
@@ -143,7 +143,7 @@ describe('Apple auth endpoint tests', () => {
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
 
-        const confirmedUser: IUserModel | null = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
+        const confirmedUser: UserDocument | null = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('dj8e99g34n@privaterelay.appleid.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -152,7 +152,7 @@ describe('Apple auth endpoint tests', () => {
     });
 
     it('Visiting /auth/apple/callback while being logged in with an updated callbackUrl param should redirect to the new callback URL page', async () => {
-        const missingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const missingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.not.exist(missingUser);
 
         nock('https://appleid.apple.com')
@@ -199,7 +199,7 @@ describe('Apple auth endpoint tests', () => {
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wri.org/');
 
-        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
+        const confirmedUser: UserDocument = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('dj8e99g34n@privaterelay.appleid.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -208,7 +208,7 @@ describe('Apple auth endpoint tests', () => {
     });
 
     it('Visiting /auth/apple/token with a valid Apple OAuth token should generate a new user and a new token if providerId does not match', async () => {
-        const existingUser: IUserModel = await UserModel.findOne({ providerId: '000958.a4550a8804284886a5b5116a1c0351af.1425' }).exec();
+        const existingUser: UserDocument = await UserModel.findOne({ providerId: '000958.a4550a8804284886a5b5116a1c0351af.1425' }).exec();
         should.not.exist(existingUser);
 
         const keys: KeyPairSyncResult<string, string> = crypto.generateKeyPairSync('rsa', {
@@ -269,7 +269,7 @@ describe('Apple auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const userWithToken: IUserModel = await UserModel.findOne({ providerId: '000958.a4550a8804284886a5b5116a1c0351af.1425' }).exec();
+        const userWithToken: UserDocument = await UserModel.findOne({ providerId: '000958.a4550a8804284886a5b5116a1c0351af.1425' }).exec();
         should.exist(userWithToken);
         userWithToken.should.have.property('email').and.equal('dj8e99g34n@privaterelay.appleid.com');
         userWithToken.should.have.property('role').and.equal('USER');
@@ -288,7 +288,7 @@ describe('Apple auth endpoint tests', () => {
             photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
         }).save();
 
-        const existingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
+        const existingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' }).exec();
         should.exist(existingUser);
         existingUser.should.have.property('email').and.equal('john.doe@vizzuality.com');
         existingUser.should.have.property('name').and.equal('John Doe');
@@ -356,7 +356,7 @@ describe('Apple auth endpoint tests', () => {
 
         JWT.verify(response.body.token, process.env.JWT_SECRET);
 
-        const userWithToken: IUserModel = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
+        const userWithToken: UserDocument = await UserModel.findOne({ email: 'dj8e99g34n@privaterelay.appleid.com' }).exec();
         should.exist(userWithToken);
         userWithToken.should.have.property('email').and.equal('dj8e99g34n@privaterelay.appleid.com');
         userWithToken.should.have.property('role').and.equal('USER');
