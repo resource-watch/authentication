@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { IUserDocument } from 'models/user.model';
 import { createUser, createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { TOKENS } from './utils/test.constants';
@@ -91,7 +91,7 @@ describe('GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, single user)', async () => {
-        const userOne: IUserModel = await new UserModel(createUser({})).save();
+        const userOne: IUserDocument = await new UserModel(createUser({})).save();
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
@@ -106,8 +106,8 @@ describe('GET users ids by role', () => {
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, multiple users)', async () => {
         await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'ADMIN' })).save();
         await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'MANAGER' })).save();
-        const userThree: IUserModel = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
-        const userFour: IUserModel = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
+        const userThree: IUserDocument = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
+        const userFour: IUserDocument = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)

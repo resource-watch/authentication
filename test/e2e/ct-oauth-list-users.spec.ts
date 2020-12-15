@@ -2,7 +2,7 @@ import chai from 'chai';
 import nock from 'nock';
 import type request from 'superagent';
 
-import UserModel, { IUser, IUserModel } from 'models/user.model';
+import UserModel, { IUser, IUserDocument } from 'models/user.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { createUserAndToken, ensureHasPaginationElements } from './utils/helpers';
 import { getMockOktaUser, mockOktaListUsers } from "./utils/okta.mocks";
@@ -151,7 +151,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        response.body.data.map((e: IUserModel) => e.email).should.include(user.profile.email);
+        response.body.data.map((e: IUserDocument) => e.email).should.include(user.profile.email);
 
         ensureHasPaginationElements(response);
     });
@@ -310,7 +310,7 @@ describe('List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(3);
-        response.body.data.map((e: IUserModel) => e.email).should
+        response.body.data.map((e: IUserDocument) => e.email).should
             .include(userOne.profile.email).and.to
             .include(userTwo.profile.email).and.to
             .include(userThree.profile.email);

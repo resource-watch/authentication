@@ -2,7 +2,7 @@ import chai from 'chai';
 import nock from 'nock';
 import sinon, { SinonSandbox } from 'sinon';
 
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { IUserDocument } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { getUUID, stubConfigValue } from './utils/helpers';
@@ -96,7 +96,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'test@example.com' }).exec();
+        const confirmedUser: IUserDocument = await UserModel.findOne({ email: 'test@example.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('test@example.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -123,7 +123,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'test@example.com' }).exec();
+        const confirmedUser: IUserDocument = await UserModel.findOne({ email: 'test@example.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('test@example.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -161,7 +161,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'test@example.com' }).exec();
+        const confirmedUser: IUserDocument = await UserModel.findOne({ email: 'test@example.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('test@example.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -200,7 +200,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'test@example.com' }).exec();
+        const confirmedUser: IUserDocument = await UserModel.findOne({ email: 'test@example.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('test@example.com');
         confirmedUser.should.have.property('role').and.equal('USER');
@@ -238,7 +238,7 @@ describe('OAuth endpoints tests - Confirm account', () => {
         const missingTempUser: IUserTemp = await UserTempModel.findOne({ email: 'test@example.com' }).exec();
         should.not.exist(missingTempUser);
 
-        const confirmedUser: IUserModel = await UserModel.findOne({ email: 'test@example.com' }).exec();
+        const confirmedUser: IUserDocument = await UserModel.findOne({ email: 'test@example.com' }).exec();
         should.exist(confirmedUser);
         confirmedUser.should.have.property('email').and.equal('test@example.com');
         confirmedUser.should.have.property('role').and.equal('USER');

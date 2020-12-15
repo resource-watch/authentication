@@ -3,7 +3,7 @@ import { RouterContext } from "koa-router";
 import logger from "logger";
 import Utils from "utils";
 import Settings, { IThirdPartyAuth } from "services/settings.service";
-import UserModel, { IUserModel } from "models/user.model";
+import UserModel, { IUserDocument } from "models/user.model";
 import passport from "koa-passport";
 import { Strategy as FacebookStrategy, StrategyOption } from "passport-facebook";
 import FacebookTokenStrategy from "passport-facebook-token";
@@ -56,7 +56,7 @@ export class FacebookProvider extends BaseProvider {
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         logger.info('[passportService] Registering user', profile);
 
-        let user: IUserModel = await UserModel.findOne({
+        let user: IUserDocument = await UserModel.findOne({
             provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
             providerId: profile.id,
         }).exec();

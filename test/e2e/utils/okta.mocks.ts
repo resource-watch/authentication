@@ -5,7 +5,7 @@ import faker from 'faker';
 import { OktaUser, OktaUserProfile } from "services/okta.service";
 
 export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
-    const email = faker.internet.email();
+    const email:string = faker.internet.email();
     return {
         "id": faker.random.uuid(),
         "status": "PROVISIONED",

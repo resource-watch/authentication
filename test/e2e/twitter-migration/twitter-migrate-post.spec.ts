@@ -3,7 +3,7 @@ import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
 import type request from 'superagent';
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { IUserDocument } from 'models/user.model';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
@@ -242,7 +242,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
     });
 
     it('Submitting the migrate form for a logged in user with the correct data should migrate the user data (happy case)', async () => {
-        const user: Partial<IUserModel> = await createUserInDB({
+        const user: Partial<IUserDocument> = await createUserInDB({
             email: 'john.doe@vizzuality.com',
             provider: 'twitter',
             providerId: '113994825016233013735'
@@ -333,7 +333,7 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         response.should.redirect;
         response.should.redirectTo(/\/auth\/twitter\/finished$/);
 
-        const confirmedUser: IUserModel = await UserModel.findById(user.id)
+        const confirmedUser: IUserDocument = await UserModel.findById(user.id)
             .exec();
 
         should.exist(confirmedUser);

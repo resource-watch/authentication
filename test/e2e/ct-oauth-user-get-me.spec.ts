@@ -3,7 +3,7 @@ import chai from 'chai';
 import type request from 'superagent';
 
 import UserModel from 'models/user.model';
-import { assertTokenInfo, createUserAndToken } from './utils/helpers';
+import { assertTokenInfo, createUserAndToken, createTokenForUser } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { getMockOktaUser, mockOktaListUsers } from "./utils/okta.mocks";
 

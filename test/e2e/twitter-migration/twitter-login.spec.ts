@@ -3,7 +3,7 @@ import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
 
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { IUserDocument } from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
@@ -56,7 +56,7 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
     });
 
     it('Visiting /auth/twitter/callback with the correct oauth data for a user that does not exist locally should return an error message', async () => {
-        const missingUser: IUserModel = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
+        const missingUser: IUserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
             .exec();
         should.not.exist(missingUser);
 

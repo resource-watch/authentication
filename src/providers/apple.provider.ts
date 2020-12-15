@@ -2,7 +2,7 @@ import { Context, Next } from "koa";
 import logger from "logger";
 import Utils from "utils";
 import Settings, { IThirdPartyAuth } from "services/settings.service";
-import UserModel, { IUserModel } from "models/user.model";
+import UserModel, { IUserDocument } from "models/user.model";
 import passport from "koa-passport";
 // @ts-ignore
 import Verifier from 'apple-signin-verify-token';
@@ -56,7 +56,7 @@ export class AppleProvider extends BaseProvider {
         logger.debug('[passportService - registerAppleUser] refreshToken', refreshToken);
         logger.debug('[passportService - registerAppleUser] decodedIdToken', decodedIdToken);
 
-        let user: IUserModel = await UserModel.findOne({
+        let user: IUserDocument = await UserModel.findOne({
             provider: 'apple',
             providerId: decodedIdToken.sub,
         }).exec();
@@ -114,7 +114,7 @@ export class AppleProvider extends BaseProvider {
             };
         }
 
-        let user: IUserModel = await UserModel.findOne({
+        let user: IUserDocument = await UserModel.findOne({
             provider: 'apple',
             providerId: jwtToken.sub,
         }).exec();

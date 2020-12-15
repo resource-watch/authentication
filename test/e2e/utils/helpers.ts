@@ -3,14 +3,14 @@ import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
 import Sinon, { SinonSandbox } from "sinon";
 
-import UserModel, { IUser, IUserModel } from 'models/user.model';
+import UserModel, { IUser, IUserDocument } from 'models/user.model';
 import TempUserModel, { IUserTemp } from 'models/user-temp.model';
 
 const { ObjectId } = mongoose.Types;
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
-export const createUser: (userData?: Partial<IUserModel>) => Partial<IUserModel> = (userData: Partial<IUserModel> = {}) => ({
+export const createUser: (userData?: Partial<IUserDocument>) => Partial<IUserDocument> = (userData: Partial<IUserDocument> = {}) => ({
     _id: new ObjectId(),
     name: `${getUUID()} name`,
     email: `${getUUID()}@authorization.com`,
@@ -26,10 +26,10 @@ export const createUser: (userData?: Partial<IUserModel>) => Partial<IUserModel>
     ...userData
 });
 
-export const createTokenForUser: (tokenData: Partial<IUserModel>) => string = (tokenData: Partial<IUserModel>) => JWT.sign(tokenData, process.env.JWT_SECRET);
+export const createTokenForUser: (tokenData: Partial<IUserDocument>) => string = (tokenData: Partial<IUserDocument>) => JWT.sign(tokenData, process.env.JWT_SECRET);
 
-export const createUserInDB: (userData: Partial<IUserModel>) => Promise<Partial<IUserModel>> = async (userData: Partial<IUserModel>): Promise<Partial<IUserModel>> => {
-    const user: IUserModel = await new UserModel(createUser(userData)).save();
+export const createUserInDB: (userData: Partial<IUserDocument>) => Promise<Partial<IUserDocument>> = async (userData: Partial<IUserDocument>): Promise<Partial<IUserDocument>> => {
+    const user: IUserDocument = await new UserModel(createUser(userData)).save();
 
     return {
         id: user._id.toString(),
@@ -43,8 +43,8 @@ export const createUserInDB: (userData: Partial<IUserModel>) => Promise<Partial<
     };
 };
 
-export const createUserAndToken: (userData?: Partial<IUserModel>) => Promise<{ user: Partial<IUserModel>; token: string }> = async (userData: Partial<IUserModel> = {}) => {
-    const user: Partial<IUserModel> = await createUserInDB(userData);
+export const createUserAndToken: (userData?: Partial<IUserDocument>) => Promise<{ user: Partial<IUserDocument>; token: string }> = async (userData: Partial<IUserDocument> = {}) => {
+    const user: Partial<IUserDocument> = await createUserInDB(userData);
     const token: string = await createTokenForUser(user);
 
     return { user, token };

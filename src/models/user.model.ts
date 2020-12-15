@@ -17,12 +17,7 @@ export interface IUser {
     userToken?: string;
 }
 
-export interface IUserPayload extends IUser {
-    apps?: string[];
-    callbackUrl: string;
-}
-
-export interface IUserModel extends IUser, Document {}
+export interface IUserDocument extends IUser, Document {}
 
 const UserSchema: Schema = new Schema({
     name: { type: String, required: false, trim: true },
@@ -45,4 +40,4 @@ const UserSchema: Schema = new Schema({
 
 UserSchema.plugin(mongoosePaginate);
 
-export default mongoose.model<IUserModel>('User', UserSchema);
+export default mongoose.model<IUserDocument>('User', UserSchema);
