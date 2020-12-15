@@ -10,7 +10,7 @@ const { ObjectId } = mongoose.Types;
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
-export const createUser: (userData: IUserModel | Partial<IUserModel> | null) => Partial<IUserModel> = (userData: IUserModel | Partial<IUserModel> | null) => ({
+export const createUser: (userData?: Partial<IUserModel>) => Partial<IUserModel> = (userData: Partial<IUserModel> = {}) => ({
     _id: new ObjectId(),
     name: `${getUUID()} name`,
     email: `${getUUID()}@authorization.com`,
@@ -28,7 +28,7 @@ export const createUser: (userData: IUserModel | Partial<IUserModel> | null) => 
 
 export const createTokenForUser: (tokenData: Partial<IUserModel>) => string = (tokenData: Partial<IUserModel>) => JWT.sign(tokenData, process.env.JWT_SECRET);
 
-export const createUserInDB: (userData: (IUserModel | Partial<IUserModel>)) => Promise<Partial<IUserModel>> = async (userData: IUserModel | Partial<IUserModel>): Promise<Partial<IUserModel>> => {
+export const createUserInDB: (userData: Partial<IUserModel>) => Promise<Partial<IUserModel>> = async (userData: Partial<IUserModel>): Promise<Partial<IUserModel>> => {
     const user: IUserModel = await new UserModel(createUser(userData)).save();
 
     return {
@@ -43,7 +43,7 @@ export const createUserInDB: (userData: (IUserModel | Partial<IUserModel>)) => P
     };
 };
 
-export const createUserAndToken: (userData: (IUserModel | Partial<IUserModel>)) => Promise<{ user: Partial<IUserModel>; token: string }> = async (userData: IUserModel | Partial<IUserModel>) => {
+export const createUserAndToken: (userData?: Partial<IUserModel>) => Promise<{ user: Partial<IUserModel>; token: string }> = async (userData: Partial<IUserModel> = {}) => {
     const user: Partial<IUserModel> = await createUserInDB(userData);
     const token: string = await createTokenForUser(user);
 

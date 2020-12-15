@@ -14,8 +14,6 @@ import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import Settings from "services/settings.service";
 import OktaService, { OktaUser } from "services/okta.service";
 
-const { ObjectId } = mongoose.Types;
-
 export interface PaginatedIUserResult {
     docs: IUser[];
     limit: number;
@@ -89,13 +87,10 @@ export default class UserService {
         }
     }
 
-    static async getUsersByIds(ids: string[] = []): Promise<IUserModel[]> {
-        const newIds: Types.ObjectId[] = ids.filter(ObjectId.isValid).map((id) => new ObjectId(id));
-        return UserModel.find({
-            _id: {
-                $in: newIds
-            }
-        }).select('-password -salt -userToken -__v').exec();
+    static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
+        const search: string = OktaService.getOktaSearchCriteria({ id: ids });
+        const users = await OktaService.getUsers(search, { limit: 100 });
+        return users.map(OktaService.convertOktaUserToIUser);
     }
 
     static async getIdsByRole(role: string): Promise<Types.ObjectId[]> {

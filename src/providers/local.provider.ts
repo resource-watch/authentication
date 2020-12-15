@@ -237,7 +237,7 @@ export class LocalProvider extends BaseProvider {
     static async findByIds(ctx: Context): Promise<void> {
         logger.info('Find by ids');
         ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
-        const data: IUserModel[] = await UserService.getUsersByIds(ctx.request.body.ids);
+        const data: IUser[] = await UserService.getUsersByIds(ctx.request.body.ids);
         ctx.body = {
             data
         };
