@@ -2,7 +2,7 @@ import nock from 'nock';
 import chai from 'chai';
 import mongoose from 'mongoose';
 
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { UserDocument } from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel from 'models/renew.model';
 import type request from 'superagent';
@@ -105,7 +105,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
     });
 
     it('Recover password post with correct token and matching passwords should redirect to the configured URL (happy case) - HTML format', async () => {
-        const user: IUserModel = await new UserModel({
+        const user: UserDocument = await new UserModel({
             email: 'potato@gmail.com'
         }).save();
 
@@ -131,7 +131,7 @@ describe('OAuth endpoints tests - Recover password post - HTML version', () => {
     });
 
     it('Recover password post with correct token, matching passwords and custom origin app should redirect to that app\'s configured URL - HTML format', async () => {
-        const user: IUserModel = await new UserModel({
+        const user: UserDocument = await new UserModel({
             email: 'potato@gmail.com'
         }).save();
 

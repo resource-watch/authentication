@@ -1,7 +1,7 @@
 import nock from 'nock';
 import chai from 'chai';
 
-import UserModel, { IUserModel } from 'models/user.model';
+import UserModel, { UserDocument } from 'models/user.model';
 import { createUser, createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { TOKENS } from './utils/test.constants';
@@ -10,8 +10,8 @@ import type request from 'superagent';
 chai.should();
 
 let requester: ChaiHttp.Agent;
-let userOne: IUserModel;
-let userTwo: IUserModel;
+let userOne: UserDocument;
+let userTwo: UserDocument;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);

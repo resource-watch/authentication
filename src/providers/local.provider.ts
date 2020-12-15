@@ -14,7 +14,7 @@ import UserTempSerializer from "serializers/user-temp.serializer";
 import UserSerializer from "serializers/user.serializer";
 import UnprocessableEntityError from "errors/unprocessableEntity.error";
 import UnauthorizedError from "errors/unauthorized.error";
-import UserModel, { IUserModel } from "models/user.model";
+import UserModel, { UserDocument } from "models/user.model";
 import bcrypt from "bcrypt";
 import { Strategy } from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
@@ -25,7 +25,7 @@ export class LocalProvider extends BaseProvider {
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         logger.info('[passportService] Registering user', profile);
 
-        let user: IUserModel = await UserModel.findOne({
+        let user: UserDocument = await UserModel.findOne({
             provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
             providerId: profile.id,
         }).exec();
@@ -92,7 +92,7 @@ export class LocalProvider extends BaseProvider {
         if (Settings.getSettings().local?.active) {
             logger.info('[passportService] Loading local strategy');
             const login: (username: string, password: string, done: (error: any, user?: any) => void) => Promise<void> = async (username: string, password: string, done: (error: any, user?: any) => void): Promise<void> => {
-                const user: IUserModel = await UserModel.findOne({
+                const user: UserDocument = await UserModel.findOne({
                     email: username,
                     provider: 'local'
                 }).exec();
@@ -154,8 +154,8 @@ export class LocalProvider extends BaseProvider {
 
     static async checkLogged(ctx: Context): Promise<void> {
         if (Utils.getUser(ctx)) {
-            const userToken: IUserModel = Utils.getUser(ctx);
-            const user: IUserModel = await UserService.getUserById(userToken.id);
+            const userToken: UserDocument = Utils.getUser(ctx);
+            const user: UserDocument = await UserService.getUserById(userToken.id);
 
             ctx.body = {
                 id: user._id,
@@ -177,7 +177,7 @@ export class LocalProvider extends BaseProvider {
 
     static async getUsers(ctx: Context): Promise<void> {
         logger.info('Get Users');
-        const user: IUserModel = Utils.getUser(ctx);
+        const user: UserDocument = Utils.getUser(ctx);
         if (!user.extraUserData || !user.extraUserData.apps) {
             ctx.throw(403, 'Not authorized');
             return;
@@ -194,7 +194,7 @@ export class LocalProvider extends BaseProvider {
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
-        let users: PaginateResult<IUserModel>;
+        let users: PaginateResult<UserDocument>;
 
         if (query.app === 'all') {
             users = await UserService.getUsers(null, omit(query, ['app']));
@@ -208,7 +208,7 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async getCurrentUser(ctx: Context): Promise<void> {
-        const requestUser: IUserModel = Utils.getUser(ctx);
+        const requestUser: UserDocument = Utils.getUser(ctx);
 
         logger.info('Get current user: ', requestUser.id);
 
@@ -217,7 +217,7 @@ export class LocalProvider extends BaseProvider {
             return;
         }
 
-        const user: IUserModel = await UserService.getUserById(requestUser.id);
+        const user: UserDocument = await UserService.getUserById(requestUser.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
@@ -229,7 +229,7 @@ export class LocalProvider extends BaseProvider {
     static async getUserById(ctx: Context): Promise<void> {
         logger.info('Get User by id: ', ctx.params.id);
 
-        const user: IUserModel = await UserService.getUserById(ctx.params.id);
+        const user: UserDocument = await UserService.getUserById(ctx.params.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
@@ -241,7 +241,7 @@ export class LocalProvider extends BaseProvider {
     static async findByIds(ctx: Context): Promise<void> {
         logger.info('Find by ids');
         ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
-        const data: IUserModel[] = await UserService.getUsersByIds(ctx.request.body.ids);
+        const data: UserDocument[] = await UserService.getUsersByIds(ctx.request.body.ids);
         ctx.body = {
             data
         };
@@ -257,8 +257,8 @@ export class LocalProvider extends BaseProvider {
         logger.info(`Update user with id ${ctx.params.id}`);
         ctx.assert(ctx.params.id, 400, 'Id param required');
 
-        const user: IUserModel = Utils.getUser(ctx);
-        const userUpdate: IUserModel = await UserService.updateUser(ctx.params.id, ctx.request.body, user);
+        const user: UserDocument = Utils.getUser(ctx);
+        const userUpdate: UserDocument = await UserService.updateUser(ctx.params.id, ctx.request.body, user);
         if (!userUpdate) {
             ctx.throw(404, 'User not found');
             return;
@@ -269,8 +269,8 @@ export class LocalProvider extends BaseProvider {
     static async updateMe(ctx: Context): Promise<void> {
         logger.info(`Update user me`);
 
-        const user: IUserModel = Utils.getUser(ctx);
-        const userUpdate: IUserModel = await UserService.updateUser(user.id, ctx.request.body, user);
+        const user: UserDocument = Utils.getUser(ctx);
+        const userUpdate: UserDocument = await UserService.updateUser(user.id, ctx.request.body, user);
         if (!userUpdate) {
             ctx.throw(404, 'User not found');
             return;
@@ -282,7 +282,7 @@ export class LocalProvider extends BaseProvider {
         logger.info(`Delete user with id ${ctx.params.id}`);
         ctx.assert(ctx.params.id, 400, 'Id param required');
 
-        const deletedUser: IUserModel = await UserService.deleteUser(ctx.params.id);
+        const deletedUser: UserDocument = await UserService.deleteUser(ctx.params.id);
         if (!deletedUser) {
             ctx.throw(404, 'User not found');
             return;
@@ -293,7 +293,7 @@ export class LocalProvider extends BaseProvider {
     static async createUser(ctx: Context): Promise<void> {
         logger.info(`Create user with body ${ctx.request.body}`);
         const { body } = ctx.request;
-        const user: IUserModel = Utils.getUser(ctx);
+        const user: UserDocument = Utils.getUser(ctx);
         if (!user) {
             ctx.throw(401, 'Not logged');
             return;
@@ -471,7 +471,7 @@ export class LocalProvider extends BaseProvider {
 
     static async confirmUser(ctx: Context): Promise<void> {
         logger.info('Confirming user');
-        const user: IUserModel = await UserService.confirmUser(ctx.params.token);
+        const user: UserDocument = await UserService.confirmUser(ctx.params.token);
         if (!user) {
             ctx.throw(400, 'User expired or token not found');
             return;
@@ -497,7 +497,7 @@ export class LocalProvider extends BaseProvider {
 
     static async loginView(ctx: Context): Promise<void> {
         // check if the user has session
-        const user: IUserModel = Utils.getUser(ctx);
+        const user: UserDocument = Utils.getUser(ctx);
         if (user) {
             logger.info('User has session');
 
@@ -638,7 +638,7 @@ export class LocalProvider extends BaseProvider {
     static async updateApplications(ctx: Context): Promise<void> {
         try {
             if (ctx.session && ctx.session.applications) {
-                let user: IUserModel = Utils.getUser(ctx);
+                let user: UserDocument = Utils.getUser(ctx);
                 if (user.role === 'USER') {
                     user = await UserService.updateApplicationsForUser(user.id, ctx.session.applications);
                 } else {
@@ -695,7 +695,7 @@ export class LocalProvider extends BaseProvider {
 
             return;
         }
-        const user: IUserModel = await UserService.updatePassword(ctx.params.token, ctx.request.body.password);
+        const user: UserDocument = await UserService.updatePassword(ctx.params.token, ctx.request.body.password);
         if (user) {
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
