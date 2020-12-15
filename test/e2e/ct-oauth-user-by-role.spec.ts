@@ -1,12 +1,11 @@
 import nock from 'nock';
 import chai from 'chai';
-import type request from 'superagent';
 
-import UserModel from 'models/user.model';
-import { createUserAndToken } from './utils/helpers';
+import UserModel, { UserDocument } from 'models/user.model';
+import { createUser, createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import { TOKENS } from './utils/test.constants';
-import { getMockOktaUser, mockOktaListUsers } from "./utils/okta.mocks";
+import type request from 'superagent';
 
 chai.should();
 
@@ -25,10 +24,13 @@ describe('GET users ids by role', () => {
         requester = await getTestAgent();
 
         await UserModel.deleteMany({}).exec();
+
     });
 
     it('Get users ids by role without being logged in returns a 401', async () => {
-        const response: request.Response = await requester.get(`/auth/user/ids/USER`);
+        const response: request.Response = await requester
+            .get(`/auth/user/ids/USER`);
+
         response.status.should.equal(401);
     });
 
@@ -79,19 +81,17 @@ describe('GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role and no users on the database returns a 200 response and an empty array', async () => {
-        mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, []);
-
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
         response.status.should.equal(200);
+
         response.body.should.have.property('data').and.eql([]);
     });
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, single user)', async () => {
-        const user = getMockOktaUser({ role: 'USER' });
-        mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, [user]);
+        const userOne: UserDocument = await new UserModel(createUser({})).save();
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
@@ -99,13 +99,15 @@ describe('GET users ids by role', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(1);
-        response.body.should.have.property('data').and.eql([user.profile.legacyId]);
+
+        response.body.should.have.property('data').and.eql([userOne.id]);
     });
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, multiple users)', async () => {
-        const userOne = getMockOktaUser({ role: 'USER' });
-        const userTwo = getMockOktaUser({ role: 'USER' });
-        mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, [userOne, userTwo]);
+        await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'ADMIN' })).save();
+        await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'MANAGER' })).save();
+        const userThree: UserDocument = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
+        const userFour: UserDocument = await new UserModel(createUser({ extraUserData: { apps: ['rw'] }, role: 'USER' })).save();
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
@@ -113,7 +115,8 @@ describe('GET users ids by role', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(2);
-        response.body.should.have.property('data').and.eql([userOne.profile.legacyId, userTwo.profile.legacyId]);
+
+        response.body.should.have.property('data').and.eql([userThree.id, userFour.id]);
     });
 
     after(() => {
