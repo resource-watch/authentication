@@ -22,7 +22,7 @@ const { expect } = chai;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Apple auth endpoint tests', () => {
+describe('[OKTA] Apple auth endpoint tests', () => {
 
     // tslint:disable-next-line:typedef
     before(async function () {

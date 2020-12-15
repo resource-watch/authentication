@@ -15,7 +15,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Facebook auth endpoint tests', () => {
+describe('[OKTA] Facebook auth endpoint tests', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
