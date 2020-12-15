@@ -3,10 +3,9 @@ import chai from 'chai';
 
 import UserModel from 'models/user.model';
 
-import {assertTokenInfo, createUserAndToken} from './utils/helpers';
+import { createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
-import {getMockOktaUser, mockOktaListUsers} from "./utils/okta.mocks";
 
 chai.should();
 
@@ -25,10 +24,13 @@ describe('GET users by id', () => {
         requester = await getTestAgent();
 
         await UserModel.deleteMany({}).exec();
+
     });
 
     it('Get user without being logged in returns a 401', async () => {
-        const response: request.Response = await requester.get(`/auth/user/41224d776a326fb40f000001`);
+        const response: request.Response = await requester
+            .get(`/auth/user/41224d776a326fb40f000001`);
+
         response.status.should.equal(401);
     });
 
@@ -42,6 +44,19 @@ describe('GET users by id', () => {
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array');
         response.body.errors[0].should.have.property('detail').and.equal(`Not authorized`);
+    });
+
+    it('Get user with an invalid id of a user that does not exist returns a 422', async () => {
+        const { token } = await createUserAndToken({ role: 'ADMIN' });
+
+        const response: request.Response = await requester
+            .get(`/auth/user/1234`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(422);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Invalid id 1234 provided`);
+
     });
 
     it('Get user with id of a user that does not exist returns a 404', async () => {
@@ -58,14 +73,19 @@ describe('GET users by id', () => {
     it('Get user with id of a user that exists returns the requested user (happy case)', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
-
         const response: request.Response = await requester
             .get(`/auth/user/${user.id}`)
             .set('Authorization', `Bearer ${token}`);
 
-        assertTokenInfo(response, user);
+        response.status.should.equal(200);
+
+        response.body.should.have.property('_id').and.equal(user.id.toString());
+        response.body.should.have.property('extraUserData').and.be.an('object');
+        response.body.extraUserData.should.have.property('apps').and.be.an('array').and.deep.equal(user.extraUserData.apps);
+        response.body.should.have.property('email').and.equal(user.email);
+        response.body.should.have.property('createdAt');
+        response.body.should.have.property('role').and.equal(user.role);
+        response.body.should.have.property('provider').and.equal(user.provider);
     });
 
     after(closeTestAgent);

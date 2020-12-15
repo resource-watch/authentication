@@ -1,11 +1,10 @@
 import nock from 'nock';
 import chai from 'chai';
-import type request from 'superagent';
 
-import UserModel from 'models/user.model';
-import { assertTokenInfo, createUserAndToken } from './utils/helpers';
+import UserModel, { UserDocument } from 'models/user.model';
+import { createUserAndToken } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
-import { getMockOktaUser, mockOktaListUsers } from "./utils/okta.mocks";
+import type request from 'superagent';
 
 chai.should();
 
@@ -13,6 +12,17 @@ let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
+
+const assertTokenInfo: (response: ChaiHttp.Response, user: (UserDocument | Partial<UserDocument>)) => void = (response: ChaiHttp.Response, user: UserDocument | Partial<UserDocument>) => {
+    response.status.should.equal(200);
+    response.body.should.have.property('_id').and.equal(user.id.toString());
+    response.body.should.have.property('extraUserData').and.be.an('object');
+    response.body.extraUserData.should.have.property('apps').and.be.an('array').and.deep.equal(user.extraUserData.apps);
+    response.body.should.have.property('email').and.equal(user.email);
+    response.body.should.have.property('createdAt');
+    response.body.should.have.property('role').and.equal(user.role);
+    response.body.should.have.property('provider').and.equal(user.provider);
+};
 
 describe('GET current user details from token (to be called by other MSs)', () => {
 
@@ -31,34 +41,26 @@ describe('GET current user details from token (to be called by other MSs)', () =
         response.status.should.equal(401);
     });
 
-    it('Getting user details from token while being logged in with USER role returns 200 OK with the token data', async () => {
+    it('Getting user details from token while being logged in with USER role returns 403 Forbidden', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
 
-    it('Getting user details from token while being logged in with MANAGER role returns 200 OK with the token data', async () => {
+    it('Getting user details from token while being logged in with MANAGER role returns', async () => {
         const { token, user } = await createUserAndToken({ role: 'MANAGER' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
 
-    it('Getting user details from token while being logged in with ADMIN role returns 200 OK with the token data', async () => {
+    it('Getting user details from token while being logged in with ADMIN role returns', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
 
-    it('Getting user details from token while being logged in with MICROSERVICE role returns 200 OK with the token data', async () => {
+    it('Getting user details from token while being logged in with MICROSERVICE role returns', async () => {
         const { token, user } = await createUserAndToken({ role: 'MICROSERVICE' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
     });
