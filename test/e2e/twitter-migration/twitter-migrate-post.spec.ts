@@ -7,7 +7,6 @@ import UserModel, { UserDocument } from 'models/user.model';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
 import { createUserInDB } from "../utils/helpers";
-import {getMockOktaUser, mockOktaListUsers} from "../okta/okta.mocks";
 
 const should: Chai.Should = chai.should();
 chai.use(ChaiString);
@@ -318,9 +317,6 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
-
         const response: request.Response = await requester
             .post(`/auth/twitter/migrate`)
             .send({
@@ -355,20 +351,18 @@ describe('Twitter migrate endpoint tests - Migration form submission', () => {
         confirmedUser.should.have.property('providerId')
             .and
             .equal('113994825016233013735');
-confirmedUser.should.have.property('password')
-            .and.not.be.empty;
-confirmedUser.should.have.property('salt')
+        confirmedUser.should.have.property('password')
+                    .and.not.be.empty;
+        confirmedUser.should.have.property('salt')
             .and.not.be.empty;
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        UserModel.deleteMany({})
-            .exec();
-
-        closeTestAgent();
+        await UserModel.deleteMany({}).exec();
+        await closeTestAgent();
     });
 });

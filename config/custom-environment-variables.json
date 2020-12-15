@@ -7,6 +7,7 @@
   "redis": {
     "url": "REDIS_URL"
   },
+  "authProvider": "AUTHORIZATION_PROVIDER",
   "logger": {
     "type": "LOGGER_TYPE",
     "level": "LOGGER_LEVEL"

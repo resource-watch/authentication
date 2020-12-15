@@ -16,7 +16,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Auth endpoints tests - Update user', () => {
+describe('[OKTA] Auth endpoints tests - Update user', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

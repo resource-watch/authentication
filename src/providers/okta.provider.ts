@@ -4,9 +4,12 @@ import passport from "koa-passport";
 import { URL } from "url";
 import logger from "logger";
 import Utils from "utils";
-import { PaginateResult, Types } from "mongoose";
 import { omit } from "lodash";
-import UserService from "services/user.service";
+import bcrypt from "bcrypt";
+import { Strategy } from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+
+import OktaUserService, { PaginatedIUserResult } from "services/okta.user.service";
 import Settings, { IApplication, IThirdPartyAuth } from "services/settings.service";
 import { IUserTemp } from "models/user-temp.model";
 import { IRenew } from "models/renew.model";
@@ -14,17 +17,13 @@ import UserTempSerializer from "serializers/user-temp.serializer";
 import UserSerializer from "serializers/user.serializer";
 import UnprocessableEntityError from "errors/unprocessableEntity.error";
 import UnauthorizedError from "errors/unauthorized.error";
-import UserModel, { UserDocument } from "models/user.model";
-import bcrypt from "bcrypt";
-import { Strategy } from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
+import UserModel, { IUser, UserDocument } from "models/user.model";
 import BaseProvider from "providers/base.provider";
-import { serialize } from "v8";
 
-export class LocalProvider extends BaseProvider {
+export class OktaProvider extends BaseProvider {
 
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
-        logger.info('[LocalProvider] Registering user', profile);
+        logger.info('[passportService] Registering user', profile);
 
         let user: UserDocument = await UserModel.findOne({
             provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
@@ -32,7 +31,7 @@ export class LocalProvider extends BaseProvider {
         }).exec();
         logger.info(user);
         if (!user) {
-            logger.info('[LocalProvider] User does not exist');
+            logger.info('[passportService] User does not exist');
             let name: string = null;
             let email: string = null;
             let photo: string = null;
@@ -62,12 +61,12 @@ export class LocalProvider extends BaseProvider {
                 }
             }
             if (email) {
-                logger.info('[LocalProvider] Updating email');
+                logger.info('[passportService] Updating email');
                 user.email = email;
                 await user.save();
             }
         }
-        logger.info('[LocalProvider] Returning user');
+        logger.info('[passportService] Returning user');
         done(null, {
             id: user._id,
             provider: user.provider,
@@ -91,13 +90,13 @@ export class LocalProvider extends BaseProvider {
         });
 
         if (Settings.getSettings().local?.active) {
-            logger.info('[LocalProvider] Loading local auth');
+            logger.info('[passportService] Loading local strategy');
             const login: (username: string, password: string, done: (error: any, user?: any) => void) => Promise<void> = async (username: string, password: string, done: (error: any, user?: any) => void): Promise<void> => {
                 const user: UserDocument = await UserModel.findOne({
                     email: username,
                     provider: 'local'
                 }).exec();
-                if (user?.salt && user?.password === bcrypt.hashSync(password.toString(), user.salt)) {
+                if (user?.salt && user?.password === bcrypt.hashSync(password, user.salt)) {
                     done(null, {
                         id: user._id,
                         name: user.name,
@@ -122,7 +121,7 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async localCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
-        return passport.authenticate('local', async (user: UserDocument) => {
+        return passport.authenticate('local', async (user) => {
             if (!user) {
                 if (ctx.request.type === 'application/json') {
                     ctx.status = 401;
@@ -142,8 +141,8 @@ export class LocalProvider extends BaseProvider {
             if (ctx.request.type === 'application/json') {
                 ctx.status = 200;
                 logger.info('Generating token');
-                const token: string = await UserService.createToken(user, false);
-                ctx.body = UserSerializer.serialize(user);
+                const token: string = await OktaUserService.createToken(user, false);
+                ctx.body = UserTempSerializer.serialize(user);
                 ctx.body.data.token = token;
             } else {
                 await ctx.logIn(user)
@@ -156,10 +155,20 @@ export class LocalProvider extends BaseProvider {
     static async checkLogged(ctx: Context): Promise<void> {
         if (Utils.getUser(ctx)) {
             const userToken: UserDocument = Utils.getUser(ctx);
-            const user: UserDocument = await UserService.getUserById(userToken.id);
+            const user: IUser = await OktaUserService.getUserById(userToken.id);
 
-            ctx.body = UserSerializer.serializeElement(user);
-            ctx.body.providerId = user.providerId;
+            ctx.body = {
+                id: user.id,
+                name: user.name,
+                photo: user.photo,
+                provider: user.provider,
+                providerId: user.providerId,
+                email: user.email,
+                role: user.role,
+                createdAt: user.createdAt,
+                extraUserData: user.extraUserData
+            };
+
         } else {
             ctx.res.statusCode = 401;
             ctx.throw(401, 'Not authenticated');
@@ -185,14 +194,14 @@ export class LocalProvider extends BaseProvider {
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
-        let users: PaginateResult<UserDocument>;
+        let users: PaginatedIUserResult;
 
         if (query.app === 'all') {
-            users = await UserService.getUsers(null, omit(query, ['app']));
+            users = await OktaUserService.getUsers(null, omit(query, ['app']));
         } else if (query.app) {
-            users = await UserService.getUsers(query.app.split(','), omit(query, ['app']));
+            users = await OktaUserService.getUsers(query.app.split(','), omit(query, ['app']));
         } else {
-            users = await UserService.getUsers(apps, query);
+            users = await OktaUserService.getUsers(apps, query);
         }
 
         ctx.body = UserSerializer.serialize(users, link);
@@ -204,43 +213,42 @@ export class LocalProvider extends BaseProvider {
         logger.info('Get current user: ', requestUser.id);
 
         if (requestUser.id && requestUser.id.toLowerCase() === 'microservice') {
-            ctx.body = UserSerializer.serializeElement(requestUser);
+            ctx.body = requestUser;
             return;
         }
 
-        const user: UserDocument = await UserService.getUserById(requestUser.id);
+        const user: IUser = await OktaUserService.getUserById(requestUser.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
             return;
         }
-        ctx.body = UserSerializer.serializeElement(user);
+        ctx.body = user;
     }
 
     static async getUserById(ctx: Context): Promise<void> {
         logger.info('Get User by id: ', ctx.params.id);
 
-        const user: UserDocument = await UserService.getUserById(ctx.params.id);
+        const user: IUser = await OktaUserService.getUserById(ctx.params.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
             return;
         }
-        ctx.body = UserSerializer.serializeElement(user);
+
+        ctx.body = user;
     }
 
     static async findByIds(ctx: Context): Promise<void> {
         logger.info('Find by ids');
         ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
-        const data: UserDocument[] = await UserService.getUsersByIds(ctx.request.body.ids);
-        ctx.body = {
-            data
-        };
+        const data: IUser[] = await OktaUserService.getUsersByIds(ctx.request.body.ids);
+        ctx.body = { data };
     }
 
     static async getIdsByRole(ctx: Context): Promise<void> {
         logger.info(`[getIdsByRole] Get ids by role: ${ctx.params.role}`);
-        const data: Types.ObjectId[] = await UserService.getIdsByRole(ctx.params.role);
+        const data: string[] = await OktaUserService.getIdsByRole(ctx.params.role);
         ctx.body = { data };
     }
 
@@ -249,7 +257,7 @@ export class LocalProvider extends BaseProvider {
         ctx.assert(ctx.params.id, 400, 'Id param required');
 
         const user: UserDocument = Utils.getUser(ctx);
-        const userUpdate: UserDocument = await UserService.updateUser(ctx.params.id, ctx.request.body, user);
+        const userUpdate: UserDocument = await OktaUserService.updateUser(ctx.params.id, ctx.request.body, user);
         if (!userUpdate) {
             ctx.throw(404, 'User not found');
             return;
@@ -261,7 +269,7 @@ export class LocalProvider extends BaseProvider {
         logger.info(`Update user me`);
 
         const user: UserDocument = Utils.getUser(ctx);
-        const userUpdate: UserDocument = await UserService.updateUser(user.id, ctx.request.body, user);
+        const userUpdate: UserDocument = await OktaUserService.updateUser(user.id, ctx.request.body, user);
         if (!userUpdate) {
             ctx.throw(404, 'User not found');
             return;
@@ -273,7 +281,7 @@ export class LocalProvider extends BaseProvider {
         logger.info(`Delete user with id ${ctx.params.id}`);
         ctx.assert(ctx.params.id, 400, 'Id param required');
 
-        const deletedUser: UserDocument = await UserService.deleteUser(ctx.params.id);
+        const deletedUser: UserDocument = await OktaUserService.deleteUser(ctx.params.id);
         if (!deletedUser) {
             ctx.throw(404, 'User not found');
             return;
@@ -307,7 +315,7 @@ export class LocalProvider extends BaseProvider {
             return;
         }
 
-        const exist: boolean = await UserService.emailExists(body.email);
+        const exist: boolean = await OktaUserService.emailExists(body.email);
         if (exist) {
             ctx.throw(400, 'Email exists');
             return;
@@ -321,7 +329,7 @@ export class LocalProvider extends BaseProvider {
             }
         }
 
-        await UserService.createUserWithoutPassword(ctx.request.body, ctx.state.generalConfig);
+        await OktaUserService.createUserWithoutPassword(ctx.request.body, ctx.state.generalConfig);
         ctx.body = {};
 
     }
@@ -335,7 +343,7 @@ export class LocalProvider extends BaseProvider {
 
             if (ctx.session.generateToken) {
                 // generate token and eliminate session
-                const token: string = await LocalProvider.createToken(ctx, false);
+                const token: string = await OktaProvider.createToken(ctx, false);
 
                 // Replace token query parameter in redirect URL
                 const url: URL = new URL(ctx.session.callbackUrl);
@@ -414,7 +422,7 @@ export class LocalProvider extends BaseProvider {
             error = 'Password and Repeat password not equal';
         }
 
-        const exist: boolean = await UserService.emailExists(ctx.request.body.email);
+        const exist: boolean = await OktaUserService.emailExists(ctx.request.body.email);
         if (exist) {
             error = 'Email exists';
         }
@@ -433,7 +441,7 @@ export class LocalProvider extends BaseProvider {
         }
 
         try {
-            const data: IUserTemp = await UserService.createUser(ctx.request.body, ctx.state.generalConfig);
+            const data: IUserTemp = await OktaUserService.createUser(ctx.request.body, ctx.state.generalConfig);
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
                 ctx.body = UserTempSerializer.serialize(data);
@@ -462,7 +470,7 @@ export class LocalProvider extends BaseProvider {
 
     static async confirmUser(ctx: Context): Promise<void> {
         logger.info('Confirming user');
-        const user: UserDocument = await UserService.confirmUser(ctx.params.token);
+        const user: UserDocument = await OktaUserService.confirmUser(ctx.params.token);
         if (!user) {
             ctx.throw(400, 'User expired or token not found');
             return;
@@ -562,7 +570,7 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async resetPasswordView(ctx: Context): Promise<void> {
-        const renew: IRenew = await UserService.getRenewModel(ctx.params.token);
+        const renew: IRenew = await OktaUserService.getRenewModel(ctx.params.token);
         let error: string = null;
         if (!renew) {
             error = 'Token expired';
@@ -596,7 +604,7 @@ export class LocalProvider extends BaseProvider {
         }
 
         const originApp: string = Utils.getOriginApp(ctx);
-        const renew: IRenew = await UserService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
+        const renew: IRenew = await OktaUserService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
         if (!renew) {
             if (ctx.request.type === 'application/json') {
                 throw new UnprocessableEntityError('User not found');
@@ -629,16 +637,16 @@ export class LocalProvider extends BaseProvider {
     static async updateApplications(ctx: Context): Promise<void> {
         try {
             if (ctx.session && ctx.session.applications) {
-                let user: UserDocument = Utils.getUser(ctx);
+                let user: IUser = Utils.getUser(ctx);
                 if (user.role === 'USER') {
-                    user = await UserService.updateApplicationsForUser(user.id, ctx.session.applications);
+                    user = await OktaUserService.updateApplicationsForUser(user.id, ctx.session.applications);
                 } else {
-                    user = await UserService.getUserById(user.id);
+                    user = await OktaUserService.getUserById(user.id);
                 }
                 delete ctx.session.applications;
                 if (user) {
                     await ctx.login({
-                        id: user._id,
+                        id: user.id,
                         provider: user.provider,
                         providerId: user.providerId,
                         role: user.role,
@@ -668,7 +676,7 @@ export class LocalProvider extends BaseProvider {
         if (ctx.request.body.password !== ctx.request.body.repeatPassword) {
             error = 'Password and Repeat password not equal';
         }
-        const exist: IRenew = await UserService.getRenewModel(ctx.params.token);
+        const exist: IRenew = await OktaUserService.getRenewModel(ctx.params.token);
         if (!exist) {
             error = 'Token expired';
         }
@@ -686,7 +694,7 @@ export class LocalProvider extends BaseProvider {
 
             return;
         }
-        const user: UserDocument = await UserService.updatePassword(ctx.params.token, ctx.request.body.password);
+        const user: UserDocument = await OktaUserService.updatePassword(ctx.params.token, ctx.request.body.password);
         if (user) {
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
@@ -703,7 +711,7 @@ export class LocalProvider extends BaseProvider {
                     ctx.redirect(Settings.getSettings().local.confirmUrlRedirect);
                     return;
                 }
-                ctx.body = UserSerializer.serialize(user);
+                ctx.body = user;
             }
         } else {
             await ctx.render('reset-password', {
@@ -717,4 +725,4 @@ export class LocalProvider extends BaseProvider {
     }
 }
 
-export default LocalProvider;
+export default OktaProvider;

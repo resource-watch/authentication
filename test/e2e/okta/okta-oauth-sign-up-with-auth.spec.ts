@@ -18,7 +18,7 @@ let sandbox: SinonSandbox;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('OAuth endpoints tests - Sign up with HTML UI', () => {
+describe('[OKTA] OAuth endpoints tests - Sign up with HTML UI', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
