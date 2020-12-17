@@ -103,7 +103,7 @@ class TwitterRouter {
             return;
         }
 
-        const user: IUser = await UserService.getUserById(sessionUser.id);
+        const user: UserDocument = await UserService.getUserById(sessionUser.id);
         if (!user) {
             error = 'Could not find a valid user account for the current session';
         }
