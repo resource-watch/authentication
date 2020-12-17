@@ -2,9 +2,9 @@ import nock from 'nock';
 import chai from 'chai';
 
 import UserModel, { UserDocument } from 'models/user.model';
-import { createUser, createUserAndToken } from './utils/helpers';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
-import { TOKENS } from './utils/test.constants';
+import { createUser, createUserAndToken } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { TOKENS } from '../utils/test.constants';
 import type request from 'superagent';
 
 chai.should();
@@ -14,7 +14,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('GET users ids by role', () => {
+describe('[CT] GET users ids by role', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

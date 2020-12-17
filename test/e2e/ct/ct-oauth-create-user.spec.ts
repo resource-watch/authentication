@@ -4,9 +4,9 @@ import chaiDateTime from "chai-datetime";
 import type request from 'superagent';
 
 import UserModel from 'models/user.model';
-import UserTempSchema from "models/user-temp.model";
-import { closeTestAgent, getTestAgent } from './utils/test-server';
-import { createUserAndToken } from './utils/helpers';
+import UserTempSchema, { IUserTemp } from "models/user-temp.model";
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { createUserAndToken } from '../utils/helpers';
 
 chai.should();
 chai.use(chaiDateTime);
@@ -16,7 +16,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('User management endpoints tests - Create user', () => {
+describe('[CT] User management endpoints tests - Create user', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
@@ -137,7 +137,7 @@ describe('User management endpoints tests - Create user', () => {
         response.status.should.equal(200);
         response.body.should.be.an('object');
 
-        const createdUser = await UserTempSchema.findOne({ email: 'new.email3@example.com' });
+        const createdUser: IUserTemp = await UserTempSchema.findOne({ email: 'new.email3@example.com' });
         createdUser.should.be.an('object');
         createdUser.email.should.equal('new.email3@example.com');
     });

@@ -3,8 +3,8 @@ import chai from 'chai';
 
 import UserModel, { UserDocument } from 'models/user.model';
 
-import { closeTestAgent, getTestAgent } from './utils/test-server';
-import { createUserAndToken, createUserInDB, ensureHasPaginationElements } from './utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { createUserAndToken, createUserInDB, ensureHasPaginationElements } from '../utils/helpers';
 import type request from 'superagent';
 
 chai.should();
@@ -14,7 +14,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('List users', () => {
+describe('[CT] List users', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

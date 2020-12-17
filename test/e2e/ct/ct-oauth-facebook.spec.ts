@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import JWT from 'jsonwebtoken';
 
 import UserModel, { UserDocument } from 'models/user.model';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 
 const should: Chai.Should = chai.should();
@@ -15,7 +15,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Facebook auth endpoint tests', () => {
+describe('[CT] Facebook auth endpoint tests', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

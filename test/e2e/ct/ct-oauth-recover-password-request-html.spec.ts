@@ -7,7 +7,7 @@ import UserModel from 'models/user.model';
 import UserTempModel from 'models/user-temp.model';
 import RenewModel from 'models/renew.model';
 import type request from 'superagent';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 
 chai.should();
 
@@ -16,7 +16,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('OAuth endpoints tests - Recover password request - HTML version', () => {
+describe('[CT] OAuth endpoints tests - Recover password request - HTML version', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
