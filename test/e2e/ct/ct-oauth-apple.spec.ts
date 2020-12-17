@@ -5,10 +5,10 @@ import JWT from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
 import { pem2jwk, RSA_JWK } from 'pem-jwk';
 import UserModel, { UserDocument } from 'models/user.model';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
-import { stubConfigValue } from "./utils/helpers";
+import { stubConfigValue } from '../utils/helpers';
 import config from "config";
 
 const should: Chai.Should = chai.should();
@@ -22,7 +22,7 @@ const { expect } = chai;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Apple auth endpoint tests', () => {
+describe('[CT] Apple auth endpoint tests', () => {
 
     // tslint:disable-next-line:typedef
     before(async function () {
