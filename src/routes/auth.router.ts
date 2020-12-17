@@ -1,7 +1,7 @@
 import config from "config";
-import {Context, DefaultState, ExtendableContext, Next} from "koa";
+import { Context, DefaultState, Next } from "koa";
 import passport from 'koa-passport';
-import Router, {IRouterParamContext} from 'koa-router';
+import Router from 'koa-router';
 import { cloneDeep } from 'lodash';
 import logger from 'logger';
 import Utils from 'utils';
@@ -67,101 +67,8 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: Next): Promi
     await next();
 }
 
-async function redirectLogin(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.redirectLogin(ctx) : await OktaProvider.redirectLogin(ctx);
-}
-
-async function success(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.success(ctx) : await OktaProvider.success(ctx);
-}
-
-async function loginView(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.loginView(ctx) : await OktaProvider.loginView(ctx);
-}
-
-async function localCallback(ctx: Context & ExtendableContext & IRouterParamContext, next: Next): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.localCallback(ctx, next) : await OktaProvider.localCallback(ctx, next);
-}
-
-async function failAuth(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.failAuth(ctx) : await OktaProvider.failAuth(ctx);
-}
-
-async function checkLogged(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.checkLogged(ctx) : await OktaProvider.checkLogged(ctx);
-}
-
-async function logout(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.logout(ctx) : await OktaProvider.logout(ctx);
-}
-
-async function getSignUp(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.getSignUp(ctx) : await OktaProvider.getSignUp(ctx);
-}
-
-async function signUp(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.signUp(ctx) : await OktaProvider.signUp(ctx);
-}
-
-async function confirmUser(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.confirmUser(ctx) : await OktaProvider.confirmUser(ctx);
-}
-
-async function requestEmailResetView(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.requestEmailResetView(ctx) : await OktaProvider.requestEmailResetView(ctx);
-}
-
-async function sendResetMail(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.sendResetMail(ctx) : await OktaProvider.sendResetMail(ctx);
-}
-
-async function resetPasswordView(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.resetPasswordView(ctx) : await OktaProvider.resetPasswordView(ctx);
-}
-
-async function resetPassword(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.resetPassword(ctx) : await OktaProvider.resetPassword(ctx);
-}
-
-async function generateJWT(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.generateJWT(ctx) : await OktaProvider.generateJWT(ctx);
-}
-
-async function getUsers(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.getUsers(ctx) : await OktaProvider.getUsers(ctx);
-}
-
-async function getCurrentUser(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.getCurrentUser(ctx) : await OktaProvider.getCurrentUser(ctx);
-}
-
-async function getUserById(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.getUserById(ctx) : await OktaProvider.getUserById(ctx);
-}
-
-async function findByIds(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.findByIds(ctx) : await OktaProvider.findByIds(ctx);
-}
-
-async function getIdsByRole(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.getIdsByRole(ctx) : await OktaProvider.getIdsByRole(ctx);
-}
-
-async function createUser(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.createUser(ctx) : await OktaProvider.createUser(ctx);
-}
-
-async function updateMe(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.updateMe(ctx) : await OktaProvider.updateMe(ctx);
-}
-
-async function updateUser(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.updateUser(ctx) : await OktaProvider.updateUser(ctx);
-}
-
-async function deleteUser(ctx: Context): Promise<void> {
-    config.get('authProvider') === 'CT' ? await LocalProvider.deleteUser(ctx) : await OktaProvider.deleteUser(ctx);
-}
+// TODO: add a proper interface definition here
+const UserProvider:Record<string, any> = config.get('authProvider') === 'CT' ? LocalProvider : OktaProvider;
 
 const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
@@ -177,42 +84,42 @@ router.get('/apple', setCallbackUrl, AppleProvider.apple);
 router.post('/apple/callback', AppleProvider.appleCallback, AppleProvider.updateApplications);
 router.get('/apple/token', AppleProvider.appleToken, AppleProvider.generateJWT);
 
-router.get('/', setCallbackUrl, redirectLogin);
+router.get('/', setCallbackUrl, UserProvider.redirectLogin);
 // @ts-ignore
-router.get('/basic', passport.authenticate('basic'), success);
+router.get('/basic', passport.authenticate('basic'), UserProvider.success);
 // @ts-ignore
-router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, loginView);
-router.post('/login', localCallback);
-router.get('/fail', loadApplicationGeneralConfig, failAuth);
+router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, UserProvider.loginView);
+router.post('/login', UserProvider.localCallback);
+router.get('/fail', loadApplicationGeneralConfig, UserProvider.failAuth);
 // @ts-ignore
-router.get('/check-logged', checkLogged);
-router.get('/success', loadApplicationGeneralConfig, success);
-router.get('/logout', setCallbackUrlOnlyWithQueryParam, logout);
-router.get('/sign-up', loadApplicationGeneralConfig, getSignUp);
-router.post('/sign-up', loadApplicationGeneralConfig, signUp);
+router.get('/check-logged', UserProvider.checkLogged);
+router.get('/success', loadApplicationGeneralConfig, UserProvider.success);
+router.get('/logout', setCallbackUrlOnlyWithQueryParam, UserProvider.logout);
+router.get('/sign-up', loadApplicationGeneralConfig, UserProvider.getSignUp);
+router.post('/sign-up', loadApplicationGeneralConfig, UserProvider.signUp);
 // @ts-ignore
-router.get('/confirm/:token', confirmUser);
-router.get('/reset-password', loadApplicationGeneralConfig, requestEmailResetView);
-router.post('/reset-password', loadApplicationGeneralConfig, sendResetMail);
-router.get('/reset-password/:token', loadApplicationGeneralConfig, resetPasswordView);
-router.post('/reset-password/:token', loadApplicationGeneralConfig, resetPassword);
-router.get('/generate-token', Utils.isLogged, generateJWT);
+router.get('/confirm/:token', UserProvider.confirmUser);
+router.get('/reset-password', loadApplicationGeneralConfig, UserProvider.requestEmailResetView);
+router.post('/reset-password', loadApplicationGeneralConfig, UserProvider.sendResetMail);
+router.get('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPasswordView);
+router.post('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPassword);
+router.get('/generate-token', Utils.isLogged, UserProvider.generateJWT);
 // @ts-ignore
-router.get('/user', Utils.isLogged, Utils.isAdmin, getUsers);
-router.get('/user/me', Utils.isLogged, getCurrentUser);
-router.get('/user/from-token', Utils.isLogged, getCurrentUser);
+router.get('/user', Utils.isLogged, Utils.isAdmin, UserProvider.getUsers);
+router.get('/user/me', Utils.isLogged, UserProvider.getCurrentUser);
+router.get('/user/from-token', Utils.isLogged, UserProvider.getCurrentUser);
 // @ts-ignore
-router.get('/user/:id', Utils.isLogged, Utils.isAdmin, getUserById);
+router.get('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.getUserById);
 // @ts-ignore
-router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, findByIds);
+router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, UserProvider.findByIds);
 // @ts-ignore
-router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, getIdsByRole);
+router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, UserProvider.getIdsByRole);
 // @ts-ignore
-router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, createUser);
-router.patch('/user/me', Utils.isLogged, updateMe);
+router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, UserProvider.createUser);
+router.patch('/user/me', Utils.isLogged, UserProvider.updateMe);
 // @ts-ignore
-router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, updateUser);
+router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.updateUser);
 // @ts-ignore
-router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, deleteUser);
+router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.deleteUser);
 
 export default router;
