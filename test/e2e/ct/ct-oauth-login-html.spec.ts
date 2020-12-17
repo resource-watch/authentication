@@ -2,8 +2,8 @@ import nock from 'nock';
 import chai from 'chai';
 
 import UserModel from 'models/user.model';
-import { createUserAndToken } from './utils/helpers';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { createUserAndToken } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 
 chai.should();
@@ -13,7 +13,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Auth endpoints tests - HTML', () => {
+describe('[CT] Auth endpoints tests - HTML', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

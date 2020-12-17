@@ -4,8 +4,8 @@ import sinon, { SinonSandbox } from 'sinon';
 
 import UserModel, { UserDocument } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
-import { getUUID, stubConfigValue } from './utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { getUUID, stubConfigValue } from '../utils/helpers';
 import type request from 'superagent';
 
 const should: Chai.Should = chai.should();
@@ -16,7 +16,7 @@ let sandbox: SinonSandbox;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('OAuth endpoints tests - Confirm account', () => {
+describe('[CT] OAuth endpoints tests - Confirm account', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

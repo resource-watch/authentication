@@ -3,8 +3,8 @@ import chai from 'chai';
 
 import UserModel, { UserDocument } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
-import { createUserAndToken } from './utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { createUserAndToken } from '../utils/helpers';
 import type request from 'superagent';
 import chaiDateTime from "chai-datetime";
 
@@ -16,7 +16,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Auth endpoints tests - Update user', () => {
+describe('[CT] Auth endpoints tests - Update user', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

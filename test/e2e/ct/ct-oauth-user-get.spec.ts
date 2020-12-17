@@ -3,8 +3,8 @@ import chai from 'chai';
 
 import UserModel from 'models/user.model';
 
-import { createTokenForUser, createUserAndToken } from './utils/helpers';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { createUserAndToken } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 
 chai.should();
@@ -14,7 +14,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('GET current user details', () => {
+describe('[CT] GET users by id', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
@@ -27,36 +27,54 @@ describe('GET current user details', () => {
 
     });
 
-    it('Getting my user without being logged in returns a 401', async () => {
+    it('Get user without being logged in returns a 401', async () => {
         const response: request.Response = await requester
-            .get(`/auth/user/me`);
+            .get(`/auth/user/41224d776a326fb40f000001`);
 
         response.status.should.equal(401);
     });
 
-    it('Getting my user while being logged in with USER role returns the user', async () => {
-        const { token, user } = await createUserAndToken({ role: 'USER' });
+    it('Get user while being logged in as a regular user returns a 403 error', async () => {
+        const { token } = await createUserAndToken({ role: 'USER' });
 
         const response: request.Response = await requester
-            .get(`/auth/user/me`)
+            .get(`/auth/user/41224d776a326fb40f000001`)
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(200);
-
-        response.body.should.have.property('_id').and.equal(user.id.toString());
-        response.body.should.have.property('extraUserData').and.be.an('object');
-        response.body.extraUserData.should.have.property('apps').and.be.an('array').and.deep.equal(user.extraUserData.apps);
-        response.body.should.have.property('email').and.equal(user.email);
-        response.body.should.have.property('createdAt');
-        response.body.should.have.property('role').and.equal(user.role);
-        response.body.should.have.property('provider').and.equal(user.provider);
+        response.status.should.equal(403);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Not authorized`);
     });
 
-    it('Getting my user while being logged in with ADMIN role returns the user', async () => {
+    it('Get user with an invalid id of a user that does not exist returns a 422', async () => {
+        const { token } = await createUserAndToken({ role: 'ADMIN' });
+
+        const response: request.Response = await requester
+            .get(`/auth/user/1234`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(422);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Invalid id 1234 provided`);
+
+    });
+
+    it('Get user with id of a user that does not exist returns a 404', async () => {
+        const { token } = await createUserAndToken({ role: 'ADMIN' });
+
+        const response: request.Response = await requester
+            .get(`/auth/user/41224d776a326fb40f000001`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(404);
+        response.body.errors[0].should.have.property('detail').and.equal(`User not found`);
+    });
+
+    it('Get user with id of a user that exists returns the requested user (happy case)', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
         const response: request.Response = await requester
-            .get(`/auth/user/me`)
+            .get(`/auth/user/${user.id}`)
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -68,18 +86,6 @@ describe('GET current user details', () => {
         response.body.should.have.property('createdAt');
         response.body.should.have.property('role').and.equal(user.role);
         response.body.should.have.property('provider').and.equal(user.provider);
-    });
-
-    it('Getting my user while being logged in with MICROSERVICE id returns the user', async () => {
-        const token:string = await createTokenForUser({ id: 'microservice' });
-
-        const response: request.Response = await requester
-            .get(`/auth/user/me`)
-            .set('Authorization', `Bearer ${token}`);
-
-        response.status.should.equal(200);
-
-        response.body.should.have.property('id').and.equal('microservice');
     });
 
     after(closeTestAgent);

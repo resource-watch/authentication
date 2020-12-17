@@ -2,8 +2,8 @@ import nock from 'nock';
 import chai from 'chai';
 
 import UserModel, { UserDocument } from 'models/user.model';
-import { createUserAndToken } from './utils/helpers';
-import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { createUserAndToken } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 
 chai.should();
@@ -24,7 +24,7 @@ const assertTokenInfo: (response: ChaiHttp.Response, user: (UserDocument | Parti
     response.body.should.have.property('provider').and.equal(user.provider);
 };
 
-describe('GET current user details from token (to be called by other MSs)', () => {
+describe('[CT] GET current user details from token (to be called by other MSs)', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {

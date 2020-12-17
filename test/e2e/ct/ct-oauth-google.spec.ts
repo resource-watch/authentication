@@ -6,7 +6,7 @@ import chaiString from "chai-string";
 import UserModel, { UserDocument } from 'models/user.model';
 import UserService from 'services/user.service';
 
-import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 
 const should: Chai.Should = chai.should();
@@ -17,7 +17,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Google auth endpoint tests', () => {
+describe('[CT] Google auth endpoint tests', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
