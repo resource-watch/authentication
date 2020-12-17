@@ -5,13 +5,14 @@ import jwt, { Options } from "koa-jwt";
 import logger from 'logger';
 import UserService from "services/user.service";
 import Settings from "services/settings.service";
-import AuthRouter from 'routes/auth.router';
+import authRouterGenerator from 'routes/auth.router';
 import { router as TwitterRouter } from 'routes/auth/twitter.router';
 import FacebookProvider from "providers/facebook.provider";
 import LocalProvider from "providers/local.provider";
 import GoogleProvider from "providers/google.provider";
 import AppleProvider from "providers/apple.provider";
 import TwitterProvider from "providers/twitter.provider";
+import config from "config";
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
@@ -74,7 +75,7 @@ export async function loadRoutes(app: Application): Promise<void> {
 
     // Load routes
     logger.debug('Loading routes...');
-    app.use(AuthRouter.routes());
+    app.use(authRouterGenerator(config.get('authProvider')).routes());
     app.use(TwitterRouter.routes());
 
     logger.debug('Loaded routes correctly!');
