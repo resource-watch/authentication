@@ -67,59 +67,78 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: Next): Promi
     await next();
 }
 
-// TODO: add a proper interface definition here
-const UserProvider:Record<string, any> = config.get('authProvider') === 'CT' ? LocalProvider : OktaProvider;
+const authRouterGenerator: (authProvider: string) => Router = (authProvider: string) => {
 
-const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
+    // TODO: add a proper interface definition here
+    let UserProvider: Record<string, any>;
 
-router.get('/google', setCallbackUrl, GoogleProvider.google);
-router.get('/google/callback', GoogleProvider.googleCallback, GoogleProvider.updateApplications);
-router.get('/google/token', GoogleProvider.googleToken, GoogleProvider.generateJWT);
+    switch (authProvider) {
 
-router.get('/facebook/token', FacebookProvider.facebookToken, FacebookProvider.generateJWT);
-router.get('/facebook', setCallbackUrl, FacebookProvider.facebook);
-router.get('/facebook/callback', FacebookProvider.facebookCallback, FacebookProvider.updateApplications);
+        case 'CT':
+            UserProvider = LocalProvider;
+            break;
+        case 'OKTA':
+            UserProvider = OktaProvider;
+            break;
+        default:
+            throw new Error(`Unknown Auth provider ${authProvider}`);
+            break;
 
-router.get('/apple', setCallbackUrl, AppleProvider.apple);
-router.post('/apple/callback', AppleProvider.appleCallback, AppleProvider.updateApplications);
-router.get('/apple/token', AppleProvider.appleToken, AppleProvider.generateJWT);
+    }
 
-router.get('/', setCallbackUrl, UserProvider.redirectLogin);
-// @ts-ignore
-router.get('/basic', passport.authenticate('basic'), UserProvider.success);
-// @ts-ignore
-router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, UserProvider.loginView);
-router.post('/login', UserProvider.localCallback);
-router.get('/fail', loadApplicationGeneralConfig, UserProvider.failAuth);
-// @ts-ignore
-router.get('/check-logged', UserProvider.checkLogged);
-router.get('/success', loadApplicationGeneralConfig, UserProvider.success);
-router.get('/logout', setCallbackUrlOnlyWithQueryParam, UserProvider.logout);
-router.get('/sign-up', loadApplicationGeneralConfig, UserProvider.getSignUp);
-router.post('/sign-up', loadApplicationGeneralConfig, UserProvider.signUp);
-// @ts-ignore
-router.get('/confirm/:token', UserProvider.confirmUser);
-router.get('/reset-password', loadApplicationGeneralConfig, UserProvider.requestEmailResetView);
-router.post('/reset-password', loadApplicationGeneralConfig, UserProvider.sendResetMail);
-router.get('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPasswordView);
-router.post('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPassword);
-router.get('/generate-token', Utils.isLogged, UserProvider.generateJWT);
-// @ts-ignore
-router.get('/user', Utils.isLogged, Utils.isAdmin, UserProvider.getUsers);
-router.get('/user/me', Utils.isLogged, UserProvider.getCurrentUser);
-router.get('/user/from-token', Utils.isLogged, UserProvider.getCurrentUser);
-// @ts-ignore
-router.get('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.getUserById);
-// @ts-ignore
-router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, UserProvider.findByIds);
-// @ts-ignore
-router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, UserProvider.getIdsByRole);
-// @ts-ignore
-router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, UserProvider.createUser);
-router.patch('/user/me', Utils.isLogged, UserProvider.updateMe);
-// @ts-ignore
-router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.updateUser);
-// @ts-ignore
-router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.deleteUser);
+    const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
-export default router;
+    router.get('/google', setCallbackUrl, GoogleProvider.google);
+    router.get('/google/callback', GoogleProvider.googleCallback, GoogleProvider.updateApplications);
+    router.get('/google/token', GoogleProvider.googleToken, GoogleProvider.generateJWT);
+
+    router.get('/facebook/token', FacebookProvider.facebookToken, FacebookProvider.generateJWT);
+    router.get('/facebook', setCallbackUrl, FacebookProvider.facebook);
+    router.get('/facebook/callback', FacebookProvider.facebookCallback, FacebookProvider.updateApplications);
+
+    router.get('/apple', setCallbackUrl, AppleProvider.apple);
+    router.post('/apple/callback', AppleProvider.appleCallback, AppleProvider.updateApplications);
+    router.get('/apple/token', AppleProvider.appleToken, AppleProvider.generateJWT);
+
+    router.get('/', setCallbackUrl, UserProvider.redirectLogin);
+// @ts-ignore
+    router.get('/basic', passport.authenticate('basic'), UserProvider.success);
+// @ts-ignore
+    router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, UserProvider.loginView);
+    router.post('/login', UserProvider.localCallback);
+    router.get('/fail', loadApplicationGeneralConfig, UserProvider.failAuth);
+// @ts-ignore
+    router.get('/check-logged', UserProvider.checkLogged);
+    router.get('/success', loadApplicationGeneralConfig, UserProvider.success);
+    router.get('/logout', setCallbackUrlOnlyWithQueryParam, UserProvider.logout);
+    router.get('/sign-up', loadApplicationGeneralConfig, UserProvider.getSignUp);
+    router.post('/sign-up', loadApplicationGeneralConfig, UserProvider.signUp);
+// @ts-ignore
+    router.get('/confirm/:token', UserProvider.confirmUser);
+    router.get('/reset-password', loadApplicationGeneralConfig, UserProvider.requestEmailResetView);
+    router.post('/reset-password', loadApplicationGeneralConfig, UserProvider.sendResetMail);
+    router.get('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPasswordView);
+    router.post('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPassword);
+    router.get('/generate-token', Utils.isLogged, UserProvider.generateJWT);
+// @ts-ignore
+    router.get('/user', Utils.isLogged, Utils.isAdmin, UserProvider.getUsers);
+    router.get('/user/me', Utils.isLogged, UserProvider.getCurrentUser);
+    router.get('/user/from-token', Utils.isLogged, UserProvider.getCurrentUser);
+// @ts-ignore
+    router.get('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.getUserById);
+// @ts-ignore
+    router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, UserProvider.findByIds);
+// @ts-ignore
+    router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, UserProvider.getIdsByRole);
+// @ts-ignore
+    router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, UserProvider.createUser);
+    router.patch('/user/me', Utils.isLogged, UserProvider.updateMe);
+// @ts-ignore
+    router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.updateUser);
+// @ts-ignore
+    router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.deleteUser);
+
+    return router;
+};
+
+export default authRouterGenerator;
