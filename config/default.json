@@ -37,7 +37,8 @@
     "token": ""
   },
   "okta": {
-    "url": "https://wri-admin.okta.com"
+    "url": "https://wri-admin.okta.com",
+    "apiKey": null
   },
   "settings": {
     "defaultApp": "gfw",

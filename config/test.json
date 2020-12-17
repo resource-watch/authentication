@@ -8,6 +8,10 @@
     "internalUrl": "http://authorization.com",
     "publicUrl": "http://authorization.com"
   },
+  "okta": {
+    "url": "https://wri-admin.okta.com",
+    "apiKey": "testApiKey"
+  },
   "settings": {
     "defaultApp": "rw",
     "local": {
