@@ -129,7 +129,7 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
 
             const port: string = process.env.PORT || '9000';
 
-            const server: Server = app.listen(process.env.PORT, () => {
+            const server: Server = app.listen(port, () => {
                 if (process.env.CT_REGISTER_MODE === 'auto') {
                     RWAPIMicroservice.register().then(() => {
                         logger.info('CT registration process started');
