@@ -11,6 +11,70 @@
         "method": "GET",
         "path": "/auth/user/me"
       }
+    },
+    {
+      "path": "/auth/twitter",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/twitter"
+      }
+    },
+    {
+      "path": "/auth/twitter/start",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/twitter/start"
+      }
+    },
+    {
+      "path": "/auth/twitter/auth",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/twitter/auth"
+      }
+    },
+    {
+      "path": "/auth/twitter/callback",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/twitter/callback"
+      }
+    },
+    {
+      "path": "/auth/twitter/migrate",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/twitter/migrate"
+      }
+    },
+    {
+      "path": "/auth/twitter/migrate",
+      "method": "POST",
+      "redirect": {
+        "method": "POST",
+        "path": "/auth/twitter/migrate"
+      }
+    },
+    {
+      "path": "/auth/twitter/finished",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/twitter/finished"
+      }
+    },
+    {
+      "path": "/auth/twitter/fail",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/twitter/fail"
+      }
     }
   ]
 }
