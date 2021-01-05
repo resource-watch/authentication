@@ -29,9 +29,11 @@ class TwitterRouter {
     }
 
     static async startMigration(ctx: Context): Promise<void> {
+        const app: string = getOriginApp(ctx, Settings.getSettings());
+
         return ctx.render('start', {
             error: false,
-            generalConfig: ctx.state.generalConfig,
+            app
         });
     }
 
@@ -66,8 +68,7 @@ class TwitterRouter {
 
         return ctx.render('migrate', {
             error: false,
-            email: user.email,
-            generalConfig: ctx.state.generalConfig,
+            email: user.email
         });
     }
 
@@ -95,8 +96,7 @@ class TwitterRouter {
         if (error) {
             await ctx.render('migrate', {
                 error,
-                email: ctx.request.body.email,
-                generalConfig: ctx.state.generalConfig,
+                email: ctx.request.body.email
             });
 
             return;
@@ -112,8 +112,7 @@ class TwitterRouter {
         if (error) {
             await ctx.render('migrate', {
                 error,
-                email: ctx.request.body.email,
-                generalConfig: ctx.state.generalConfig,
+                email: ctx.request.body.email
             });
 
             return;
@@ -136,9 +135,7 @@ class TwitterRouter {
             return ctx.redirect('/auth/twitter/start');
         }
 
-        return ctx.render('finished', {
-            generalConfig: ctx.state.generalConfig,
-        });
+        return ctx.render('finished');
     }
 
     static async failAuth(ctx: Context): Promise<void> {
@@ -146,7 +143,6 @@ class TwitterRouter {
 
         return ctx.render('start', {
             error: ctx.query.error,
-            generalConfig: ctx.state.generalConfig,
         });
     }
 }
