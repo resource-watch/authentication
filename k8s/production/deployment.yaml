@@ -50,7 +50,7 @@ spec:
         - name: CONFIRM_URL_REDIRECT
           value: http://www.globalforestwatch.org
         - name: PUBLIC_URL
-          value: http://production-api.globalforestwatch.org
+          value: https://api.resourcewatch.org
         - name: APP_NAME
           value: RW API
         - name: APP_LOGO
