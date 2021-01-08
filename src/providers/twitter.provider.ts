@@ -19,7 +19,7 @@ export class TwitterProvider extends BaseProvider {
         profile: Record<string, any>,
         done: (error: any, user?: any) => void
     ): Promise<void> {
-        logger.info('[passportService] Registering user', profile);
+        logger.info('[TwitterProvider] Registering user', profile);
 
         const user: UserDocument = await UserService.getUser({
             provider: 'twitter',
@@ -36,12 +36,12 @@ export class TwitterProvider extends BaseProvider {
                 email = profile.emails[0].value;
             }
             if (email && email !== user.email) {
-                logger.info('[passportService] Updating email');
+                logger.info('[TwitterProvider] Updating email');
                 user.email = email;
                 await user.save();
             }
         }
-        logger.info('[passportService] Returning user');
+        logger.info('[TwitterProvider] Returning user');
         done(null, {
             id: user._id,
             provider: user.provider,
@@ -66,13 +66,13 @@ export class TwitterProvider extends BaseProvider {
         });
 
         if (Settings.getSettings().thirdParty) {
-            logger.info('[passportService] Loading third-party oauth');
+            logger.info('[TwitterProvider] Loading Twitter auth');
             const apps: string[] = Object.keys(Settings.getSettings().thirdParty);
             for (let i: number = 0, { length } = apps; i < length; i += 1) {
-                logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
+                logger.info(`[TwitterProvider] Loading Twitter auth settings for ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
                 if (app.twitter?.active) {
-                    logger.info(`[passportService] Loading twitter strategy of ${apps[i]}`);
+                    logger.info(`[TwitterProvider] Loading Twitter auth passport provider for ${apps[i]}`);
                     const configTwitter: IStrategyOption = {
                         consumerKey: app.twitter.consumerKey,
                         consumerSecret: app.twitter.consumerSecret,

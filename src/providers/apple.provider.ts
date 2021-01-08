@@ -25,14 +25,14 @@ export class AppleProvider extends BaseProvider {
 
         // third party oauth
         if (Settings.getSettings().thirdParty) {
-            logger.info('[passportService] Loading third-party oauth');
+            logger.info('[AppleProvider] Loading Apple auth');
             const apps: string[] = Object.keys(Settings.getSettings().thirdParty);
             for (let i: number = 0, { length } = apps; i < length; i += 1) {
-                logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
+                logger.info(`[AppleProvider] Loading Apple auth settings for ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
 
                 if (app.apple?.active) {
-                    logger.info(`[passportService] Loading apple strategy ${apps[i]}`);
+                    logger.info(`[AppleProvider] Loading Apple auth passport provider for ${apps[i]}`);
                     const configApple: AppleStrategy.AuthenticateOptionsWithRequest = {
                         clientID: app.apple.clientId,
                         teamID: app.apple.teamId,
@@ -51,10 +51,10 @@ export class AppleProvider extends BaseProvider {
     }
 
     static async registerUser(req: Request, accessToken: string, refreshToken: string, decodedIdToken: DecodedIdToken, profile: Profile, verified: VerifyCallback): Promise<void> {
-        logger.info('[passportService - registerAppleUser] Registering user', profile);
-        logger.debug('[passportService - registerAppleUser] accessToken', accessToken);
-        logger.debug('[passportService - registerAppleUser] refreshToken', refreshToken);
-        logger.debug('[passportService - registerAppleUser] decodedIdToken', decodedIdToken);
+        logger.info('[AppleProvider - registerUser] Registering user', profile);
+        logger.debug('[AppleProvider - registerUser] accessToken', accessToken);
+        logger.debug('[AppleProvider - registerUser] refreshToken', refreshToken);
+        logger.debug('[AppleProvider - registerUser] decodedIdToken', decodedIdToken);
 
         let user: UserDocument = await UserModel.findOne({
             provider: 'apple',
@@ -63,18 +63,18 @@ export class AppleProvider extends BaseProvider {
         logger.info(user);
         const { email } = decodedIdToken;
         if (!user) {
-            logger.info('[passportService] User does not exist');
+            logger.info('[AppleProvider] User does not exist');
             user = await new UserModel({
                 email,
                 provider: 'apple',
                 providerId: decodedIdToken.sub
             }).save();
         } else {
-            logger.info('[passportService] Updating email');
+            logger.info('[AppleProvider] Updating email');
             user.email = email;
             await user.save();
         }
-        logger.info('[passportService] Returning user');
+        logger.info('[AppleProvider] Returning user');
         verified(null, {
             // eslint-disable-next-line no-underscore-dangle
             id: user._id,
@@ -120,7 +120,7 @@ export class AppleProvider extends BaseProvider {
         }).exec();
 
         if (!user) {
-            logger.info('[Auth router] User does not exist');
+            logger.info('[AppleProvider] User does not exist');
             user = await new UserModel({
                 email: jwtToken.email,
                 provider: 'apple',
@@ -131,7 +131,7 @@ export class AppleProvider extends BaseProvider {
             user.email = jwtToken.email;
             await user.save();
         }
-        logger.info('[passportService] Returning user');
+        logger.info('[AppleProvider] Returning user');
 
         // This places the user data in the ctx object as Passport would
         // @ts-ignore

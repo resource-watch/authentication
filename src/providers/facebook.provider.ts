@@ -22,14 +22,14 @@ export class FacebookProvider extends BaseProvider {
 
         // third party oauth
         if (Settings.getSettings().thirdParty) {
-            logger.info('[passportService] Loading third-party oauth');
+            logger.info('[FacebookProvider] Loading Facebook auth');
             const apps: string[] = Object.keys(Settings.getSettings().thirdParty);
             for (let i: number = 0, { length } = apps; i < length; i += 1) {
-                logger.info(`[passportService] Loading third-party oauth of app: ${apps[i]}`);
+                logger.info(`[FacebookProvider] Loading Facebook auth settings for: ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
 
                 if (app.facebook && app.facebook.active) {
-                    logger.info(`[passportService] Loading facebook strategy ${apps[i]}`);
+                    logger.info(`[FacebookProvider] Loading Facebook auth passport provider for ${apps[i]}`);
                     const configFacebook: StrategyOption = {
                         clientID: app.facebook.clientID,
                         clientSecret: app.facebook.clientSecret,
@@ -54,7 +54,7 @@ export class FacebookProvider extends BaseProvider {
     }
 
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
-        logger.info('[passportService] Registering user', profile);
+        logger.info('[FacebookProvider] Registering user', profile);
 
         let user: UserDocument = await UserModel.findOne({
             provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
@@ -62,7 +62,7 @@ export class FacebookProvider extends BaseProvider {
         }).exec();
         logger.info(user);
         if (!user) {
-            logger.info('[passportService] User does not exist');
+            logger.info('[FacebookProvider] User does not exist');
             let name: string = null;
             let email: string = null;
             let photo: string = null;
@@ -92,12 +92,12 @@ export class FacebookProvider extends BaseProvider {
                 }
             }
             if (email) {
-                logger.info('[passportService] Updating email');
+                logger.info('[FacebookProvider] Updating email');
                 user.email = email;
                 await user.save();
             }
         }
-        logger.info('[passportService] Returning user');
+        logger.info('[FacebookProvider] Returning user');
         done(null, {
             id: user._id,
             provider: user.provider,

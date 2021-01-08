@@ -23,7 +23,7 @@ import BaseProvider from "providers/base.provider";
 export class LocalProvider extends BaseProvider {
 
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
-        logger.info('[passportService] Registering user', profile);
+        logger.info('[LocalProvider] Registering user', profile);
 
         let user: UserDocument = await UserModel.findOne({
             provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
@@ -31,7 +31,7 @@ export class LocalProvider extends BaseProvider {
         }).exec();
         logger.info(user);
         if (!user) {
-            logger.info('[passportService] User does not exist');
+            logger.info('[LocalProvider] User does not exist');
             let name: string = null;
             let email: string = null;
             let photo: string = null;
@@ -61,12 +61,12 @@ export class LocalProvider extends BaseProvider {
                 }
             }
             if (email) {
-                logger.info('[passportService] Updating email');
+                logger.info('[LocalProvider] Updating email');
                 user.email = email;
                 await user.save();
             }
         }
-        logger.info('[passportService] Returning user');
+        logger.info('[LocalProvider] Returning user');
         done(null, {
             id: user._id,
             provider: user.provider,
@@ -90,7 +90,7 @@ export class LocalProvider extends BaseProvider {
         });
 
         if (Settings.getSettings().local?.active) {
-            logger.info('[passportService] Loading local strategy');
+            logger.info('[LocalProvider] Loading local auth');
             const login: (username: string, password: string, done: (error: any, user?: any) => void) => Promise<void> = async (username: string, password: string, done: (error: any, user?: any) => void): Promise<void> => {
                 const user: UserDocument = await UserModel.findOne({
                     email: username,
