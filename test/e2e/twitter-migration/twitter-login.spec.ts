@@ -129,10 +129,8 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`)
             .redirects(0);
 
-        response.status.should.equal(404);
-        response.body.should.have.property('errors').and.be.an('array');
-        response.body.errors[0].should.have.property('detail').and.equal(`No RW API account found for this twitter user`);
-
+        response.status.should.equal(302);
+        response.should.redirectTo('/auth/twitter/fail');
     });
 
     it('Visiting /auth/twitter/callback with the correct oauth data for a user that does exists locally should redirect to the migrate page', async () => {
