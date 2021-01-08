@@ -45,7 +45,16 @@
         <div class="row align-center" >
             <div class="small-10 medium-8 large-8 columns" >
                 <div class="login-form row" >
-
+                    <% if (error && error.length > 0) { %>
+                        <div class="small-12 medium-10 large-10 columns columns align-center" >
+                            <div class="callout alert" data-closable>
+                                <p><%= error %></p>
+                                <button class="close-button" aria-label="Dismiss alert" type="button" data-close>
+                                    <span aria-hidden="true">&times;</span>
+                                </button>
+                            </div>
+                        </div>
+                    <% } %>
                     <div class="small-8 medium-8 large-5 columns align-center" >
                         <img src="<%= application.logo %>" >
                     </div >

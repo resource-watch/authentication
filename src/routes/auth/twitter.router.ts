@@ -46,7 +46,7 @@ class TwitterRouter {
     static async twitterCallbackAuthentication(ctx: Context, next: Next): Promise<void> {
         const app: string = getOriginApp(ctx, Settings.getSettings());
         // @ts-ignore
-        await passport.authenticate(`twitter:${app}`, { failureRedirect: '/auth/fail' })(ctx, next);
+        await passport.authenticate(`twitter:${app}`, { failureRedirect: '/auth/twitter/fail', failureFlash: true })(ctx, next);
     }
 
     static async redirectToMigrate(ctx: Context): Promise<void> {
@@ -140,9 +140,13 @@ class TwitterRouter {
 
     static async failAuth(ctx: Context): Promise<void> {
         logger.info('Not authenticated');
+        const app: string = getOriginApp(ctx, Settings.getSettings());
+
+        const error:string = ctx.flash('error');
 
         return ctx.render('start', {
-            error: ctx.query.error,
+            error,
+            app
         });
     }
 }

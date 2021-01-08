@@ -6,7 +6,6 @@ import Utils from "utils";
 import UserService from "services/user.service";
 import Settings, { IThirdPartyAuth } from "services/settings.service";
 import { UserDocument } from "models/user.model";
-import NoTwitterAccountError from "errors/noTwitterAccount.error";
 import { Strategy } from "passport";
 import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
 import BaseProvider from "providers/base.provider";
@@ -17,7 +16,7 @@ export class TwitterProvider extends BaseProvider {
         accessToken: string,
         refreshToken: string,
         profile: Record<string, any>,
-        done: (error: any, user?: any) => void
+        done: (error: any, user?: any, message?: any) => void
     ): Promise<void> {
         logger.info('[TwitterProvider] Registering user', profile);
 
@@ -29,7 +28,7 @@ export class TwitterProvider extends BaseProvider {
         logger.info(user);
 
         if (!user) {
-            done(new NoTwitterAccountError());
+            done(null, false, { message: 'No RW API user found for this Twitter account' });
         } else {
             let email: string = null;
             if (profile?.emails?.length > 0) {

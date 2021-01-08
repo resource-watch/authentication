@@ -5,6 +5,8 @@ import koaBody from 'koa-body';
 import koaLogger from 'koa-logger';
 import mongoose from 'mongoose';
 import sleep from 'sleep';
+// @ts-ignore
+import flash from 'koa-connect-flash';
 import { RWAPIMicroservice } from 'rw-api-microservice-node';
 // @ts-ignore
 import cors from '@koa/cors';
@@ -84,6 +86,8 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
             app.keys = ['twitter'];
             // @ts-ignore
             app.use(session({ store: redisStore({ url: config.get('redis.url') }) }));
+
+            app.use(flash());
 
             app.use(views(`${__dirname}/views`, { extension: 'ejs' }));
 
