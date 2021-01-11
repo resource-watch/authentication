@@ -419,6 +419,7 @@ export default class UserService {
 
         user.provider = 'local';
         delete user.providerId;
+        user.salt = salt;
         user.email = email;
         user.password = bcrypt.hashSync(password, salt);
 
