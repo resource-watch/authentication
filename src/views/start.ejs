@@ -37,6 +37,10 @@
         .row {
             align-items: center
         }
+
+        .text-small {
+            font-size: 12px;
+        }
     </style >
 </head >
 <body >
@@ -47,13 +51,13 @@
                 <div class="login-form row" >
                     <% if (error && error.length > 0) { %>
                         <div class="small-12 medium-10 large-10 columns columns align-center" >
-                            <div class="callout alert" data-closable>
-                                <p><%= error %></p>
-                                <button class="close-button" aria-label="Dismiss alert" type="button" data-close>
-                                    <span aria-hidden="true">&times;</span>
-                                </button>
-                            </div>
-                        </div>
+                            <div class="callout alert" data-closable >
+                                <p ><%= error %></p >
+                                <button class="close-button" aria-label="Dismiss alert" type="button" data-close >
+                                    <span aria-hidden="true" >&times;</span >
+                                </button >
+                            </div >
+                        </div >
                     <% } %>
                     <div class="small-8 medium-8 large-5 columns align-center" >
                         <img src="<%= application.logo %>" >
@@ -64,8 +68,16 @@
                             migration tool, you will be able to migrate your Twitter-based <%= application.name %>
                             account to use an email address and password for login. To start the migration process,
                             click the "Twitter" button below to log in using your existing Twitter-based account.</p >
+                        <p class="text-small" >If you experience any issue in this process,
+                            please send an email to <a target="_blank"
+                                    href="mailto: resourcewatch@wri.org?subject=Twitter%20migration%20error&body=I%20am%20experiencing%20issues%20with%20the%20Twitter%20migration%20for%20my%20RW%20API%20account.%20Here%20are%20my%20details%3A%0A%0ATwitter%20username%2Fhandle%3A%20%0AEmail%20address%20I%27d%20like%20to%20associate%20with%20my%20account%20going%20forward%3A%0AThe%20error%20message%20I%27m%20seeing%2C%20or%20the%20issue%20I%27m%20experiencing%3A" >resourcewatch@wri.org</a >
+                            with the subject "Twitter migration error".
+                            In your email, include your Twitter username/handle, the email address you'd like to
+                            associate with your account going forward, and
+                            the error message you're currently seeing.</p >
                         <div class="third-party" >
-                            <a href="/auth/twitter/auth?origin=<%= app %>" ><i class="fa fa-twitter" aria-hidden="true" ></i >Twitter</a >
+                            <a href="/auth/twitter/auth?origin=<%= app %>" ><i class="fa fa-twitter"
+                                                                               aria-hidden="true" ></i >Twitter</a >
                         </div >
                     </div >
 
