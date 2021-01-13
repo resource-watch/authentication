@@ -22,6 +22,7 @@ services:
       CT_REGISTER_MODE: autoa
       LOCAL_URL: http://127.0.0.1:9000
       HOST_IP: 127.0.0.1
+      FASTLY_ENABLED: "false"
     command: test
     depends_on:
       - mongo
