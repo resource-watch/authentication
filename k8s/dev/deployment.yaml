@@ -215,18 +215,18 @@ spec:
           valueFrom:
             secretKeyRef:
               key: FASTLY_ENABLED
-              name: mssecrets
+              name: authorization
         - name: FASTLY_APIKEY
           valueFrom:
             secretKeyRef:
               key: FASTLY_APIKEY
-              name: mssecrets
+              name: authorization
               optional: true
         - name: FASTLY_SERVICEID
           valueFrom:
             secretKeyRef:
               key: FASTLY_SERVICEID
-              name: mssecrets
+              name: authorization
               optional: true
         image: vizzuality/authorization
         imagePullPolicy: Always
