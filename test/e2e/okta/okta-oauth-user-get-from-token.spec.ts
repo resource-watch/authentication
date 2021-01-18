@@ -6,6 +6,7 @@ import sinon, { SinonSandbox } from "sinon";
 import { assertTokenInfo, createUserAndToken, stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
+import {OktaUser} from "../../../src/services/okta.service";
 
 chai.should();
 
@@ -35,7 +36,7 @@ describe('[OKTA] GET current user details from token (to be called by other MSs)
 
     it('Getting user details from token while being logged in with USER role returns 200 OK with the token data', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
@@ -43,7 +44,7 @@ describe('[OKTA] GET current user details from token (to be called by other MSs)
 
     it('Getting user details from token while being logged in with MANAGER role returns 200 OK with the token data', async () => {
         const { token, user } = await createUserAndToken({ role: 'MANAGER' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
@@ -51,7 +52,7 @@ describe('[OKTA] GET current user details from token (to be called by other MSs)
 
     it('Getting user details from token while being logged in with ADMIN role returns 200 OK with the token data', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
@@ -59,7 +60,7 @@ describe('[OKTA] GET current user details from token (to be called by other MSs)
 
     it('Getting user details from token while being logged in with MICROSERVICE role returns 200 OK with the token data', async () => {
         const { token, user } = await createUserAndToken({ role: 'MICROSERVICE' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);

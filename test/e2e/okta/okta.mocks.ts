@@ -5,7 +5,7 @@ import faker from 'faker';
 import { OktaUser, OktaUserProfile } from "services/okta.service";
 
 export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
-    const email = faker.internet.email();
+    const email: string = faker.internet.email();
     return {
         "id": faker.random.uuid(),
         "status": "PROVISIONED",
@@ -38,10 +38,10 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
                 "href": "https://wri.okta.com/api/v1/users/00uk4x3281Yka1zn85d5"
             }
         }
-    }
+    };
 };
 
-export const mockOktaListUsers = (
+export const mockOktaListUsers: (query?: {}, users?: OktaUser[], statusCode?: number) => void = (
     query = {},
     users: OktaUser[] = [],
     statusCode = 200,
@@ -50,4 +50,4 @@ export const mockOktaListUsers = (
         .get('/api/v1/users')
         .query(query)
         .reply(statusCode, users);
-}
+};

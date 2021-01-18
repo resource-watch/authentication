@@ -78,7 +78,7 @@ export default class OktaUserService {
     static async getUserById(id: string): Promise<IUser> {
         try {
             const search: string = OktaService.getOktaSearchCriteria({ id });
-            const users = await OktaService.getUsers(search, { limit: 1 });
+            const users: OktaUser[] = await OktaService.getUsers(search, { limit: 1 });
             return OktaService.convertOktaUserToIUser(users[0]);
         } catch (err) {
             logger.error('Error getting user by ID from Okta Users API: ');
@@ -89,7 +89,7 @@ export default class OktaUserService {
 
     static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
         const search: string = OktaService.getOktaSearchCriteria({ id: ids });
-        const users = await OktaService.getUsers(search, { limit: 100 });
+        const users: OktaUser[] = await OktaService.getUsers(search, { limit: 100 });
         return users.map(OktaService.convertOktaUserToIUser);
     }
 
@@ -99,7 +99,7 @@ export default class OktaUserService {
         }
 
         const search: string = OktaService.getOktaSearchCriteria({ role });
-        const users = await OktaService.getUsers(search, { limit: 100 });
+        const users: OktaUser[] = await OktaService.getUsers(search, { limit: 100 });
         return users.map(OktaService.convertOktaUserToIUser).map((el) => el.id);
     }
 
@@ -362,7 +362,7 @@ export default class OktaUserService {
         if (!user) {
             return null;
         }
-        const dbUser = await OktaUserService.getUser({ _id: user.id });
+        const dbUser: UserDocument = await OktaUserService.getUser({ _id: user.id });
 
         const salt: string = bcrypt.genSaltSync();
 
