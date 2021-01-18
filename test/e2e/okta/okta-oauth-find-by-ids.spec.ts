@@ -7,6 +7,7 @@ import { createUserAndToken, stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
 import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
+import { OktaUser } from "../../../src/services/okta.service";
 
 chai.should();
 
@@ -86,7 +87,7 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users with id list containing a user that exists returns only the listed user', async () => {
-        const user = getMockOktaUser();
+        const user: OktaUser = getMockOktaUser();
         mockOktaListUsers({ limit: 100, search: `((profile.legacyId eq "${user.id}"))` }, [user]);
 
         const response: request.Response = await requester
@@ -109,8 +110,8 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users with id list containing users that exist returns the listed users', async () => {
-        const userOne = getMockOktaUser();
-        const userTwo = getMockOktaUser();
+        const userOne: OktaUser = getMockOktaUser();
+        const userTwo: OktaUser = getMockOktaUser();
         mockOktaListUsers(
             { limit: 100, search: `((profile.legacyId eq "${userOne.id}") or (profile.legacyId eq "${userTwo.id}"))` },
             [userOne, userTwo]
@@ -145,7 +146,7 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users with id list containing users that exist returns the listed users (id query param is useless)', async () => {
-        const userOne = getMockOktaUser();
+        const userOne: OktaUser = getMockOktaUser();
         mockOktaListUsers(
             { limit: 100, search: `((profile.legacyId eq "${userOne.id}"))` },
             [userOne]

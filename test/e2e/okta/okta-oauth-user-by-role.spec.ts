@@ -7,6 +7,7 @@ import { createUserAndToken, stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
 import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
+import {OktaUser} from "../../../src/services/okta.service";
 
 chai.should();
 
@@ -92,7 +93,7 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, single user)', async () => {
-        const user = getMockOktaUser({ role: 'USER' });
+        const user: OktaUser = getMockOktaUser({ role: 'USER' });
         mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, [user]);
 
         const response: request.Response = await requester
@@ -105,8 +106,8 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, multiple users)', async () => {
-        const userOne = getMockOktaUser({ role: 'USER' });
-        const userTwo = getMockOktaUser({ role: 'USER' });
+        const userOne: OktaUser = getMockOktaUser({ role: 'USER' });
+        const userTwo: OktaUser = getMockOktaUser({ role: 'USER' });
         mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, [userOne, userTwo]);
 
         const response: request.Response = await requester

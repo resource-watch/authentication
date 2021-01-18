@@ -7,6 +7,7 @@ import { IUser, UserDocument } from 'models/user.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {createUserAndToken, ensureHasPaginationElements, stubConfigValue} from '../utils/helpers';
 import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
+import {OktaUser} from "../../../src/services/okta.service";
 
 chai.should();
 
@@ -67,7 +68,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - just current user', async () => {
-        const user = getMockOktaUser({});
+        const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
@@ -85,7 +86,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - just current user if no other matches the current user\'s apps', async () => {
-        const user = getMockOktaUser({});
+        const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
@@ -103,7 +104,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - only return users that match current user\'s app', async () => {
-        const users = [
+        const users: OktaUser[] = [
             getMockOktaUser({ email: 'rw-user-one@example.com', apps: ['rw'] }),
             getMockOktaUser({ email: 'rw-user-two@example.com', apps: ['rw'] }),
             getMockOktaUser({}),
@@ -126,7 +127,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by email address is supported', async () => {
-        const user = getMockOktaUser({});
+        const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
@@ -142,7 +143,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by email address with plus sign in it is supported as long as it\'s escaped', async () => {
-        const user = getMockOktaUser({ email: 'text+email@vizzuality.com' });
+        const user: OktaUser = getMockOktaUser({ email: 'text+email@vizzuality.com' });
         mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN', email: 'text+email@vizzuality.com' });
@@ -160,8 +161,8 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by provider is supported', async () => {
-        const localUser = getMockOktaUser({ provider: 'local' });
-        const googleUser = getMockOktaUser({ provider: 'google' });
+        const localUser: OktaUser = getMockOktaUser({ provider: 'local' });
+        const googleUser: OktaUser = getMockOktaUser({ provider: 'google' });
         mockOktaListUsers(
             { limit: 10, search: `(profile.provider eq "${localUser.profile.provider}") and ((profile.apps eq "rw"))` },
             [localUser],
@@ -195,8 +196,8 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by name is supported', async () => {
-        const userOne = getMockOktaUser({});
-        const userTwo = getMockOktaUser({});
+        const userOne: OktaUser = getMockOktaUser({});
+        const userTwo: OktaUser = getMockOktaUser({});
 
         mockOktaListUsers(
             { limit: 10, search: `(profile.displayName sw "${userOne.profile.displayName}") and ((profile.apps eq "rw"))` },
@@ -231,9 +232,9 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by role is supported', async () => {
-        const user = getMockOktaUser({ role: 'USER' });
-        const manager = getMockOktaUser({ role: 'MANAGER' });
-        const admin = getMockOktaUser({ role: 'ADMIN' });
+        const user: OktaUser = getMockOktaUser({ role: 'USER' });
+        const manager: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+        const admin: OktaUser = getMockOktaUser({ role: 'ADMIN' });
 
         mockOktaListUsers(
             { limit: 10, search: `(profile.role eq "${user.profile.role}") and ((profile.apps eq "rw"))` },
@@ -283,7 +284,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN should return the list of users - filter by password not supported', async () => {
-        const user = getMockOktaUser({});
+        const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
@@ -299,9 +300,9 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN and query app=all should return the list of users - even if apps of users are not match to current user\'s app', async () => {
-        const userOne = getMockOktaUser({ apps: ['gfw'] });
-        const userTwo = getMockOktaUser({ apps: ['rw'] });
-        const userThree = getMockOktaUser({ apps: ['fake-app-2'] });
+        const userOne: OktaUser = getMockOktaUser({ apps: ['gfw'] });
+        const userTwo: OktaUser = getMockOktaUser({ apps: ['rw'] });
+        const userThree: OktaUser = getMockOktaUser({ apps: ['fake-app-2'] });
         mockOktaListUsers({ limit: 10 }, [userOne, userTwo, userThree]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
@@ -321,8 +322,8 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN and filtering by app should return the list of users with apps which provided in the query app', async () => {
-        const userOne = getMockOktaUser({ apps: ['fake-app'] });
-        const userTwo = getMockOktaUser({ apps: ['fake-app-2'] });
+        const userOne: OktaUser = getMockOktaUser({ apps: ['fake-app'] });
+        const userTwo: OktaUser = getMockOktaUser({ apps: ['fake-app-2'] });
         mockOktaListUsers(
             { limit: 10, search: `((profile.apps eq "fake-app") or (profile.apps eq "fake-app-2"))` },
             [userOne, userTwo]
@@ -344,8 +345,8 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as ADMIN and an invalid query param should return the list of users ignoring the invalid query param', async () => {
-        const userOne = getMockOktaUser({});
-        const userTwo = getMockOktaUser({});
+        const userOne: OktaUser = getMockOktaUser({});
+        const userTwo: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [userOne, userTwo]);
 
         const { token } = await createUserAndToken({ role: 'ADMIN' });
