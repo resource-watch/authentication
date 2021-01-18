@@ -31,8 +31,8 @@ export interface OktaUser {
     profile: OktaUserProfile;
     credentials: {
         provider: { type: string; name: string; }
-    },
-    _links: { self: { href: string; } }
+    };
+    _links: { self: { href: string; } };
 }
 
 export interface OktaPaginationOptions {
@@ -98,7 +98,7 @@ export default class OktaService {
         };
     }
 
-    private static getOktaProfileFieldName(userField: string) {
+    private static getOktaProfileFieldName(userField: string): string {
         switch (userField) {
             case 'id':
                 return 'profile.legacyId';
@@ -111,7 +111,7 @@ export default class OktaService {
         }
     }
 
-    private static getOktaFieldOperator(userField: string) {
+    private static getOktaFieldOperator(userField: string): string {
         switch (userField) {
             case 'id':
             case 'apps':

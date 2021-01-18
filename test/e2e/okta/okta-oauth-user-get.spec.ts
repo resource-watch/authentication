@@ -6,6 +6,7 @@ import sinon, { SinonSandbox } from "sinon";
 import { assertTokenInfo, createUserAndToken, stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
+import {OktaUser} from "../../../src/services/okta.service";
 
 chai.should();
 
@@ -59,7 +60,7 @@ describe('[OKTA] GET users by id', () => {
     it('Get user with id of a user that exists returns the requested user (happy case)', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
 
         const response: request.Response = await requester

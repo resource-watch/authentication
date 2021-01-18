@@ -11,6 +11,7 @@ import {
 } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
+import {OktaUser} from "../../../src/services/okta.service";
 
 chai.should();
 
@@ -40,7 +41,7 @@ describe('[OKTA] GET current user details', () => {
 
     it('Getting my user while being logged in with USER role returns the user', async () => {
         const { token, user } = await createUserAndToken({ role: 'USER' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
@@ -48,7 +49,7 @@ describe('[OKTA] GET current user details', () => {
 
     it('Getting my user while being logged in with ADMIN role returns the user', async () => {
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
-        const oktaUser = getMockOktaUser({ ...user, legacyId: user.id });
+        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
         assertTokenInfo(response, user);
