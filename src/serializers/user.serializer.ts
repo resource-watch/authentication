@@ -6,12 +6,14 @@ export default class UserSerializer {
     static serializeElement(el: Record<string, any>): Record<string, any> {
         return {
             id: el.id,
+            _id: el.id,
             email: el.email,
             name: el.name,
             photo: el.photo,
             createdAt: el.createdAt ? el.createdAt.toISOString() : null,
             updatedAt: el.updatedAt ? el.updatedAt.toISOString() : null,
             role: el.role,
+            provider: el.provider,
             extraUserData: el.extraUserData
         };
     }

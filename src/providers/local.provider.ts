@@ -19,6 +19,7 @@ import bcrypt from "bcrypt";
 import { Strategy } from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
 import BaseProvider from "providers/base.provider";
+import { serialize } from "v8";
 
 export class LocalProvider extends BaseProvider {
 
@@ -96,7 +97,7 @@ export class LocalProvider extends BaseProvider {
                     email: username,
                     provider: 'local'
                 }).exec();
-                if (user?.salt && user?.password === bcrypt.hashSync(password, user.salt)) {
+                if (user?.salt && user?.password === bcrypt.hashSync(password.toString(), user.salt)) {
                     done(null, {
                         id: user._id,
                         name: user.name,
@@ -121,7 +122,7 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async localCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
-        return passport.authenticate('local', async (user) => {
+        return passport.authenticate('local', async (user: UserDocument) => {
             if (!user) {
                 if (ctx.request.type === 'application/json') {
                     ctx.status = 401;
@@ -142,7 +143,7 @@ export class LocalProvider extends BaseProvider {
                 ctx.status = 200;
                 logger.info('Generating token');
                 const token: string = await UserService.createToken(user, false);
-                ctx.body = UserTempSerializer.serialize(user);
+                ctx.body = UserSerializer.serialize(user);
                 ctx.body.data.token = token;
             } else {
                 await ctx.logIn(user)
@@ -157,18 +158,8 @@ export class LocalProvider extends BaseProvider {
             const userToken: UserDocument = Utils.getUser(ctx);
             const user: UserDocument = await UserService.getUserById(userToken.id);
 
-            ctx.body = {
-                id: user._id,
-                name: user.name,
-                photo: user.photo,
-                provider: user.provider,
-                providerId: user.providerId,
-                email: user.email,
-                role: user.role,
-                createdAt: user.createdAt,
-                extraUserData: user.extraUserData
-            };
-
+            ctx.body = UserSerializer.serializeElement(user);
+            ctx.body.providerId = user.providerId;
         } else {
             ctx.res.statusCode = 401;
             ctx.throw(401, 'Not authenticated');
@@ -213,7 +204,7 @@ export class LocalProvider extends BaseProvider {
         logger.info('Get current user: ', requestUser.id);
 
         if (requestUser.id && requestUser.id.toLowerCase() === 'microservice') {
-            ctx.body = requestUser;
+            ctx.body = UserSerializer.serializeElement(requestUser);
             return;
         }
 
@@ -223,7 +214,7 @@ export class LocalProvider extends BaseProvider {
             ctx.throw(404, 'User not found');
             return;
         }
-        ctx.body = user;
+        ctx.body = UserSerializer.serializeElement(user);
     }
 
     static async getUserById(ctx: Context): Promise<void> {
@@ -235,16 +226,15 @@ export class LocalProvider extends BaseProvider {
             ctx.throw(404, 'User not found');
             return;
         }
-        ctx.body = user;
+        ctx.body = UserSerializer.serializeElement(user);
     }
 
     static async findByIds(ctx: Context): Promise<void> {
         logger.info('Find by ids');
         ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
         const data: UserDocument[] = await UserService.getUsersByIds(ctx.request.body.ids);
-        ctx.body = {
-            data
-        };
+
+        ctx.body = UserSerializer.serialize(data);
     }
 
     static async getIdsByRole(ctx: Context): Promise<void> {
@@ -712,7 +702,7 @@ export class LocalProvider extends BaseProvider {
                     ctx.redirect(Settings.getSettings().local.confirmUrlRedirect);
                     return;
                 }
-                ctx.body = user;
+                ctx.body = UserSerializer.serialize(user);
             }
         } else {
             await ctx.render('reset-password', {

@@ -316,7 +316,7 @@ export default class UserService {
     static async sendResetMail(email: string, generalConfig: Record<string, any>, originApp: string): Promise<IRenew> {
         logger.info('[UserService] Generating token to email', email);
 
-        const user: UserDocument = await UserModel.findOne({ email });
+        const user: UserDocument = await UserModel.findOne({ email, provider: "local" });
         if (!user) {
             logger.info('[UserService] User not found');
             return null;

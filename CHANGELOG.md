@@ -1,3 +1,7 @@
+## 18/01/2021
+
+- Streamline response structure for user management endpoints.
+
 ## 11/12/2020
 
 - Serialize user in `/apple/token` endpoint to avoid mongoose data leakage.

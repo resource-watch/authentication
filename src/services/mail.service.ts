@@ -101,6 +101,10 @@ export default class MailService {
         };
 
         return new Promise((resolve, reject) => {
+            if (!this.client) {
+                throw new Error('Email service not configured, cannot send emails');
+            }
+
             this.client.transmissions.send(reqOpts, (error, res) => {
                 if (error) {
                     reject(error);
