@@ -4,10 +4,10 @@ import type request from 'superagent';
 import sinon, { SinonSandbox } from "sinon";
 
 import { IUser, UserDocument } from 'models/user.model';
+import { OktaUser } from "services/okta.interfaces";
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import {createUserAndToken, ensureHasPaginationElements, stubConfigValue} from '../utils/helpers';
-import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
-import {OktaUser} from "../../../src/services/okta.service";
+import { ensureHasPaginationElements, stubConfigValue } from '../utils/helpers';
+import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from "./okta.mocks";
 
 chai.should();
 
@@ -42,7 +42,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as USER should return a 403 error', async () => {
-        const { token } = await createUserAndToken(null);
+        const token: string = mockValidJWT();
 
         const response: request.Response = await requester
             .get(`/auth/user`)
@@ -56,7 +56,7 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while logged in as MANAGER should return a 403 error', async () => {
-        const { token } = await createUserAndToken({ role: 'MANAGER' });
+        const token: string = mockValidJWT({ role: 'MANAGER' });
 
         const response: request.Response = await requester
             .get(`/auth/user`)
@@ -71,7 +71,7 @@ describe('[OKTA] List users', () => {
         const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
@@ -89,7 +89,7 @@ describe('[OKTA] List users', () => {
         const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
@@ -111,7 +111,7 @@ describe('[OKTA] List users', () => {
         ];
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, users);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
@@ -130,7 +130,7 @@ describe('[OKTA] List users', () => {
         const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user?email=${user.profile.email}`)
             .set('Content-Type', 'application/json')
@@ -146,7 +146,7 @@ describe('[OKTA] List users', () => {
         const user: OktaUser = getMockOktaUser({ email: 'text+email@vizzuality.com' });
         mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN', email: 'text+email@vizzuality.com' });
+        const token: string = mockValidJWT({ role: 'ADMIN', email: 'text+email@vizzuality.com' });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .query({ email: user.profile.email })
@@ -168,7 +168,7 @@ describe('[OKTA] List users', () => {
             [localUser],
         );
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        let token: string = mockValidJWT({ role: 'ADMIN' });
         const responseOne: request.Response = await requester
             .get(`/auth/user?provider=local`)
             .set('Content-Type', 'application/json')
@@ -184,6 +184,7 @@ describe('[OKTA] List users', () => {
             [googleUser],
         );
 
+        token = mockValidJWT({ role: 'ADMIN' });
         const responseTwo: request.Response = await requester
             .get(`/auth/user?provider=google`)
             .set('Content-Type', 'application/json')
@@ -204,7 +205,7 @@ describe('[OKTA] List users', () => {
             [userOne],
         );
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        let token: string = mockValidJWT({ role: 'ADMIN' });
         const responseOne: request.Response = await requester
             .get(`/auth/user?name=${userOne.profile.displayName}`)
             .set('Content-Type', 'application/json')
@@ -220,6 +221,7 @@ describe('[OKTA] List users', () => {
             [userTwo],
         );
 
+        token = mockValidJWT({ role: 'ADMIN' });
         const responseTwo: request.Response = await requester
             .get(`/auth/user?name=${userTwo.profile.displayName}`)
             .set('Content-Type', 'application/json')
@@ -241,7 +243,7 @@ describe('[OKTA] List users', () => {
             [user],
         );
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        let token: string = mockValidJWT({ role: 'ADMIN' });
         const responseOne: request.Response = await requester
             .get(`/auth/user?role=USER`)
             .set('Content-Type', 'application/json')
@@ -257,6 +259,7 @@ describe('[OKTA] List users', () => {
             [manager],
         );
 
+        token = mockValidJWT({ role: 'ADMIN' });
         const responseTwo: request.Response = await requester
             .get(`/auth/user?role=MANAGER`)
             .set('Content-Type', 'application/json')
@@ -272,6 +275,7 @@ describe('[OKTA] List users', () => {
             [admin],
         );
 
+        token = mockValidJWT({ role: 'ADMIN' });
         const responseThree: request.Response = await requester
             .get(`/auth/user?role=ADMIN`)
             .set('Content-Type', 'application/json')
@@ -287,7 +291,7 @@ describe('[OKTA] List users', () => {
         const user: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user?password=%242b%2410%241wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK`)
             .set('Content-Type', 'application/json')
@@ -305,7 +309,7 @@ describe('[OKTA] List users', () => {
         const userThree: OktaUser = getMockOktaUser({ apps: ['fake-app-2'] });
         mockOktaListUsers({ limit: 10 }, [userOne, userTwo, userThree]);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user?app=all`)
             .set('Content-Type', 'application/json')
@@ -329,7 +333,7 @@ describe('[OKTA] List users', () => {
             [userOne, userTwo]
         );
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user?app=fake-app,fake-app-2`)
             .set('Content-Type', 'application/json')
@@ -349,7 +353,7 @@ describe('[OKTA] List users', () => {
         const userTwo: OktaUser = getMockOktaUser({});
         mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [userOne, userTwo]);
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user?foo=bar`)
             .set('Content-Type', 'application/json')

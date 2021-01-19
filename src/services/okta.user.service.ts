@@ -12,7 +12,8 @@ import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import Settings from "services/settings.service";
-import OktaService, { OktaUser } from "services/okta.service";
+import OktaService from "services/okta.service";
+import { OktaUser } from "services/okta.interfaces";
 
 export interface PaginatedIUserResult {
     docs: IUser[];
@@ -21,40 +22,23 @@ export interface PaginatedIUserResult {
 
 export default class OktaUserService {
 
-    static async createToken(user: UserDocument, saveInUser: boolean): Promise<string> {
+    static createToken(user: IUser): string {
         try {
             const options: SignOptions = {};
             if (Settings.getSettings().jwt.expiresInMinutes && Settings.getSettings().jwt.expiresInMinutes > 0) {
                 options.expiresIn = Settings.getSettings().jwt.expiresInMinutes * 60;
             }
 
-            const userData: UserDocument = await UserModel.findById(user.id);
-            let token: string;
-
-            if (userData) {
-                const dataToken: Record<string, any> = {
-                    id: userData._id,
-                    role: userData.role,
-                    provider: userData.provider,
-                    email: userData.email,
-                    extraUserData: userData.extraUserData,
-                    createdAt: Date.now(),
-                    photo: userData.photo,
-                    name: userData.name
-                };
-                token = JWT.sign(dataToken, Settings.getSettings().jwt.secret, options);
-                if (saveInUser) {
-                    userData.userToken = token;
-                    await userData.save();
-                }
-            } else {
-                const dataToken: Record<string, any> = { ...user };
-                delete dataToken.exp;
-                dataToken.createdAt = new Date();
-                token = JWT.sign(dataToken, Settings.getSettings().jwt.secret, options);
-            }
-
-            return token;
+            return JWT.sign({
+                id: user.id,
+                role: user.role,
+                provider: user.provider,
+                email: user.email,
+                extraUserData: user.extraUserData,
+                createdAt: Date.now(),
+                photo: user.photo,
+                name: user.name
+            }, Settings.getSettings().jwt.secret, options);
         } catch (e) {
             logger.info('[UserService] Error to generate token', e);
             return null;
@@ -313,22 +297,35 @@ export default class OktaUserService {
 
         let isRevoked: boolean = false;
         if (payload.id !== 'microservice') {
-            const checkList: string[] = ['id', 'role', 'extraUserData', 'email'];
+            try {
+                const user: IUser = await OktaService.getOktaUserByEmail(payload.email);
 
-            const user: UserDocument = await UserModel.findById(payload.id);
-
-            if (!user) {
-                logger.info('[UserService] User ID in token does not match an existing user');
-
-                return true;
-            }
-
-            checkList.forEach((property) => {
-                if (!isEqual(user.get(property), payload[property])) {
-                    logger.info(`[AuthService] ${property} in token does not match the database value - token value: "${payload[property]}" || database value: "${user.get(property)}" `);
+                if (!isEqual(user.id, payload.id)) {
+                    logger.info(`[AuthService] "id" in token does not match expected value`);
                     isRevoked = true;
                 }
-            });
+
+                if (!isEqual(user.role, payload.role)) {
+                    logger.info(`[AuthService] "role" in token does not match expected value`);
+                    isRevoked = true;
+                }
+
+                if (!isEqual(user.extraUserData, payload.extraUserData)) {
+                    logger.info(`[AuthService] "extraUserData" in token does not match expected value`);
+                    isRevoked = true;
+                }
+
+                if (!isEqual(user.email, payload.email)) {
+                    logger.info(`[AuthService] "email" in token does not match expected value`);
+                    isRevoked = true;
+                }
+
+                return isRevoked;
+            } catch (err) {
+                logger.error(err);
+                logger.info('[UserService] User ID in token does not match an existing user');
+                return true;
+            }
         }
 
         return isRevoked;

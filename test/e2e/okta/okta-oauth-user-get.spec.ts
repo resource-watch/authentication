@@ -3,10 +3,10 @@ import chai from 'chai';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from "sinon";
 
-import { assertTokenInfo, createUserAndToken, stubConfigValue } from '../utils/helpers';
+import { OktaUser } from "services/okta.interfaces";
+import { assertOktaTokenInfo, stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
-import {OktaUser} from "../../../src/services/okta.service";
+import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from "./okta.mocks";
 
 chai.should();
 
@@ -35,8 +35,7 @@ describe('[OKTA] GET users by id', () => {
     });
 
     it('Get user while being logged in as a regular user returns a 403 error', async () => {
-        const { token } = await createUserAndToken({ role: 'USER' });
-
+        const token: string = mockValidJWT();
         const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`)
             .set('Authorization', `Bearer ${token}`);
@@ -47,8 +46,7 @@ describe('[OKTA] GET users by id', () => {
     });
 
     it('Get user with id of a user that does not exist returns a 404', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
-
+        const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`)
             .set('Authorization', `Bearer ${token}`);
@@ -58,16 +56,15 @@ describe('[OKTA] GET users by id', () => {
     });
 
     it('Get user with id of a user that exists returns the requested user (happy case)', async () => {
-        const { token, user } = await createUserAndToken({ role: 'ADMIN' });
-
-        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+        const user: OktaUser = getMockOktaUser();
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
         const response: request.Response = await requester
-            .get(`/auth/user/${user.id}`)
+            .get(`/auth/user/${user.profile.legacyId}`)
             .set('Authorization', `Bearer ${token}`);
 
-        assertTokenInfo(response, user);
+        assertOktaTokenInfo(response, user);
     });
 
     after(async () => {
