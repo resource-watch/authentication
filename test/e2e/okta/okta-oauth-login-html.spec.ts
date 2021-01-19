@@ -1,14 +1,22 @@
 import nock from 'nock';
 import chai from 'chai';
-
-import UserModel from 'models/user.model';
-import { createUserAndToken } from '../utils/helpers';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
+import sinon, { SinonSandbox } from "sinon";
+
+import { OktaSuccessfulLoginResponse, OktaUser } from "services/okta.interfaces";
+import { stubConfigValue } from '../utils/helpers';
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import {
+    mockOktaGetUserByEmail,
+    mockOktaSuccessfulLogin,
+    mockOktaFailedLogin,
+    mockValidJWT,
+} from "./okta.mocks";
 
 chai.should();
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -19,12 +27,12 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        await UserModel.deleteMany({}).exec();
-
     });
 
     beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
+
         requester = await getTestAgent(true);
     });
 
@@ -39,7 +47,7 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Visiting /auth while logged in should redirect to the success page', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await requester
             .get(`/auth`)
@@ -51,7 +59,7 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Visiting /auth with callbackUrl while being logged in should redirect to the callback page', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await requester
             .get(`/auth?callbackUrl=https://www.wikipedia.org`)
@@ -63,7 +71,7 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Revisiting /auth with callbackUrl while being logged in should redirect to the callback page', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await requester
             .get(`/auth?callbackUrl=https://www.google.com`)
@@ -85,6 +93,8 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with no credentials should display the error messages', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
@@ -95,6 +105,8 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with email and no password should display the error messages', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
@@ -109,6 +121,8 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login with invalid credentials (account does not exist) should display the error messages', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
@@ -124,25 +138,14 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Logging in at /auth/login valid credentials should redirect to the success page', async () => {
-        await new UserModel({
-            __v: 0,
-            email: 'test@example.com',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu',
-            extraUserData: {
-                apps: []
-            },
-            _id: '5becfa2b67da0d3ec07a27f6',
-            createdAt: '2018-11-15T04:46:35.313Z',
-            role: 'USER',
-            provider: 'local'
-        }).save();
+        const res: OktaSuccessfulLoginResponse = mockOktaSuccessfulLogin();
+        const user: OktaUser = mockOktaGetUserByEmail({ email: res._embedded.user.profile.login });
 
         const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .send({
-                email: 'test@example.com',
+                email: user.profile.email,
                 password: 'potato'
             });
 
@@ -153,11 +156,7 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Visiting /auth/login with callbackUrl while being logged in should redirect to the callback page', async () => {
-        const { token } = await createUserAndToken({
-            role: 'ADMIN',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
-        });
+        const token: string = mockValidJWT();
 
         nock('https://www.wikipedia.org')
             .get('/')
@@ -167,105 +166,79 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .redirects(0)
             .set('Authorization', `Bearer ${token}`);
-
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo: request.Response = await requester
-            .get('/auth/success');
-
+        const responseTwo: request.Response = await requester.get('/auth/success');
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
     });
 
     it('Logging in successfully with /auth/login with callbackUrl should redirect to the callback page', async () => {
-        await createUserAndToken({
-            email: 'test@example.com',
-            role: 'ADMIN',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
-        });
+        const res: OktaSuccessfulLoginResponse = mockOktaSuccessfulLogin();
+        const user: OktaUser = mockOktaGetUserByEmail({ email: res._embedded.user.profile.login });
 
         nock('https://www.wikipedia.org')
             .get('/')
             .reply(200, 'ok');
 
-        await requester
-            .get(`/auth/login?callbackUrl=https://www.wikipedia.org`);
+        await requester.get(`/auth/login?callbackUrl=https://www.wikipedia.org`);
 
         const responseOne: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .redirects(0)
             .send({
-                email: 'test@example.com',
+                email: user.profile.email,
                 password: 'potato'
             });
-
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo: request.Response = await requester
-            .get('/auth/success');
-
+        const responseTwo: request.Response = await requester.get('/auth/success');
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
     });
 
     it('Logging in successfully with /auth/login with an updated callbackUrl should redirect to the new callback page', async () => {
-        await createUserAndToken({
-            email: 'test@example.com',
-            role: 'ADMIN',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
-        });
+        const res: OktaSuccessfulLoginResponse = mockOktaSuccessfulLogin();
+        const user: OktaUser = mockOktaGetUserByEmail({ email: res._embedded.user.profile.login });
 
         nock('https://www.wikipedia.org')
             .get('/')
             .reply(200, 'ok');
 
-        await requester
-            .get(`/auth/login?callbackUrl=https://www.google.com`);
-
-        await requester
-            .get(`/auth/login?callbackUrl=https://www.wikipedia.org`);
+        await requester.get(`/auth/login?callbackUrl=https://www.google.com`);
+        await requester.get(`/auth/login?callbackUrl=https://www.wikipedia.org`);
 
         const responseOne: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .redirects(0)
             .send({
-                email: 'test@example.com',
+                email: user.profile.email,
                 password: 'potato'
             });
-
         responseOne.should.redirect;
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
-        const responseTwo: request.Response = await requester
-            .get('/auth/success');
-
+        const responseTwo: request.Response = await requester.get('/auth/success');
         responseTwo.should.redirect;
         responseTwo.should.redirectTo('https://www.wikipedia.org/');
     });
 
     it('Logging in successfully with /auth/login with callbackUrl and token=true should redirect to the callback page and pass the token', async () => {
-        await createUserAndToken({
-            email: 'test@example.com',
-            role: 'ADMIN',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
-        });
+        const res: OktaSuccessfulLoginResponse = mockOktaSuccessfulLogin();
+        const user: OktaUser = mockOktaGetUserByEmail({ email: res._embedded.user.profile.login });
 
-        await requester
-            .get(`/auth/login?callbackUrl=https://www.wikipedia.org&token=true`);
+        await requester.get(`/auth/login?callbackUrl=https://www.wikipedia.org&token=true`);
 
         const response: request.Response = await requester
             .post(`/auth/login`)
             .type('form')
             .redirects(0)
             .send({
-                email: 'test@example.com',
+                email: user.profile.email,
                 password: 'potato'
             });
 
@@ -274,6 +247,8 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Log in failure with /auth/login in should redirect to the failure page - HTTP request', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .type('form')
@@ -288,12 +263,11 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     afterEach(async () => {
-        await UserModel.deleteMany({}).exec();
-
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
+        sandbox.restore();
         await closeTestAgent();
     });
 });

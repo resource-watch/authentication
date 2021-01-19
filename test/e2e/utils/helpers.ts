@@ -5,6 +5,7 @@ import Sinon, { SinonSandbox } from "sinon";
 
 import UserModel, { IUser, UserDocument } from 'models/user.model';
 import TempUserModel, { IUserTemp } from 'models/user-temp.model';
+import { OktaUser } from "services/okta.interfaces";
 
 const { ObjectId } = mongoose.Types;
 
@@ -89,6 +90,17 @@ export const assertTokenInfo: (response: ChaiHttp.Response, user: (IUser | Parti
     response.body.should.have.property('email').and.equal(user.email);
     response.body.should.have.property('role').and.equal(user.role);
     response.body.should.have.property('provider').and.equal(user.provider);
+    response.body.should.have.property('createdAt');
+    response.body.should.have.property('updatedAt');
+};
+
+export const assertOktaTokenInfo: (response: ChaiHttp.Response, user: OktaUser) => void = (response: ChaiHttp.Response, user: OktaUser) => {
+    response.status.should.equal(200);
+    response.body.should.have.property('_id').and.equal(user.profile.legacyId);
+    response.body.should.have.property('extraUserData').and.be.an('object');
+    response.body.extraUserData.should.have.property('apps').and.be.an('array').and.deep.equal(user.profile.apps);
+    response.body.should.have.property('email').and.equal(user.profile.email);
+    response.body.should.have.property('role').and.equal(user.profile.role);
     response.body.should.have.property('createdAt');
     response.body.should.have.property('updatedAt');
 };

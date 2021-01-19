@@ -3,15 +3,10 @@ import chai from 'chai';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from "sinon";
 
-import {
-    assertTokenInfo,
-    createTokenForUser,
-    createUserAndToken,
-    stubConfigValue,
-} from '../utils/helpers';
+import { OktaUser } from "services/okta.interfaces";
+import { assertOktaTokenInfo, stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
-import {OktaUser} from "../../../src/services/okta.service";
+import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from "./okta.mocks";
 
 chai.should();
 
@@ -40,31 +35,59 @@ describe('[OKTA] GET current user details', () => {
     });
 
     it('Getting my user while being logged in with USER role returns the user', async () => {
-        const { token, user } = await createUserAndToken({ role: 'USER' });
-        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
+        const user: OktaUser = getMockOktaUser();
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
+
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
-        assertTokenInfo(response, user);
+        assertOktaTokenInfo(response, user);
+    });
+
+    it('Getting my user while being logged in with MANAGER role returns the user', async () => {
+        const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
+
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        assertOktaTokenInfo(response, user);
     });
 
     it('Getting my user while being logged in with ADMIN role returns the user', async () => {
-        const { token, user } = await createUserAndToken({ role: 'ADMIN' });
-        const oktaUser: OktaUser = getMockOktaUser({ ...user, legacyId: user.id });
-        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.id}")` }, [oktaUser]);
+        const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
+
         const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
-        assertTokenInfo(response, user);
+        assertOktaTokenInfo(response, user);
     });
 
     it('Getting my user while being logged in with MICROSERVICE id returns the user', async () => {
-        const token:string = await createTokenForUser({ id: 'microservice' });
+        const user: OktaUser = getMockOktaUser({ role: 'MICROSERVICE' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
-        const response: request.Response = await requester
-            .get(`/auth/user/me`)
-            .set('Authorization', `Bearer ${token}`);
-
-        response.status.should.equal(200);
-
-        response.body.should.have.property('id').and.equal('microservice');
+        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        assertOktaTokenInfo(response, user);
     });
 
     after(async () => {

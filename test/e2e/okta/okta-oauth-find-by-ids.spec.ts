@@ -3,11 +3,11 @@ import chai from 'chai';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from "sinon";
 
-import { createUserAndToken, stubConfigValue } from '../utils/helpers';
+import { OktaUser } from "services/okta.interfaces";
+import { stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
-import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
-import { OktaUser } from "../../../src/services/okta.service";
+import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from "./okta.mocks";
 
 chai.should();
 
@@ -39,7 +39,7 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users while being logged in as a regular user returns a 401 error', async () => {
-        const { token } = await createUserAndToken();
+        const token: string = mockValidJWT();
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)

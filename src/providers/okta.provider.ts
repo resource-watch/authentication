@@ -1,13 +1,9 @@
-import { Context, Next } from "koa";
+import { Context } from "koa";
 import { RouterContext } from "koa-router";
-import passport from "koa-passport";
 import { URL } from "url";
 import logger from "logger";
 import Utils from "utils";
 import { omit } from "lodash";
-import bcrypt from "bcrypt";
-import { Strategy } from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
 
 import OktaUserService, { PaginatedIUserResult } from "services/okta.user.service";
 import Settings, { IApplication, IThirdPartyAuth } from "services/settings.service";
@@ -19,6 +15,7 @@ import UnprocessableEntityError from "errors/unprocessableEntity.error";
 import UnauthorizedError from "errors/unauthorized.error";
 import UserModel, { IUser, UserDocument } from "models/user.model";
 import BaseProvider from "providers/base.provider";
+import OktaService from "services/okta.service";
 
 export class OktaProvider extends BaseProvider {
 
@@ -80,49 +77,24 @@ export class OktaProvider extends BaseProvider {
         });
     }
 
-    static registerStrategies(): void {
-        passport.serializeUser((user, done) => {
-            done(null, user);
-        });
+    static async localCallback(ctx: Context & RouterContext): Promise<void> {
+        try {
+            const user: IUser = await OktaService.login(ctx.request.body.email, ctx.request.body.password);
 
-        passport.deserializeUser((user, done) => {
-            done(null, user);
-        });
+            if (ctx.request.type === 'application/json') {
+                ctx.status = 200;
+                ctx.body = UserSerializer.serialize(user);
+                logger.info('Generating token');
+                ctx.body.data.token = OktaUserService.createToken(user);
+            } else {
+                await ctx.logIn(user)
+                    .then(() => ctx.redirect('/auth/success'))
+                    .catch(() => ctx.redirect('/auth/fail?error=true'));
+            }
 
-        if (Settings.getSettings().local?.active) {
-            logger.info('[passportService] Loading local strategy');
-            const login: (username: string, password: string, done: (error: any, user?: any) => void) => Promise<void> = async (username: string, password: string, done: (error: any, user?: any) => void): Promise<void> => {
-                const user: UserDocument = await UserModel.findOne({
-                    email: username,
-                    provider: 'local'
-                }).exec();
-                if (user?.salt && user?.password === bcrypt.hashSync(password, user.salt)) {
-                    done(null, {
-                        id: user._id,
-                        name: user.name,
-                        photo: user.photo,
-                        provider: user.provider,
-                        providerId: user.providerId,
-                        email: user.email,
-                        role: user.role,
-                        createdAt: user.createdAt,
-                        extraUserData: user.extraUserData
-                    });
-                } else {
-                    done(null, false);
-                }
-            };
-            const localStrategy: Strategy = new LocalStrategy({
-                usernameField: 'email',
-                passwordField: 'password',
-            }, login);
-            passport.use(localStrategy);
-        }
-    }
-
-    static async localCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
-        return passport.authenticate('local', async (user) => {
-            if (!user) {
+        } catch (err) {
+            if (err.response?.data?.errorSummary === 'Authentication failed') {
+                // Authentication failed
                 if (ctx.request.type === 'application/json') {
                     ctx.status = 401;
                     ctx.body = {
@@ -138,18 +110,10 @@ export class OktaProvider extends BaseProvider {
                 return;
             }
 
-            if (ctx.request.type === 'application/json') {
-                ctx.status = 200;
-                logger.info('Generating token');
-                const token: string = await OktaUserService.createToken(user, false);
-                ctx.body = UserTempSerializer.serialize(user);
-                ctx.body.data.token = token;
-            } else {
-                await ctx.logIn(user)
-                    .then(() => ctx.redirect('/auth/success'))
-                    .catch(() => ctx.redirect('/auth/fail?error=true'));
-            }
-        })(ctx, next);
+            // Unknown error, log and report 500 Internal Server Error
+            logger.error('Failed login request: ', err);
+            ctx.throw(500, 'Internal server error');
+        }
     }
 
     static async checkLogged(ctx: Context): Promise<void> {
@@ -343,7 +307,7 @@ export class OktaProvider extends BaseProvider {
 
             if (ctx.session.generateToken) {
                 // generate token and eliminate session
-                const token: string = await OktaProvider.createToken(ctx, false);
+                const token: string = OktaUserService.createToken(Utils.getUser(ctx));
 
                 // Replace token query parameter in redirect URL
                 const url: URL = new URL(ctx.session.callbackUrl);
