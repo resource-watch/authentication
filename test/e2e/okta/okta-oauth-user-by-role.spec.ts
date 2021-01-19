@@ -3,11 +3,11 @@ import chai from 'chai';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from "sinon";
 
-import { createUserAndToken, stubConfigValue } from '../utils/helpers';
+import { OktaUser } from "services/okta.interfaces";
+import { stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
-import { getMockOktaUser, mockOktaListUsers } from "./okta.mocks";
-import {OktaUser} from "../../../src/services/okta.service";
+import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from "./okta.mocks";
 
 chai.should();
 
@@ -36,7 +36,7 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role while being logged in as a USER returns a 400 error', async () => {
-        const { token } = await createUserAndToken({ role: 'USER' });
+        const token: string = mockValidJWT();
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
@@ -48,7 +48,7 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role while being logged in as a MANAGER returns a 400 error', async () => {
-        const { token } = await createUserAndToken({ role: 'MANAGER' });
+        const token: string = mockValidJWT({ role: 'MANAGER' });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
@@ -60,7 +60,7 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role while being logged in as an ADMIN returns a 400 error', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)

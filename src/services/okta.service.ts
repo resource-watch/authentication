@@ -3,45 +3,37 @@ import config from 'config';
 import logger from 'logger';
 
 import { IUser } from "models/user.model";
-
-export interface OktaUserProfile {
-    login: string;
-    email: string;
-    displayName?: string;
-    mobilePhone?: string;
-    secondEmail?: string;
-    legacyId: string;
-    role: string;
-    provider: string;
-    apps: string[];
-    providerId?: string;
-    photo?: string;
-}
-
-export interface OktaUser {
-    id: string;
-    status: string;
-    created: string;
-    activated: string;
-    statusChanged: string;
-    lastLogin: string|null;
-    lastUpdated: string;
-    passwordChanged: string|null;
-    type: { id: string; };
-    profile: OktaUserProfile;
-    credentials: {
-        provider: { type: string; name: string; }
-    };
-    _links: { self: { href: string; } };
-}
-
-export interface OktaPaginationOptions {
-    limit: number;
-    before?: string;
-    after?: string;
-}
+import { OktaPaginationOptions, OktaUser } from "services/okta.interfaces";
 
 export default class OktaService {
+
+    static async getOktaUserByEmail(email: string): Promise<IUser> {
+        const { data } = await axios.get(`${config.get('okta.url')}/api/v1/users/${email}`, {
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+                'Authorization': `SSWS ${config.get('okta.apiKey')}`,
+            }
+        });
+
+        return OktaService.convertOktaUserToIUser(data);
+    }
+
+    static async login(username: string, password: string): Promise<IUser> {
+        const { data } = await axios.post(
+            `${config.get('okta.url')}/api/v1/authn`,
+            { username, password },
+            {
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json',
+                    'Authorization': `SSWS ${config.get('okta.apiKey')}`,
+                }
+            }
+        );
+
+        return OktaService.getOktaUserByEmail(data._embedded.user.profile.login);
+    }
 
     static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
         const { data } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {

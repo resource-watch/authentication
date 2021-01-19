@@ -1,6 +1,7 @@
 import Application, { Context, Next } from "koa";
 import passport from "koa-passport";
 import jwt, { Options } from "koa-jwt";
+import config from "config";
 
 import logger from 'logger';
 import UserService from "services/user.service";
@@ -12,7 +13,7 @@ import LocalProvider from "providers/local.provider";
 import GoogleProvider from "providers/google.provider";
 import AppleProvider from "providers/apple.provider";
 import TwitterProvider from "providers/twitter.provider";
-import config from "config";
+import OktaUserService from "./services/okta.user.service";
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
@@ -57,7 +58,7 @@ export async function loadRoutes(app: Application): Promise<void> {
     app.use(jwt({
         secret: Settings.getSettings().jwt.secret,
         passthrough: Settings.getSettings().jwt.passthrough,
-        isRevoked: UserService.checkRevokedToken,
+        isRevoked: config.get('authProvider') === 'CT' ? UserService.checkRevokedToken : OktaUserService.checkRevokedToken,
         getToken
     }));
 
