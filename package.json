@@ -91,6 +91,7 @@
     "@types/sinon": "^9.0.9",
     "@types/sleep": "^0.0.8",
     "@types/sparkpost": "^2.1.4",
+    "@types/uuid": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^4.6.1",
     "@typescript-eslint/parser": "^4.6.1",
     "chai": "^4.2.0",
@@ -151,6 +152,7 @@
     "rw-api-microservice-node": "^3.2.1",
     "sleep": "^6.3.0",
     "sparkpost": "^2.1.4",
-    "typescript": "^4.1.2"
+    "typescript": "^4.1.2",
+    "uuid": "^8.3.2"
   }
 }

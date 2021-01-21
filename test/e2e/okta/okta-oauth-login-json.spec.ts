@@ -1,14 +1,22 @@
 import nock from 'nock';
 import chai from 'chai';
-
-import UserModel, { UserDocument } from 'models/user.model';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken, createUserInDB } from '../utils/helpers';
 import type request from 'superagent';
+import sinon, { SinonSandbox } from "sinon";
+
+import { OktaSuccessfulLoginResponse, OktaUser } from "services/okta.interfaces";
+import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { stubConfigValue } from '../utils/helpers';
+import {
+    mockOktaFailedLogin,
+    mockOktaGetUserByEmail,
+    mockOktaSuccessfulLogin,
+    mockValidJWT,
+} from "./okta.mocks";
 
 chai.should();
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -19,11 +27,13 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
+    });
 
-        requester = await getTestAgent();
+    beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        await UserModel.deleteMany({}).exec();
-
+        requester = await getTestAgent(true);
     });
 
     // Default HTML request behavior
@@ -40,7 +50,7 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
 
     // Default HTML request behavior
     it('Visiting /auth while logged in should redirect to the success page', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' }, 3);
 
         const response: request.Response = await requester
             .get(`/auth`)
@@ -55,7 +65,7 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
 
     // Default HTML request behavior
     it('Visiting /auth with callbackUrl while being logged in should redirect to the callback page', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await requester
             .get(`/auth?callbackUrl=https://www.wikipedia.org`)
@@ -80,6 +90,8 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with no credentials should display the error messages', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json');
@@ -92,12 +104,12 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with email and no password should display the error messages', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json')
-            .send({
-                email: 'test@example.com',
-            });
+            .send({ email: 'test@example.com' });
 
         response.status.should.equal(401);
         response.should.be.json;
@@ -107,6 +119,8 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with invalid credentials (account does not exist) should display the error messages', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json')
@@ -123,17 +137,14 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in at /auth/login with valid credentials should return a 200 HTTP code and the user details', async () => {
-        const user: Partial<UserDocument> = await createUserInDB({
-            email: 'test@example.com',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
-        });
+        const res: OktaSuccessfulLoginResponse = mockOktaSuccessfulLogin();
+        const user: OktaUser = mockOktaGetUserByEmail({ email: res._embedded.user.profile.login });
 
         const response: request.Response = await requester
             .post(`/auth/login`)
             .set('Content-Type', 'application/json')
             .send({
-                email: 'test@example.com',
+                email: user.profile.email,
                 password: 'potato'
             });
 
@@ -141,17 +152,18 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
         response.redirects.should.be.an('array').and.length(0);
 
         const responseUser: Record<string, any> = response.body.data;
-        responseUser.should.have.property('id').and.be.a('string').and.equal(user.id.toString());
-        responseUser.should.have.property('name').and.be.a('string').and.equal(user.name);
-        responseUser.should.have.property('photo').and.be.a('string').and.equal(user.photo);
-        responseUser.should.have.property('email').and.equal(user.email);
-        responseUser.should.have.property('role').and.equal(user.role);
-        responseUser.should.have.property('extraUserData').and.eql(user.extraUserData);
+        responseUser.should.have.property('id').and.be.a('string').and.equal(user.profile.legacyId);
+        responseUser.should.have.property('name').and.be.a('string').and.equal(user.profile.displayName);
+        responseUser.should.have.property('photo').and.be.a('string').and.equal(user.profile.photo);
+        responseUser.should.have.property('email').and.equal(user.profile.email);
+        responseUser.should.have.property('role').and.equal(user.profile.role);
+        responseUser.should.have.property('extraUserData');
+        responseUser.extraUserData.should.have.property('apps').and.eql(user.profile.apps);
         responseUser.should.have.property('token').and.be.a('string').and.not.be.empty;
     });
 
     it('Visiting GET /auth/login with callbackUrl while being logged in should return a 200', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await requester
             .get(`/auth/login?callbackUrl=https://www.wikipedia.org`)
@@ -163,17 +175,14 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
     });
 
     it('Logging in successfully with POST /auth/login with callbackUrl should not redirect to the callback page', async () => {
-        const user: Partial<UserDocument> = await createUserInDB({
-            email: 'test@example.com',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu'
-        });
+        const res: OktaSuccessfulLoginResponse = mockOktaSuccessfulLogin();
+        const user: OktaUser = mockOktaGetUserByEmail({ email: res._embedded.user.profile.login });
 
         const response: request.Response = await requester
             .post(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .set('Content-Type', 'application/json')
             .send({
-                email: 'test@example.com',
+                email: user.profile.email,
                 password: 'potato'
             });
 
@@ -181,17 +190,19 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
         response.redirects.should.be.an('array').and.length(0);
 
         const responseUser: Record<string, any> = response.body.data;
-        responseUser.should.have.property('id').and.be.a('string').and.equal(user.id.toString());
-        responseUser.should.have.property('name').and.be.a('string').and.equal(user.name);
-        responseUser.should.have.property('photo').and.be.a('string').and.equal(user.photo);
-        responseUser.should.have.property('email').and.equal(user.email);
-        responseUser.should.have.property('role').and.equal(user.role);
-        responseUser.should.have.property('extraUserData').and.eql(user.extraUserData);
-        responseUser.should.have.property('token').and.be.an('string').and.not.be.empty;
-        responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
+        responseUser.should.have.property('id').and.be.a('string').and.equal(user.profile.legacyId);
+        responseUser.should.have.property('name').and.be.a('string').and.equal(user.profile.displayName);
+        responseUser.should.have.property('photo').and.be.a('string').and.equal(user.profile.photo);
+        responseUser.should.have.property('email').and.equal(user.profile.email);
+        responseUser.should.have.property('role').and.equal(user.profile.role);
+        responseUser.should.have.property('extraUserData');
+        responseUser.extraUserData.should.have.property('apps').and.eql(user.profile.apps);
+        responseUser.should.have.property('token').and.be.a('string').and.not.be.empty;
     });
 
     it('Log in failure with /auth/login in should redirect to the failure page', async () => {
+        mockOktaFailedLogin();
+
         const response: request.Response = await requester
             .post(`/auth/login?callbackUrl=https://www.wikipedia.org`)
             .set('Content-Type', 'application/json')
@@ -207,15 +218,12 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
         response.body.errors[0].detail.should.equal('Invalid email or password');
     });
 
-    after(() => {
-        closeTestAgent();
-    });
-
     afterEach(async () => {
-        await UserModel.deleteMany({}).exec();
-
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        sandbox.restore();
+        await closeTestAgent();
     });
 });

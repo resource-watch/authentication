@@ -4,7 +4,7 @@ import faker from 'faker';
 
 import {
     JWTPayload,
-    OktaFailedLoginResponse,
+    OktaFailedAPIResponse,
     OktaSuccessfulLoginResponse,
     OktaUser,
     OktaUserProfile
@@ -13,6 +13,8 @@ import {createTokenForUser} from "../utils/helpers";
 
 export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
     const email: string = faker.internet.email();
+    const firstName: string = faker.name.firstName();
+    const lastName: string = faker.name.lastName();
     return {
         "id": faker.random.uuid(),
         "status": "PROVISIONED",
@@ -27,11 +29,13 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
             legacyId: faker.random.uuid(),
             login: email,
             email,
-            role: 'ADMIN',
+            role: 'USER',
             provider: 'okta',
             apps: ['rw'],
-            firstName: faker.name.firstName(),
-            lastName: faker.name.lastName(),
+            firstName,
+            lastName,
+            displayName: `${firstName} ${lastName}`,
+            photo: faker.image.imageUrl(),
             ...override,
         },
         "credentials": {
@@ -86,8 +90,8 @@ export const mockOktaSuccessfulLogin: () => OktaSuccessfulLoginResponse = () => 
     return successfulLoginResponse;
 };
 
-export const mockOktaFailedLogin: () => OktaFailedLoginResponse = () => {
-    const failedLoginResponse: OktaFailedLoginResponse = {
+export const mockOktaFailedLogin: () => OktaFailedAPIResponse = () => {
+    const failedLoginResponse: OktaFailedAPIResponse = {
         "errorCode": "E0000004",
         "errorSummary": "Authentication failed",
         "errorLink": "E0000004",
@@ -102,11 +106,12 @@ export const mockOktaFailedLogin: () => OktaFailedLoginResponse = () => {
     return failedLoginResponse;
 };
 
-export const mockOktaGetUserByEmail: (override: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
+export const mockOktaGetUserByEmail: (override: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {
     const user: OktaUser = getMockOktaUser(override);
 
     nock(config.get('okta.url'))
         .get(`/api/v1/users/${user.profile.email}`)
+        .times(times)
         .reply(200, { ...user });
 
     return user;
@@ -120,7 +125,7 @@ export const generateRandomTokenPayload: (override?: Partial<JWTPayload>) => JWT
     return { id, email, role, extraUserData, ...override };
 };
 
-export const mockValidJWT: (override?: Partial<JWTPayload>) => string = (override = {}) => {
+export const mockValidJWT: (override?: Partial<JWTPayload>, times?: number) => string = (override = {}, times = 1) => {
     const tokenPayload: JWTPayload = generateRandomTokenPayload(override);
     const token: string = createTokenForUser(tokenPayload);
 
@@ -129,7 +134,37 @@ export const mockValidJWT: (override?: Partial<JWTPayload>) => string = (overrid
         email: tokenPayload.email,
         role: tokenPayload.role,
         apps: tokenPayload.extraUserData.apps,
-    });
+    }, times);
 
     return token;
+};
+
+export const mockOktaSuccessfulSignUp: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
+    const user: OktaUser = getMockOktaUser(override);
+
+    nock(config.get('okta.url'))
+        .post('/api/v1/users?activate=false')
+        .reply(200, user);
+
+    nock(config.get('okta.url'))
+        .post(`/api/v1/users/${user.id}/lifecycle/activate?sendEmail=true`)
+        .reply(200, user);
+
+    return user;
+};
+
+export const mockOktaFailedSignUp: (errorSummary: string) => OktaFailedAPIResponse = (errorSummary: string) => {
+    const failedLoginResponse: OktaFailedAPIResponse = {
+        "errorCode": "E0000004",
+        errorSummary,
+        "errorLink": "E0000004",
+        "errorId": "oaeXDfN2vJFQlyrTZJGc3FrAA",
+        "errorCauses": [{ errorSummary }],
+    };
+
+    nock(config.get('okta.url'))
+        .post('/api/v1/users?activate=false')
+        .reply(401, failedLoginResponse);
+
+    return failedLoginResponse;
 };

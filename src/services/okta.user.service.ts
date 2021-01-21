@@ -10,7 +10,7 @@ import MailService from 'services/mail.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
-import UserTempModel, { IUserTemp } from 'models/user-temp.model';
+import UserTempModel, {IUserTemp, UserTempDocument} from 'models/user-temp.model';
 import Settings from "services/settings.service";
 import OktaService from "services/okta.service";
 import { OktaUser } from "services/okta.interfaces";
@@ -151,41 +151,6 @@ export default class OktaUserService {
         return !!(exist || existTemp);
     }
 
-    static async createUser(data: IUser & { apps: string[]; callbackUrl: string }, generalConfig: Record<string, any>): Promise<IUserTemp> {
-        const salt: string = bcrypt.genSaltSync();
-
-        const apps: string[] = data.apps || [];
-
-        const user: IUserTemp = await new UserTempModel({
-            provider: 'local',
-            email: data.email,
-            role: 'USER',
-            password: bcrypt.hashSync(data.password, salt),
-            confirmationToken: crypto.randomBytes(20).toString('hex'),
-            salt,
-            extraUserData: { apps }
-        }).save();
-
-        logger.info('Sending mail');
-        try {
-            const mailService: MailService = new MailService();
-            await mailService.setup();
-            await mailService.sendConfirmationMail(
-                {
-                    email: user.email,
-                    confirmationToken: user.confirmationToken,
-                },
-                [{ address: user.email }],
-                generalConfig
-            );
-        } catch (err) {
-            logger.info('Error', err);
-            throw err;
-        }
-
-        return user;
-    }
-
     static async createUserWithoutPassword(data: IUser & { apps: string[]; callbackUrl: string }, generalConfig: Record<string, any>): Promise<void> {
         const salt: string = bcrypt.genSaltSync();
         const pass: string = crypto.randomBytes(8).toString('hex');
@@ -221,7 +186,7 @@ export default class OktaUserService {
     }
 
     static async confirmUser(confirmationToken: string): Promise<UserDocument> {
-        const exist: IUserTemp = await UserTempModel.findOne({ confirmationToken });
+        const exist: UserTempDocument = await UserTempModel.findOne({ confirmationToken });
         if (!exist) {
             return null;
         }

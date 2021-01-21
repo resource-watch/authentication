@@ -1,20 +1,46 @@
 import axios from 'axios';
 import config from 'config';
 import logger from 'logger';
+import { v4 as uuidv4 } from 'uuid';
 
 import { IUser } from "models/user.model";
-import { OktaPaginationOptions, OktaUser } from "services/okta.interfaces";
+import { IUserTemp } from "models/user-temp.model";
+import { OktaPaginationOptions, OktaRequestHeaders, OktaUser } from "services/okta.interfaces";
 
 export default class OktaService {
 
     static async getOktaUserByEmail(email: string): Promise<IUser> {
-        const { data } = await axios.get(`${config.get('okta.url')}/api/v1/users/${email}`, {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Authorization': `SSWS ${config.get('okta.apiKey')}`,
-            }
-        });
+        const { data } = await axios.get(
+            `${config.get('okta.url')}/api/v1/users/${email}`,
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        return OktaService.convertOktaUserToIUser(data);
+    }
+
+    static async signUpWithoutPassword(email: string, name: string): Promise<IUserTemp> {
+        const { data } = await axios.post(
+            `${config.get('okta.url')}/api/v1/users?activate=false`,
+            {
+                profile: {
+                    firstName: 'RW API',
+                    lastName: 'User',
+                    displayName: name,
+                    email,
+                    login: email,
+                    legacyId: uuidv4(),
+                    "role": "USER",
+                    "apps": ["rw"]
+                }
+            },
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        await axios.post(
+            `${config.get('okta.url')}/api/v1/users/${data.id}/lifecycle/activate?sendEmail=true`,
+            {},
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
 
         return OktaService.convertOktaUserToIUser(data);
     }
@@ -23,13 +49,7 @@ export default class OktaService {
         const { data } = await axios.post(
             `${config.get('okta.url')}/api/v1/authn`,
             { username, password },
-            {
-                headers: {
-                    'Accept': 'application/json',
-                    'Content-Type': 'application/json',
-                    'Authorization': `SSWS ${config.get('okta.apiKey')}`,
-                }
-            }
+            { headers: OktaService.getOktaRequestHeaders() }
         );
 
         return OktaService.getOktaUserByEmail(data._embedded.user.profile.login);
@@ -37,11 +57,7 @@ export default class OktaService {
 
     static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
         const { data } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Authorization': `SSWS ${config.get('okta.apiKey')}`,
-            },
+            headers: OktaService.getOktaRequestHeaders(),
             params: {
                 limit: pageOptions.limit,
                 ...(search && { search }),
@@ -122,6 +138,14 @@ export default class OktaService {
         }
 
         return `(${array.map(item => `(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${item}")`).join(' or ')})`;
+    }
+
+    private static getOktaRequestHeaders(): OktaRequestHeaders {
+        return {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Authorization': `SSWS ${config.get('okta.apiKey')}`,
+        };
     }
 
 }
