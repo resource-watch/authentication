@@ -377,20 +377,36 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async signUp(ctx: Context): Promise<void> {
-        logger.info('Creating user');
-        let error: string = null;
-        if (!ctx.request.body.email || !ctx.request.body.password || !ctx.request.body.repeatPassword) {
-            error = 'Email, Password and Repeat password are required';
-        }
-        if (ctx.request.body.password !== ctx.request.body.repeatPassword) {
-            error = 'Password and Repeat password not equal';
-        }
+        try {
+            logger.info('Creating user');
 
-        const exist: boolean = await OktaUserService.emailExists(ctx.request.body.email);
-        if (exist) {
-            error = 'Email exists';
-        }
-        if (error) {
+            // Call Okta API to create user without password
+            const newUser: IUserTemp = await OktaService.signUpWithoutPassword(
+                ctx.request.body.email,
+                ctx.request.body.name,
+            );
+
+            if (ctx.request.type === 'application/json') {
+                ctx.response.type = 'application/json';
+                ctx.body = UserTempSerializer.serialize(newUser);
+            } else {
+                await ctx.render('sign-up-correct', {
+                    generalConfig: ctx.state.generalConfig,
+                });
+            }
+        } catch (err) {
+            logger.error('Error creating user: ', err);
+
+            let error: string = 'Error creating user.';
+
+            if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: The field cannot be left blank') {
+                error = 'Email is required';
+            }
+
+            if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {
+                error = 'Email exists';
+            }
+
             if (ctx.request.type === 'application/json') {
                 throw new UnprocessableEntityError(error);
             } else {
@@ -399,28 +415,7 @@ export class OktaProvider extends BaseProvider {
                     email: ctx.request.body.email,
                     generalConfig: ctx.state.generalConfig,
                 });
-
             }
-            return;
-        }
-
-        try {
-            const data: IUserTemp = await OktaUserService.createUser(ctx.request.body, ctx.state.generalConfig);
-            if (ctx.request.type === 'application/json') {
-                ctx.response.type = 'application/json';
-                ctx.body = UserTempSerializer.serialize(data);
-            } else {
-                await ctx.render('sign-up-correct', {
-                    generalConfig: ctx.state.generalConfig,
-                });
-            }
-        } catch (err) {
-            logger.info('Error', err);
-            await ctx.render('sign-up', {
-                error: 'Error creating user.',
-                email: ctx.request.body.email,
-                generalConfig: ctx.state.generalConfig,
-            });
         }
     }
 

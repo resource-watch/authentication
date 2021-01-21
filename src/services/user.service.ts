@@ -10,7 +10,7 @@ import MailService from 'services/mail.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
-import UserTempModel, { IUserTemp } from 'models/user-temp.model';
+import UserTempModel, {IUserTemp, UserTempDocument} from 'models/user-temp.model';
 import Settings from "services/settings.service";
 
 const { ObjectId } = mongoose.Types;
@@ -289,7 +289,7 @@ export default class UserService {
     }
 
     static async confirmUser(confirmationToken: string): Promise<UserDocument> {
-        const exist: IUserTemp = await UserTempModel.findOne({ confirmationToken });
+        const exist: UserTempDocument = await UserTempModel.findOne({ confirmationToken });
         if (!exist) {
             return null;
         }

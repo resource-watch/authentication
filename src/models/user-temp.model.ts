@@ -1,6 +1,6 @@
 import mongoose, { Document, Schema } from 'mongoose';
 
-export interface IUserTemp extends Document {
+export interface IUserTemp {
     name?: string;
     photo?: string;
     email?: string;
@@ -8,9 +8,11 @@ export interface IUserTemp extends Document {
     salt?: string;
     role: string;
     createdAt: Date;
-    confirmationToken: string;
+    confirmationToken?: string;
     extraUserData: { apps: string[]; };
 }
+
+export interface UserTempDocument extends IUserTemp, Document {}
 
 const UserTempSchema: Schema = new Schema({
     email: { type: String, required: false, trim: true },
@@ -26,4 +28,4 @@ const UserTempSchema: Schema = new Schema({
     extraUserData: { type: Schema.Types.Mixed },
 });
 
-export default mongoose.model<IUserTemp>('UserTemp', UserTempSchema);
+export default mongoose.model<UserTempDocument>('UserTemp', UserTempSchema);
