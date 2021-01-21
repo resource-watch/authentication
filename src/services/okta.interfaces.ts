@@ -10,7 +10,9 @@ export interface JWTPayload {
 export interface OktaUserProfile {
     login: string;
     email: string;
-    displayName?: string;
+    firstName: string;
+    lastName: string;
+    displayName: string;
     mobilePhone?: string;
     secondEmail?: string;
     legacyId: string;
@@ -44,12 +46,22 @@ export interface OktaPaginationOptions {
     after?: string;
 }
 
-export interface OktaFailedLoginResponse {
+export interface OktaRequestHeaders {
+    Accept: string;
+    'Content-Type': string;
+    Authorization: string;
+}
+
+export interface OktaErrorCause {
+    errorSummary: string;
+}
+
+export interface OktaFailedAPIResponse {
     errorCode: string;
     errorSummary: string;
     errorLink: string;
     errorId: string;
-    errorCauses: string[];
+    errorCauses: OktaErrorCause[];
 }
 
 export interface OktaSuccessfulLoginResponse {
