@@ -210,51 +210,16 @@ export default class OktaUserService {
         return RenewModel.findOne({ token });
     }
 
-    static async sendResetMail(email: string, generalConfig: Record<string, any>, originApp: string): Promise<IRenew> {
-        logger.info('[UserService] Generating token to email', email);
+    static async updatePassword(token: string, newPassword: string): Promise<IUser> {
+        logger.info('[OktaUserService] Updating password');
 
-        const user: UserDocument = await UserModel.findOne({ email });
-        if (!user) {
-            logger.info('[UserService] User not found');
-            return null;
-        }
-
-        const renew: IRenew = await new RenewModel({
-            userId: user._id,
-            token: crypto.randomBytes(20).toString('hex'),
-        }).save();
-
-        const mailService: MailService = new MailService();
-        await mailService.setup();
-        await mailService.sendRecoverPasswordMail(
-            {
-                token: renew.token,
-            },
-            [{ address: user.email }],
-            generalConfig,
-            originApp
-        );
-
-        return renew;
-    }
-
-    static async updatePassword(token: string, newPassword: string): Promise<UserDocument> {
-        logger.info('[UserService] Updating password');
         const renew: IRenew = await RenewModel.findOne({ token });
         if (!renew) {
             logger.info('[UserService] Token not found');
             return null;
         }
-        const user: UserDocument = await UserModel.findById(renew.userId);
-        if (!user) {
-            logger.info('[UserService] User not found');
-            return null;
-        }
-        const salt: string = bcrypt.genSaltSync();
-        user.password = bcrypt.hashSync(newPassword, salt);
-        user.salt = salt;
-        await user.save();
-        return user;
+
+        return OktaService.updatePasswordForUser(renew.userId, newPassword);
     }
 
     static async checkRevokedToken(ctx: Context, payload: Record<string, any>): Promise<boolean> {
