@@ -226,7 +226,7 @@ spec:
               key: FASTLY_SERVICEID
               name: authorization
               optional: true
-        image: vizzuality/authorization
+        image: gfwdockerhub/authorization
         imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 3
