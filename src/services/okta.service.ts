@@ -2,15 +2,23 @@ import axios from 'axios';
 import config from 'config';
 import logger from 'logger';
 import { v4 as uuidv4 } from 'uuid';
+import crypto from "crypto";
 
 import { IUser } from "models/user.model";
 import { IUserTemp } from "models/user-temp.model";
+import RenewModel from "models/renew.model";
 import { OktaPaginationOptions, OktaRequestHeaders, OktaUser } from "services/okta.interfaces";
 
 export default class OktaService {
 
+    static async getOktaUserById(id: string): Promise<OktaUser> {
+        const search: string = OktaService.getOktaSearchCriteria({ id });
+        const [user] = await OktaService.getUsers(search, { limit: 1 });
+        return user;
+    }
+
     static async getOktaUserByEmail(email: string): Promise<IUser> {
-        const { data } = await axios.get(
+        const { data }: { data: OktaUser } = await axios.get(
             `${config.get('okta.url')}/api/v1/users/${email}`,
             { headers: OktaService.getOktaRequestHeaders() }
         );
@@ -18,8 +26,36 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(data);
     }
 
+    static async sendPasswordRecoveryEmail(email: string): Promise<void> {
+        await axios.post(
+            `${config.get('okta.url')}/api/v1/authn/recovery/password`,
+            { username: email, "factorType": "EMAIL" },
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        const user: IUser = await OktaService.getOktaUserByEmail(email);
+
+        // Store renew token in the DB - TODO is this still needed?
+        await new RenewModel({
+            userId: user.id,
+            token: crypto.randomBytes(20).toString('hex'),
+        }).save();
+    }
+
+    static async updatePasswordForUser(userId: string, password: string): Promise<IUser> {
+        const oktaUser: OktaUser = await OktaService.getOktaUserById(userId);
+
+        const { data }: { data: OktaUser } = await axios.put(
+            `${config.get('okta.url')}/api/v1/users/${oktaUser.id}`,
+            { credentials: { password: { value: password } } },
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        return OktaService.convertOktaUserToIUser(data);
+    }
+
     static async signUpWithoutPassword(email: string, name: string): Promise<IUserTemp> {
-        const { data } = await axios.post(
+        const { data }: { data: OktaUser } = await axios.post(
             `${config.get('okta.url')}/api/v1/users?activate=false`,
             {
                 profile: {
@@ -56,7 +92,7 @@ export default class OktaService {
     }
 
     static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
-        const { data } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
+        const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
             headers: OktaService.getOktaRequestHeaders(),
             params: {
                 limit: pageOptions.limit,
@@ -65,6 +101,7 @@ export default class OktaService {
                 ...(pageOptions.before && { before: pageOptions.before }),
             }
         });
+
         return data;
     }
 

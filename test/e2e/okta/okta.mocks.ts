@@ -168,3 +168,36 @@ export const mockOktaFailedSignUp: (errorSummary: string) => OktaFailedAPIRespon
 
     return failedLoginResponse;
 };
+
+export const mockOktaUpdatePassword: (override?: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {
+    const user: OktaUser = getMockOktaUser(override);
+
+    nock(config.get('okta.url'))
+        .get(`/api/v1/users`)
+        .query({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` })
+        .times(times)
+        .reply(200, [user]);
+
+    nock(config.get('okta.url'))
+        .put(`/api/v1/users/${user.id}`)
+        .times(times)
+        .reply(200, { ...user });
+
+    return user;
+};
+
+export const mockOktaSendResetPasswordEmail: (override?: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {
+    const user: OktaUser = getMockOktaUser(override);
+
+    nock(config.get('okta.url'))
+        .post(`/api/v1/authn/recovery/password`, { username: user.profile.email, factorType: 'EMAIL' })
+        .times(times)
+        .reply(200, { ...user });
+
+    nock(config.get('okta.url'))
+        .get(`/api/v1/users/${user.profile.email}`)
+        .times(times)
+        .reply(200, { ...user });
+
+    return user;
+};

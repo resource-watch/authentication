@@ -1,16 +1,19 @@
 import nock from 'nock';
 import chai from 'chai';
 import mongoose from 'mongoose';
-
-import UserModel, { UserDocument } from 'models/user.model';
-import UserTempModel from 'models/user-temp.model';
-import RenewModel, { IRenew } from 'models/renew.model';
+import sinon, { SinonSandbox } from "sinon";
 import type request from 'superagent';
+
+import RenewModel from 'models/renew.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import { stubConfigValue } from "../utils/helpers";
+import {OktaUser} from "../../../src/services/okta.interfaces";
+import {mockOktaUpdatePassword} from "./okta.mocks";
 
 chai.should();
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -21,12 +24,15 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - JSON version', 
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
+    });
 
-        await UserModel.deleteMany({}).exec();
-        await UserTempModel.deleteMany({}).exec();
-        await RenewModel.deleteMany({}).exec();
+    beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
         requester = await getTestAgent(true);
+
+        await RenewModel.deleteMany({}).exec();
     });
 
     it('Recover password post with fake token returns a 422 error - JSON format', async () => {
@@ -34,15 +40,10 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - JSON version', 
             .post(`/auth/reset-password/token`)
             .set('Content-Type', 'application/json');
 
-        return new Promise((resolve) => {
-            response.status.should.equal(422);
-            response.should.be.json;
-            response.body.should.have.property('errors').and.be.an('array');
-            response.body.errors[0].should.have.property('detail').and.equal(`Token expired`);
-
-            resolve();
-        });
-
+        response.status.should.equal(422);
+        response.should.be.json;
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Token expired`);
     });
 
     it('Recover password post with correct token and missing passwords should return an error message - JSON format', async () => {
@@ -55,15 +56,11 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - JSON version', 
             .post(`/auth/reset-password/myToken`)
             .set('Content-Type', 'application/json');
 
-        return new Promise((resolve) => {
-            response.status.should.equal(422);
-            response.should.be.json;
-            response.body.should.have.property('errors').and.be.an('array');
-            response.body.errors[0].status.should.equal(422);
-            response.body.errors[0].detail.should.equal('Password and Repeat password are required');
-
-            resolve();
-        });
+        response.status.should.equal(422);
+        response.should.be.json;
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].status.should.equal(422);
+        response.body.errors[0].detail.should.equal('Password and Repeat password are required');
     });
 
     it('Recover password post with correct token and missing repeat password should return an error message - JSON format', async () => {
@@ -79,35 +76,23 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - JSON version', 
                 password: 'abcd'
             });
 
-        return new Promise((resolve) => {
-            response.status.should.equal(422);
-            response.should.be.json;
-            response.body.should.have.property('errors').and.be.an('array');
-            response.body.errors[0].status.should.equal(422);
-            response.body.errors[0].detail.should.equal('Password and Repeat password not equal');
-
-            resolve();
-        });
-
+        response.status.should.equal(422);
+        response.should.be.json;
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].status.should.equal(422);
+        response.body.errors[0].detail.should.equal('Password and Repeat password not equal');
     });
 
     it('Recover password post with correct token and different password and repeatPassword should return an error message - JSON format', async () => {
-        const renewModel: IRenew = await new RenewModel({
+        await new RenewModel({
             userId: mongoose.Types.ObjectId(),
             token: 'myToken'
         }).save();
 
-        const loadedRenewModels: IRenew[] = await RenewModel.find({});
-        loadedRenewModels.should.have.lengthOf(1);
-        loadedRenewModels[0]._id.toString().should.equal(renewModel._id.toString());
-
         const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .set('Content-Type', 'application/json')
-            .send({
-                password: 'abcd',
-                repeatPassword: 'efgh'
-            });
+            .send({ password: 'abcd', repeatPassword: 'efgh' });
 
         response.status.should.equal(422);
         response.should.be.json;
@@ -117,61 +102,31 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - JSON version', 
     });
 
     it('Recover password post with correct token and matching passwords should redirect to the configured URL (happy case) - JSON format', async () => {
-        const user: UserDocument = await new UserModel({
-            __v: 0,
-            email: 'test@example.com',
-            password: '$2b$10$1wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK',
-            salt: '$2b$10$1wDgP5YCStyvZndwDu2Gwu',
-            extraUserData: {
-                apps: ['rw']
-            },
-            _id: '5becfa2b67da0d3ec07a27f6',
-            createdAt: '2018-11-15T04:46:35.313Z',
-            role: 'USER',
-            provider: 'local',
-            name: 'lorem-ipsum',
-            photo: 'http://www.random.rand/abc.jpg'
-        }).save();
-
-        await new RenewModel({
-            userId: user._id,
-            token: 'myToken'
-        }).save();
+        const user: OktaUser = mockOktaUpdatePassword();
+        await new RenewModel({ userId: user.profile.legacyId, token: 'myToken' }).save();
 
         const response: request.Response = await requester
             .post(`/auth/reset-password/myToken`)
             .set('Content-Type', 'application/json')
-            .send({
-                password: 'abcd',
-                repeatPassword: 'abcd'
-            });
-        return new Promise((resolve) => {
-            response.status.should.equal(200);
-            response.redirects.should.be.an('array').and.length(0);
+            .send({ password: 'abcd', repeatPassword: 'abcd' });
 
-            const responseUser: Record<string, any> = response.body.data;
-            responseUser.should.have.property('id').and.be.a('string').and.not.be.empty;
-            responseUser.should.have.property('name').and.be.a('string').and.equal('lorem-ipsum');
-            responseUser.should.have.property('photo').and.be.a('string').and.equal('http://www.random.rand/abc.jpg');
-            responseUser.should.have.property('email').and.equal('test@example.com');
-            responseUser.should.have.property('role').and.equal('USER');
-            responseUser.should.have.property('extraUserData').and.be.an('object');
-            responseUser.extraUserData.should.have.property('apps').and.be.an('array').and.contain('rw');
-
-            resolve();
-        });
-
+        response.status.should.equal(200);
+        response.redirects.should.be.an('array').and.length(0);
+        response.body.data.should.have.property('id').and.be.a('string').and.eql(user.profile.legacyId);
+        response.body.data.should.have.property('name').and.be.a('string').and.equal(user.profile.displayName);
+        response.body.data.should.have.property('photo').and.be.a('string').and.equal(user.profile.photo);
+        response.body.data.should.have.property('email').and.equal(user.profile.email);
+        response.body.data.should.have.property('role').and.equal(user.profile.role);
+        response.body.data.should.have.property('extraUserData').and.be.an('object');
+        response.body.data.extraUserData.should.have.property('apps').and.eql(user.profile.apps);
     });
 
-    after(closeTestAgent);
-
     afterEach(async () => {
-        await UserModel.deleteMany({}).exec();
-        await UserTempModel.deleteMany({}).exec();
-        await RenewModel.deleteMany({}).exec();
-
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        sandbox.restore();
+        await closeTestAgent();
     });
 });
