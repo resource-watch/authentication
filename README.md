@@ -1,6 +1,6 @@
 # Authorization API - Resource Watch 
 
-[![Build Status](https://travis-ci.org/resource-watch/authorization.svg?branch=dev)](https://travis-ci.org/resource-watch/authorization)
+[![Build Status](https://travis-ci.com/resource-watch/authorization.svg?branch=dev)](https://travis-ci.com/resource-watch/authorization)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/6998e7a532fb2d138ca3/test_coverage)](https://codeclimate.com/github/resource-watch/authorization/test_coverage)
 
 ## Dependencies
