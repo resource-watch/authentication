@@ -562,9 +562,21 @@ export class OktaProvider extends BaseProvider {
             }
         }
 
-        const originApp: string = Utils.getOriginApp(ctx);
-        const renew: IRenew = await OktaUserService.sendResetMail(ctx.request.body.email, ctx.state.generalConfig, originApp);
-        if (!renew) {
+        try {
+            await OktaService.sendPasswordRecoveryEmail(ctx.request.body.email);
+
+            if (ctx.request.type === 'application/json') {
+                ctx.body = { message: 'Email sent' };
+            } else {
+                await ctx.render('request-mail-reset', {
+                    info: 'Email sent!!',
+                    error: null,
+                    email: ctx.request.body.email,
+                    app: Utils.getOriginApp(ctx),
+                    generalConfig: ctx.state.generalConfig,
+                });
+            }
+        } catch (err) {
             if (ctx.request.type === 'application/json') {
                 throw new UnprocessableEntityError('User not found');
             } else {
@@ -578,18 +590,6 @@ export class OktaProvider extends BaseProvider {
 
                 return;
             }
-        }
-
-        if (ctx.request.type === 'application/json') {
-            ctx.body = { message: 'Email sent' };
-        } else {
-            await ctx.render('request-mail-reset', {
-                info: 'Email sent!!',
-                error: null,
-                email: ctx.request.body.email,
-                app: Utils.getOriginApp(ctx),
-                generalConfig: ctx.state.generalConfig,
-            });
         }
     }
 
@@ -653,7 +653,8 @@ export class OktaProvider extends BaseProvider {
 
             return;
         }
-        const user: UserDocument = await OktaUserService.updatePassword(ctx.params.token, ctx.request.body.password);
+
+        const user: IUser = await OktaUserService.updatePassword(ctx.params.token, ctx.request.body.password);
         if (user) {
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
