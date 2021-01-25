@@ -25,7 +25,7 @@ const getOriginApp: (ctx: Context, config: ISettings) => string = (ctx: Context,
 class TwitterRouter {
 
     static async redirectStart(ctx: Context): Promise<void> {
-        ctx.redirect('/auth/twitter/start');
+        ctx.redirect(`${Settings.getSettings().publicUrl}/auth/twitter/start`);
     }
 
     static async startMigration(ctx: Context): Promise<void> {

@@ -3,6 +3,7 @@ import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
 
+import Settings from "services/settings.service";
 import UserModel, { UserDocument } from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
@@ -39,7 +40,7 @@ describe('Twitter migrate endpoint tests - Login and migration start', () => {
     it('Visiting /auth/twitter while not being logged in should redirect to the start page', async () => {
         const response: request.Response = await requester.get(`/auth/twitter`).redirects(0);
         response.status.should.equal(302);
-        response.should.redirectTo('/auth/twitter/start');
+        response.should.redirectTo(`${Settings.getSettings().publicUrl}/auth/twitter/start`);
     });
 
     it('Visiting /auth/twitter/callback while not being logged in should redirect to the twitter login page', async () => {

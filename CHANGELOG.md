@@ -1,3 +1,7 @@
+## 25/01/2021
+
+- Add redirection to `config.publicUrl` to account for `passport-twitter` only supporting a single source host. 
+
 ## 18/01/2021
 
 - Streamline response structure for user management endpoints.
