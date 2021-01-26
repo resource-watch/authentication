@@ -24,13 +24,11 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-    });
 
-    beforeEach(async () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        requester = await getTestAgent(true);
+        requester = await getTestAgent();
     });
 
     it('Creating an user while not logged in should return 401 Unauthorized', async () => {
@@ -162,12 +160,14 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         response.body.should.have.property('photo').and.eql(user.profile.photo);
     });
 
+    after(async () => {
+        sandbox.restore();
+        await closeTestAgent();
+    });
+
     afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
-
-        sandbox.restore();
-        await closeTestAgent();
     });
 });
