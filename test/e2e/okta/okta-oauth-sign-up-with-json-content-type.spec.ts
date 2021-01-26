@@ -46,7 +46,12 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
     });
 
     it('Registering a user with correct data and no app returns a 200', async () => {
-        const user: OktaUser = mockOktaSuccessfulSignUp({ apps: [] });
+        const user: OktaUser = getMockOktaUser({ apps: [] });
+        mockOktaSuccessfulSignUp(user, {
+            email: user.profile.email,
+            name: '',
+            role: 'USER',
+        });
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
@@ -78,7 +83,13 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
     });
 
     it('Registering a user with correct data and app returns a 200', async () => {
-        const user: OktaUser = mockOktaSuccessfulSignUp({ apps: ['gfw'] });
+        const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
+        mockOktaSuccessfulSignUp(user, {
+            email: user.profile.email,
+            name: '',
+            role: 'USER',
+            apps: ['gfw'],
+        });
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
@@ -98,7 +109,13 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
     });
 
     it('Registering a user with a custom role should return a 200 and ignore the role', async () => {
-        const user: OktaUser = mockOktaSuccessfulSignUp({ apps: ['gfw'] });
+        const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
+        mockOktaSuccessfulSignUp(user, {
+            email: user.profile.email,
+            name: '',
+            role: 'USER',
+            apps: ['gfw'],
+        });
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)

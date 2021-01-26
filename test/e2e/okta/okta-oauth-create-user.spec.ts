@@ -8,7 +8,7 @@ import UserModel from 'models/user.model';
 import UserTempSchema, {IUserTemp} from 'models/user-temp.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { stubConfigValue } from '../utils/helpers';
-import { mockOktaFailedSignUp, mockOktaSuccessfulSignUp, mockValidJWT } from "./okta.mocks";
+import {getMockOktaUser, mockOktaFailedSignUp, mockOktaSuccessfulSignUp, mockValidJWT} from "./okta.mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -132,7 +132,15 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     it('Creating an user with valid data should return 200 OK and the created user data', async () => {
         const apps: string[] = ['rw'];
         const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-        const user: OktaUser = mockOktaSuccessfulSignUp({ apps });
+        const user: OktaUser = getMockOktaUser({ apps });
+
+        mockOktaSuccessfulSignUp(user, {
+            email: user.profile.email,
+            name: '',
+            role: user.profile.role,
+            photo: user.profile.photo,
+            apps,
+        });
 
         const response: request.Response = await requester
             .post(`/auth/user`)
@@ -142,7 +150,7 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 role: user.profile.role,
                 extraUserData: { apps },
                 email: user.profile.email,
-                photo: user.profile.role,
+                photo: user.profile.photo,
             });
 
         response.status.should.equal(200);
