@@ -27,13 +27,11 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-    });
 
-    beforeEach(async () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        requester = await getTestAgent(true);
+        requester = await getTestAgent();
     });
 
     // Default HTML request behavior
@@ -218,12 +216,14 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
         response.body.errors[0].detail.should.equal('Invalid email or password');
     });
 
+    after(async () => {
+        sandbox.restore();
+        await closeTestAgent();
+    });
+
     afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
-
-        sandbox.restore();
-        await closeTestAgent();
     });
 });

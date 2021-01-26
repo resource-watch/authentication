@@ -5,77 +5,19 @@ import logger from 'logger';
 import Utils from 'utils';
 import { omit } from 'lodash';
 
-import OktaUserService, { PaginatedIUserResult } from 'services/okta.user.service';
 import Settings, { IApplication, IThirdPartyAuth } from 'services/settings.service';
-import { IUserTemp } from 'models/user-temp.model';
 import { IRenew } from 'models/renew.model';
 import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
-import UserModel, { IUser, UserDocument } from 'models/user.model';
+import { IUser, UserDocument } from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
+import {OktaUpdateUserPayload} from 'services/okta.interfaces';
+import UserNotFoundError from 'errors/userNotFound.error';
 
 export class OktaProvider extends BaseProvider {
-
-    static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
-        logger.info('[passportService] Registering user', profile);
-
-        let user: UserDocument = await UserModel.findOne({
-            provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
-            providerId: profile.id,
-        }).exec();
-        logger.info(user);
-        if (!user) {
-            logger.info('[passportService] User does not exist');
-            let name: string = null;
-            let email: string = null;
-            let photo: string = null;
-            if (profile) {
-                name = profile.displayName;
-                photo = profile.photos?.length > 0 ? profile.photos[0].value : null;
-                if (profile.emails?.length > 0) {
-                    email = profile.emails[0].value;
-                } else if (profile.email) {
-                    ({ email } = profile);
-                }
-            }
-            user = await new UserModel({
-                name,
-                email,
-                photo,
-                provider: profile.provider ? profile.provider.split('-')[0] : profile.provider,
-                providerId: profile.id
-            }).save();
-        } else {
-            let email: string = null;
-            if (profile) {
-                if (profile.emails?.length > 0) {
-                    email = profile.emails[0].value;
-                } else if (profile.email) {
-                    ({ email } = profile);
-                }
-            }
-            if (email) {
-                logger.info('[passportService] Updating email');
-                user.email = email;
-                await user.save();
-            }
-        }
-        logger.info('[passportService] Returning user');
-        done(null, {
-            id: user._id,
-            provider: user.provider,
-            providerId: user.providerId,
-            role: user.role,
-            createdAt: user.createdAt,
-            extraUserData: user.extraUserData,
-            name: user.name,
-            photo: user.photo,
-            email: user.email
-        });
-    }
 
     static async localCallback(ctx: Context & RouterContext): Promise<void> {
         try {
@@ -170,8 +112,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async getCurrentUser(ctx: Context): Promise<void> {
-        const requestUser: UserDocument = Utils.getUser(ctx);
-
+        const requestUser: IUser = Utils.getUser(ctx);
         logger.info('Get current user: ', requestUser.id);
 
         if (requestUser.id && requestUser.id.toLowerCase() === 'microservice') {
@@ -180,7 +121,6 @@ export class OktaProvider extends BaseProvider {
         }
 
         const user: IUser = await OktaService.getUserById(requestUser.id);
-
         if (!user) {
             ctx.throw(404, 'User not found');
             return;
