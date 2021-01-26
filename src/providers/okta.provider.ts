@@ -302,7 +302,13 @@ export class OktaProvider extends BaseProvider {
         }
 
         try {
-            ctx.body = await OktaService.createUserWithoutPassword(body.email, body.name, body.role, body.apps, body.photo);
+            ctx.body = await OktaService.createUserWithoutPassword({
+                email: body.email,
+                name: body.name,
+                role: body.role,
+                apps: body.extraUserData.apps,
+                photo: body.photo,
+            });
         } catch (err) {
             logger.error('Error creating user, ', err);
             if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {
@@ -394,12 +400,11 @@ export class OktaProvider extends BaseProvider {
     static async signUp(ctx: Context): Promise<void> {
         try {
             logger.info('Creating user');
-
-            // Call Okta API to create user without password
-            const newUser: IUserTemp = await OktaService.signUpWithoutPassword(
-                ctx.request.body.email,
-                ctx.request.body.name,
-            );
+            const newUser: IUser = await OktaService.createUserWithoutPassword({
+                email: ctx.request.body.email,
+                name: ctx.request.body.name,
+                role: 'USER',
+            });
 
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
