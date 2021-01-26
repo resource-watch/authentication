@@ -14,6 +14,11 @@ export default class OktaService {
     static async getOktaUserById(id: string): Promise<OktaUser> {
         const search: string = OktaService.getOktaSearchCriteria({ id });
         const [user] = await OktaService.getUsers(search, { limit: 1 });
+
+        if (!user) {
+            throw new UserNotFoundError();
+        }
+
         return user;
     }
 
@@ -131,14 +136,7 @@ export default class OktaService {
 
         const { data }: { data: OktaUser } = await axios.post(
             `${config.get('okta.url')}/api/v1/users/${user.id}`,
-            {
-                profile: {
-                    ...payload.displayName && { displayName: payload.displayName },
-                    ...payload.photo && { photo: payload.photo },
-                    ...user.profile.role === 'ADMIN' && payload.role && { role: payload.role },
-                    ...user.profile.role === 'ADMIN' && payload.apps && { apps: payload.apps },
-                }
-            },
+            { profile: payload },
             { headers: OktaService.getOktaRequestHeaders() }
         );
 

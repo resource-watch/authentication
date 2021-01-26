@@ -115,6 +115,14 @@ export const mockGetUserById: (user: OktaUser, times?: number) => void = (user, 
         .reply(200, [user]);
 };
 
+export const mockGetUserByIdNotFound: (id: string, times?: number) => void = (id, times = 1) => {
+    nock(config.get('okta.url'))
+        .get(`/api/v1/users`)
+        .query({ limit: 1, search: `(profile.legacyId eq "${id}")` })
+        .times(times)
+        .reply(200, []);
+};
+
 export const mockOktaGetUserByEmail: (override: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {
     const user: OktaUser = getMockOktaUser(override);
 
