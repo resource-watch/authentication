@@ -279,13 +279,7 @@ export class OktaProvider extends BaseProvider {
             return;
         }
 
-        const exist: boolean = await OktaUserService.emailExists(body.email);
-        if (exist) {
-            ctx.throw(400, 'Email exists');
-            return;
-        }
-
-        // check Apps
+        // Check apps
         for (let i: number = 0, { length } = body.extraUserData.apps; i < length; i += 1) {
             if (user.extraUserData.apps.indexOf(body.extraUserData.apps[i]) < 0) {
                 ctx.throw(403, 'Forbidden');
@@ -293,9 +287,16 @@ export class OktaProvider extends BaseProvider {
             }
         }
 
-        await OktaUserService.createUserWithoutPassword(ctx.request.body, ctx.state.generalConfig);
-        ctx.body = {};
+        try {
+            ctx.body = await OktaService.createUserWithoutPassword(body.email, body.name, body.role, body.apps, body.photo);
+        } catch (err) {
+            logger.error('Error creating user, ', err);
+            if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {
+                ctx.throw(400, 'Email exists');
+            }
 
+            ctx.throw(500, 'Internal server error');
+        }
     }
 
     static async success(ctx: Context): Promise<void> {
