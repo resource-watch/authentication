@@ -11,10 +11,184 @@ import { OktaPaginationOptions, OktaRequestHeaders, OktaUser } from 'services/ok
 
 export default class OktaService {
 
-    static async getOktaUserById(id: string): Promise<OktaUser> {
-        const search: string = OktaService.getOktaSearchCriteria({ id });
-        const [user] = await OktaService.getUsers(search, { limit: 1 });
+    static createToken(user: IUser): string {
+        try {
+            const options: SignOptions = {};
+            if (Settings.getSettings().jwt.expiresInMinutes && Settings.getSettings().jwt.expiresInMinutes > 0) {
+                options.expiresIn = Settings.getSettings().jwt.expiresInMinutes * 60;
+            }
 
+            return JWT.sign({
+                id: user.id,
+                role: user.role,
+                provider: user.provider,
+                email: user.email,
+                extraUserData: user.extraUserData,
+                createdAt: Date.now(),
+                photo: user.photo,
+                name: user.name
+            }, Settings.getSettings().jwt.secret, options);
+        } catch (e) {
+            logger.info('[UserService] Error to generate token', e);
+            return null;
+        }
+    }
+
+    static async searchOktaUsers(query: Record<string, any>): Promise<OktaUser[]> {
+        const search: string = OktaService.getOktaSearchCriteria(query);
+        const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
+            headers: OktaService.getOktaRequestHeaders(),
+            params: {
+                ...(search && { search }),
+                ...(query.limit && { limit: query.limit }),
+                ...(query.after && { after: query.after }),
+                ...(query.before && { before: query.before }),
+            }
+        });
+
+        return data;
+    }
+
+    static async getUsers(apps: string[], query: Record<string, string>): Promise<IUser[]> {
+        logger.info('[UserService] Get users with apps', apps);
+        const limit: number = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
+        const before: string = query['page[before]'];
+        const after: string = query['page[after]'];
+        const search: string = OktaService.getOktaSearchCriteria({ ...query, apps });
+
+        const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
+            headers: OktaService.getOktaRequestHeaders(),
+            params: {
+                limit,
+                ...(search && { search }),
+                ...(after && { after }),
+                ...(before && { before }),
+            }
+        });
+
+        return data.map(OktaService.convertOktaUserToIUser);
+    }
+
+    static async getUserById(id: string): Promise<IUser> {
+        return OktaService.convertOktaUserToIUser(await OktaService.getOktaUserById(id));
+    }
+
+    static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
+        const users: OktaUser[] = await OktaService.searchOktaUsers({ limit: 100, id: ids });
+        return users.map(OktaService.convertOktaUserToIUser);
+    }
+
+    static async getIdsByRole(role: string): Promise<string[]> {
+        if (!['SUPERADMIN', 'ADMIN', 'MANAGER', 'USER'].includes(role)) {
+            throw new UnprocessableEntityError(`Invalid role ${role} provided`);
+        }
+
+        const users: OktaUser[] = await OktaService.searchOktaUsers({ limit: 100, role });
+        return users.map(OktaService.convertOktaUserToIUser).map((el) => el.id);
+    }
+
+    static async confirmUser(confirmationToken: string): Promise<UserDocument> {
+        const exist: UserTempDocument = await UserTempModel.findOne({ confirmationToken });
+        if (!exist) {
+            return null;
+        }
+        const user: UserDocument = await new UserModel({
+            email: exist.email,
+            password: exist.password,
+            salt: exist.salt,
+            role: exist.role,
+            extraUserData: exist.extraUserData,
+            provider: 'local',
+        }).save();
+        await exist.remove();
+        delete user.password;
+        delete user.salt;
+
+        return user;
+    }
+
+    static async getRenewModel(token: string): Promise<IRenew> {
+        logger.info('[UserService]obtaining renew model of token', token);
+        return RenewModel.findOne({ token });
+    }
+
+    static async updatePassword(token: string, newPassword: string): Promise<IUser> {
+        logger.info('[OktaServices] Updating password');
+
+        const renew: IRenew = await RenewModel.findOne({ token });
+        if (!renew) {
+            logger.info('[UserService] Token not found');
+            return null;
+        }
+
+        return OktaService.updatePasswordForUser(renew.userId, newPassword);
+    }
+
+    static async checkRevokedToken(ctx: Context, payload: Record<string, any>): Promise<boolean> {
+        logger.info('Checking if token is revoked');
+
+        let isRevoked: boolean = false;
+        if (payload.id !== 'microservice') {
+            try {
+                const user: IUser = await OktaService.getOktaUserByEmail(payload.email);
+
+                if (!isEqual(user.id, payload.id)) {
+                    logger.info(`[AuthService] "id" in token does not match expected value`);
+                    isRevoked = true;
+                }
+
+                if (!isEqual(user.role, payload.role)) {
+                    logger.info(`[AuthService] "role" in token does not match expected value`);
+                    isRevoked = true;
+                }
+
+                if (!isEqual(user.extraUserData, payload.extraUserData)) {
+                    logger.info(`[AuthService] "extraUserData" in token does not match expected value`);
+                    isRevoked = true;
+                }
+
+                if (!isEqual(user.email, payload.email)) {
+                    logger.info(`[AuthService] "email" in token does not match expected value`);
+                    isRevoked = true;
+                }
+
+                return isRevoked;
+            } catch (err) {
+                logger.error(err);
+                logger.info('[UserService] User ID in token does not match an existing user');
+                return true;
+            }
+        }
+
+        return isRevoked;
+    }
+
+    static async updateApplicationsForUser(id: string, applications: string[]): Promise<UserDocument> {
+        logger.info('[UserService] Searching user with id ', id, applications);
+        const user: UserDocument = await UserModel.findById(id);
+        if (!user) {
+            logger.info('[UserService] User not found');
+            return null;
+        }
+        if (!user.extraUserData) {
+            user.extraUserData = {
+                apps: []
+            };
+        } else {
+            user.extraUserData = { ...user.extraUserData };
+        }
+        for (let i: number = 0, { length } = applications; i < length; i += 1) {
+            if (user.extraUserData.apps.indexOf(applications[i]) === -1) {
+                user.extraUserData.apps.push(applications[i].toLowerCase());
+            }
+        }
+        user.markModified('extraUserData');
+        await user.save();
+        return user;
+    }
+
+    static async getOktaUserById(id: string): Promise<OktaUser> {
+        const [user] = await OktaService.searchOktaUsers({ limit: 1, id });
         if (!user) {
             throw new UserNotFoundError();
         }
@@ -148,21 +322,7 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(user);
     }
 
-    static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
-        const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
-            headers: OktaService.getOktaRequestHeaders(),
-            params: {
-                limit: pageOptions.limit,
-                ...(search && { search }),
-                ...(pageOptions.after && { after: pageOptions.after }),
-                ...(pageOptions.before && { before: pageOptions.before }),
-            }
-        });
-
-        return data;
-    }
-
-    static getOktaSearchCriteria(query: Record<string, any>): string {
+    private static getOktaSearchCriteria(query: Record<string, any>): string {
         logger.debug('[UserService] getOktaSearchCriteria Object.keys(query)', Object.keys(query));
 
         const searchCriteria: string[] = [];
@@ -178,12 +338,10 @@ export default class OktaService {
                 }
             });
 
-        return searchCriteria
-            .filter(el => el !== '')
-            .join(' and ');
+        return searchCriteria.filter(el => el !== '').join(' and ');
     }
 
-    static convertOktaUserToIUser(user: OktaUser): IUser {
+    private static convertOktaUserToIUser(user: OktaUser): IUser {
         return {
             id: user.profile.legacyId,
             // @ts-ignore

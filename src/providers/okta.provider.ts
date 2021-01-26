@@ -85,7 +85,7 @@ export class OktaProvider extends BaseProvider {
                 ctx.status = 200;
                 ctx.body = UserSerializer.serialize(user);
                 logger.info('Generating token');
-                ctx.body.data.token = OktaUserService.createToken(user);
+                ctx.body.data.token = OktaService.createToken(user);
             } else {
                 await ctx.logIn(user)
                     .then(() => ctx.redirect('/auth/success'))
@@ -119,7 +119,7 @@ export class OktaProvider extends BaseProvider {
     static async checkLogged(ctx: Context): Promise<void> {
         if (Utils.getUser(ctx)) {
             const userToken: UserDocument = Utils.getUser(ctx);
-            const user: IUser = await OktaUserService.getUserById(userToken.id);
+            const user: IUser = await OktaService.getUserById(userToken.id);
 
             ctx.body = {
                 id: user.id,
@@ -158,16 +158,14 @@ export class OktaProvider extends BaseProvider {
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
-        let users: PaginatedIUserResult;
-
+        let appsToUse: string[]|null = apps;
         if (query.app === 'all') {
-            users = await OktaUserService.getUsers(null, omit(query, ['app']));
+            appsToUse = null;
         } else if (query.app) {
-            users = await OktaUserService.getUsers(query.app.split(','), omit(query, ['app']));
-        } else {
-            users = await OktaUserService.getUsers(apps, query);
+            appsToUse = query.app.split(',');
         }
 
+        const users: IUser[] = await OktaService.getUsers(appsToUse, omit(query, ['app']));
         ctx.body = UserSerializer.serialize(users, link);
     }
 
@@ -181,7 +179,7 @@ export class OktaProvider extends BaseProvider {
             return;
         }
 
-        const user: IUser = await OktaUserService.getUserById(requestUser.id);
+        const user: IUser = await OktaService.getUserById(requestUser.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
@@ -193,7 +191,7 @@ export class OktaProvider extends BaseProvider {
     static async getUserById(ctx: Context): Promise<void> {
         logger.info('Get User by id: ', ctx.params.id);
 
-        const user: IUser = await OktaUserService.getUserById(ctx.params.id);
+        const user: IUser = await OktaService.getUserById(ctx.params.id);
 
         if (!user) {
             ctx.throw(404, 'User not found');
@@ -206,13 +204,13 @@ export class OktaProvider extends BaseProvider {
     static async findByIds(ctx: Context): Promise<void> {
         logger.info('Find by ids');
         ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
-        const data: IUser[] = await OktaUserService.getUsersByIds(ctx.request.body.ids);
+        const data: IUser[] = await OktaService.getUsersByIds(ctx.request.body.ids);
         ctx.body = { data };
     }
 
     static async getIdsByRole(ctx: Context): Promise<void> {
         logger.info(`[getIdsByRole] Get ids by role: ${ctx.params.role}`);
-        const data: string[] = await OktaUserService.getIdsByRole(ctx.params.role);
+        const data: string[] = await OktaService.getIdsByRole(ctx.params.role);
         ctx.body = { data };
     }
 
@@ -328,7 +326,7 @@ export class OktaProvider extends BaseProvider {
 
             if (ctx.session.generateToken) {
                 // generate token and eliminate session
-                const token: string = OktaUserService.createToken(Utils.getUser(ctx));
+                const token: string = OktaService.createToken(Utils.getUser(ctx));
 
                 // Replace token query parameter in redirect URL
                 const url: URL = new URL(ctx.session.callbackUrl);
@@ -449,7 +447,7 @@ export class OktaProvider extends BaseProvider {
 
     static async confirmUser(ctx: Context): Promise<void> {
         logger.info('Confirming user');
-        const user: UserDocument = await OktaUserService.confirmUser(ctx.params.token);
+        const user: UserDocument = await OktaService.confirmUser(ctx.params.token);
         if (!user) {
             ctx.throw(400, 'User expired or token not found');
             return;
@@ -549,7 +547,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async resetPasswordView(ctx: Context): Promise<void> {
-        const renew: IRenew = await OktaUserService.getRenewModel(ctx.params.token);
+        const renew: IRenew = await OktaService.getRenewModel(ctx.params.token);
         let error: string = null;
         if (!renew) {
             error = 'Token expired';
@@ -618,9 +616,9 @@ export class OktaProvider extends BaseProvider {
             if (ctx.session && ctx.session.applications) {
                 let user: IUser = Utils.getUser(ctx);
                 if (user.role === 'USER') {
-                    user = await OktaUserService.updateApplicationsForUser(user.id, ctx.session.applications);
+                    user = await OktaService.updateApplicationsForUser(user.id, ctx.session.applications);
                 } else {
-                    user = await OktaUserService.getUserById(user.id);
+                    user = await OktaService.getUserById(user.id);
                 }
                 delete ctx.session.applications;
                 if (user) {
@@ -655,7 +653,7 @@ export class OktaProvider extends BaseProvider {
         if (ctx.request.body.password !== ctx.request.body.repeatPassword) {
             error = 'Password and Repeat password not equal';
         }
-        const exist: IRenew = await OktaUserService.getRenewModel(ctx.params.token);
+        const exist: IRenew = await OktaService.getRenewModel(ctx.params.token);
         if (!exist) {
             error = 'Token expired';
         }
@@ -674,7 +672,7 @@ export class OktaProvider extends BaseProvider {
             return;
         }
 
-        const user: IUser = await OktaUserService.updatePassword(ctx.params.token, ctx.request.body.password);
+        const user: IUser = await OktaService.updatePassword(ctx.params.token, ctx.request.body.password);
         if (user) {
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
