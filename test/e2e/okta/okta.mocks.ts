@@ -4,7 +4,7 @@ import faker from 'faker';
 import { isEqual } from 'lodash';
 
 import {
-    JWTPayload,
+    JWTPayload, OktaCreateUserPayload,
     OktaFailedAPIResponse,
     OktaSuccessfulLoginResponse, OktaUpdateUserPayload,
     OktaUser,
@@ -156,18 +156,20 @@ export const mockValidJWT: (override?: Partial<JWTPayload>, times?: number) => s
     return token;
 };
 
-export const mockOktaSuccessfulSignUp: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
-    const user: OktaUser = getMockOktaUser(override);
-
+export const mockOktaSuccessfulSignUp: (user: OktaUser, payload: OktaCreateUserPayload) => void = (user, payload) => {
     nock(config.get('okta.url'))
-        .post('/api/v1/users?activate=false')
+        .post('/api/v1/users?activate=false', (body) => [
+            body.profile.email === payload.email,
+            body.profile.displayName === payload.name,
+            body.profile.role === payload.role || body.profile.role === 'USER',
+            isEqual(body.profile.apps, payload.apps) || isEqual(body.profile.apps, []),
+            !payload.photo || body.profile.photo === payload.photo,
+        ].every(el => !!el))
         .reply(200, user);
 
     nock(config.get('okta.url'))
         .post(`/api/v1/users/${user.id}/lifecycle/activate?sendEmail=true`)
         .reply(200, user);
-
-    return user;
 };
 
 export const mockOktaFailedSignUp: (errorSummary: string) => OktaFailedAPIResponse = (errorSummary: string) => {

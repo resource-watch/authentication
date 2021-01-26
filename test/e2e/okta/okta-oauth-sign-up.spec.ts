@@ -46,7 +46,11 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
     });
 
     it('Registering a user with correct data and no app returns a 200', async () => {
-        const user: OktaUser = mockOktaSuccessfulSignUp();
+        const user: OktaUser = getMockOktaUser();
+        mockOktaSuccessfulSignUp(user, {
+            email: user.profile.email,
+            name: '',
+        });
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
@@ -72,7 +76,12 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
 
     // User registration - with app
     it('Registering a user with correct data and app returns a 200', async () => {
-        const user: OktaUser = mockOktaSuccessfulSignUp({ apps: ['rw'] });
+        const user: OktaUser = getMockOktaUser({ apps: ['rw'] });
+        mockOktaSuccessfulSignUp(user, {
+            email: user.profile.email,
+            name: '',
+            apps: ['rw'],
+        });
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)

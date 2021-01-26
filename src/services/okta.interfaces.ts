@@ -40,6 +40,14 @@ export interface OktaUser {
     _links: { self: { href: string; } };
 }
 
+export interface OktaCreateUserPayload {
+    email: string;
+    name: string;
+    role?: string;
+    apps?: string[];
+    photo?: string;
+}
+
 export interface OktaUpdateUserPayload {
     displayName?: string;
     photo?: string;
