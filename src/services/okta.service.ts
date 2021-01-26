@@ -126,6 +126,25 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(data);
     }
 
+    static async updateUser(id: string, payload: OktaUpdateUserPayload): Promise<IUser> {
+        const user: OktaUser = await OktaService.getOktaUserById(id);
+
+        const { data }: { data: OktaUser } = await axios.post(
+            `${config.get('okta.url')}/api/v1/users/${user.id}`,
+            {
+                profile: {
+                    ...payload.displayName && { displayName: payload.displayName },
+                    ...payload.photo && { photo: payload.photo },
+                    ...user.profile.role === 'ADMIN' && payload.role && { role: payload.role },
+                    ...user.profile.role === 'ADMIN' && payload.apps && { apps: payload.apps },
+                }
+            },
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        return OktaService.convertOktaUserToIUser(data);
+    }
+
     static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
         const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
             headers: OktaService.getOktaRequestHeaders(),

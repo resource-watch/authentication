@@ -1,17 +1,18 @@
 import nock from 'nock';
 import chai from 'chai';
+import sinon, { SinonSandbox } from "sinon";
+import type request from 'superagent';
 
-import UserModel, { UserDocument } from 'models/user.model';
-import UserSerializer from 'serializers/user.serializer';
+import { OktaUser } from "services/okta.interfaces";
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserAndToken } from '../utils/helpers';
 import type request from 'superagent';
 import chaiDateTime from 'chai-datetime';
 
 chai.should();
-chai.use(chaiDateTime);
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -22,18 +23,16 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        requester = await getTestAgent();
-
-        await UserModel.deleteMany({}).exec();
-
     });
 
     beforeEach(async () => {
-        await UserModel.deleteMany({}).exec();
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
+
+        requester = await getTestAgent(true);
     });
 
-    it('Updating own\'s profile while not logged in should return a 401', async () => {
+    it('Updating my profile while not logged in should return a 401', async () => {
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json');
@@ -44,8 +43,16 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
         response.body.errors[0].detail.should.equal('Not authenticated');
     });
 
-    it('Updating own\'s profile while logged in as the user should return a 200 (no actual data changes)', async () => {
-        const { token, user } = await createUserAndToken({ role: 'USER' });
+    it('Updating my profile while logged in as the user should return a 200 (no actual data changes)', async () => {
+        const user: OktaUser = getMockOktaUser();
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
+
+        mockOktaUpdateUser(user, {});
 
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
@@ -53,19 +60,27 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
-
-        response.body.data.should.have.property('id').and.equal(user.id.toString());
-        response.body.data.should.have.property('email').and.equal(user.email);
-        response.body.data.should.have.property('name').and.equal(user.name);
-        response.body.data.should.have.property('photo').and.equal(user.photo);
-        response.body.data.should.have.property('role').and.equal(user.role);
-        response.body.data.should.have.property('extraUserData').and.be.an('object').and.have.property('apps').and.eql(user.extraUserData.apps);
+        response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+        response.body.data.should.have.property('email').and.equal(user.profile.email);
+        response.body.data.should.have.property('name').and.equal(user.profile.displayName);
+        response.body.data.should.have.property('photo').and.equal(user.profile.photo);
+        response.body.data.should.have.property('role').and.equal(user.profile.role);
+        response.body.data.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
     });
 
-    it('Updating own\'s profile while logged in as the user with role USER should return a 200 with updated name and photo', async () => {
-        const { token, user } = await createUserAndToken({ role: 'USER' });
+    it('Updating my profile while logged in as the user with role USER should return a 200 with updated name and photo', async () => {
+        const user: OktaUser = getMockOktaUser();
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
 
-        const startDate: Date = new Date();
+        mockOktaUpdateUser(user, {
+            displayName: 'changed name',
+            photo: 'http://www.changed-photo.com',
+        });
 
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
@@ -90,30 +105,31 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             });
 
         response.status.should.equal(200);
-
         response.body.data.should.have.property('name').and.equal('changed name');
         response.body.data.should.have.property('photo').and.equal('http://www.changed-photo.com');
-
-        response.body.data.should.have.property('id').and.equal(user.id.toString());
-        response.body.data.should.have.property('email').and.equal(user.email);
-        response.body.data.should.have.property('role').and.equal(user.role);
-        response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql(user.extraUserData);
-
+        response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+        response.body.data.should.have.property('email').and.equal(user.profile.email);
+        response.body.data.should.have.property('role').and.equal(user.profile.role);
+        response.body.data.should.have.property('extraUserData').and.deep.eql({ apps: user.profile.apps });
         response.body.data.should.have.property('createdAt');
         response.body.data.should.have.property('updatedAt');
-
-        (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
-        (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
-
-        const updatedUser: UserDocument = await UserModel.findOne({ email: user.email }).exec();
-
-        response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });
 
-    it('Updating own\'s profile while logged in as the user with role ADMIN should return a 200 with updated name, photo, role and apps', async () => {
-        const { token, user } = await createUserAndToken({ role: 'ADMIN' });
+    it('Updating my profile while logged in as the user with role ADMIN should return a 200 with updated name, photo, role and apps', async () => {
+        const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
 
-        const startDate: Date = new Date();
+        mockOktaUpdateUser(user, {
+            displayName: 'changed name',
+            photo: 'http://www.changed-photo.com',
+            role: 'MANAGER',
+            apps: ['changed-apps'],
+        });
 
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
@@ -138,32 +154,22 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             });
 
         response.status.should.equal(200);
-
         response.body.data.should.have.property('name').and.equal('changed name');
         response.body.data.should.have.property('photo').and.equal('http://www.changed-photo.com');
         response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
         response.body.data.should.have.property('role').and.equal('MANAGER');
-
-        response.body.data.should.have.property('id').and.equal(user.id.toString());
-        response.body.data.should.have.property('email').and.equal(user.email);
+        response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+        response.body.data.should.have.property('email').and.equal(user.profile.email);
         response.body.data.should.have.property('createdAt');
         response.body.data.should.have.property('updatedAt');
-
-        (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
-        (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
-
-        const updatedUser: UserDocument = await UserModel.findOne({ email: user.email }).exec();
-
-        response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });
 
-    after(closeTestAgent);
-
     afterEach(async () => {
-        await UserModel.deleteMany({}).exec();
-
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        sandbox.restore();
+        await closeTestAgent();
     });
 });
