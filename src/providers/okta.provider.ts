@@ -253,15 +253,18 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async deleteUser(ctx: Context): Promise<void> {
-        logger.info(`Delete user with id ${ctx.params.id}`);
-        ctx.assert(ctx.params.id, 400, 'Id param required');
+        try {
+            logger.info(`Delete user with id ${ctx.params.id}`);
+            const deletedUser: IUser = await OktaService.deleteUser(ctx.params.id);
+            ctx.body = UserSerializer.serialize(deletedUser);
+        } catch (err) {
+            logger.error('Error updating my user, ', err);
+            if (err instanceof UserNotFoundError) {
+                ctx.throw(404, 'User not found');
+            }
 
-        const deletedUser: UserDocument = await OktaUserService.deleteUser(ctx.params.id);
-        if (!deletedUser) {
-            ctx.throw(404, 'User not found');
-            return;
+            ctx.throw(500, 'Internal server error');
         }
-        ctx.body = UserSerializer.serialize(deletedUser);
     }
 
     static async createUser(ctx: Context): Promise<void> {
