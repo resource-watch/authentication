@@ -1,11 +1,12 @@
 import nock from 'nock';
 import config from 'config';
 import faker from 'faker';
+import { isEqual } from 'lodash';
 
 import {
     JWTPayload,
     OktaFailedAPIResponse,
-    OktaSuccessfulLoginResponse,
+    OktaSuccessfulLoginResponse, OktaUpdateUserPayload,
     OktaUser,
     OktaUserProfile
 } from 'services/okta.interfaces';
@@ -106,6 +107,14 @@ export const mockOktaFailedLogin: () => OktaFailedAPIResponse = () => {
     return failedLoginResponse;
 };
 
+export const mockGetUserById: (user: OktaUser, times?: number) => void = (user, times = 1) => {
+    nock(config.get('okta.url'))
+        .get(`/api/v1/users`)
+        .query({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` })
+        .times(times)
+        .reply(200, [user]);
+};
+
 export const mockOktaGetUserByEmail: (override: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {
     const user: OktaUser = getMockOktaUser(override);
 
@@ -169,21 +178,24 @@ export const mockOktaFailedSignUp: (errorSummary: string) => OktaFailedAPIRespon
     return failedLoginResponse;
 };
 
-export const mockOktaUpdatePassword: (override?: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {
-    const user: OktaUser = getMockOktaUser(override);
-
-    nock(config.get('okta.url'))
-        .get(`/api/v1/users`)
-        .query({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` })
-        .times(times)
-        .reply(200, [user]);
+export const mockOktaUpdatePassword: (user: OktaUser, times?: number) => void = (user, times = 1) => {
+    mockGetUserById(user, times);
 
     nock(config.get('okta.url'))
         .put(`/api/v1/users/${user.id}`)
         .times(times)
         .reply(200, { ...user });
+};
 
-    return user;
+export const mockOktaUpdateUser: (mockUser: OktaUser, updateData: OktaUpdateUserPayload, times?: number) => void =
+    (user, updateData, times = 1) => {
+
+    mockGetUserById(user, times);
+
+    nock(config.get('okta.url'))
+        .post(`/api/v1/users/${user.id}`, (body) => isEqual(body, { profile: updateData }))
+        .times(times)
+        .reply(200, { ...user, profile: { ...user.profile, ...updateData } });
 };
 
 export const mockOktaSendResetPasswordEmail: (override?: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {

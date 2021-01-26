@@ -40,6 +40,13 @@ export interface OktaUser {
     _links: { self: { href: string; } };
 }
 
+export interface OktaUpdateUserPayload {
+    displayName?: string;
+    photo?: string;
+    role?: string;
+    apps?: string[];
+}
+
 export interface OktaPaginationOptions {
     limit: number;
     before?: string;

@@ -90,7 +90,8 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - HTML version', 
     });
 
     it('Recover password post with correct token and matching passwords should redirect to the configured URL (happy case) - HTML format', async () => {
-        const user: OktaUser = mockOktaUpdatePassword();
+        const user: OktaUser = getMockOktaUser();
+        mockOktaUpdatePassword(user);
         await new RenewModel({ userId: user.profile.legacyId, token: 'myToken' }).save();
 
         const response: request.Response = await requester
@@ -104,7 +105,8 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - HTML version', 
     });
 
     it('Recover password post with correct token, matching passwords and custom origin app should redirect to that app\'s configured URL - HTML format', async () => {
-        const user: OktaUser = mockOktaUpdatePassword();
+        const user: OktaUser = getMockOktaUser();
+        mockOktaUpdatePassword(user);
         await new RenewModel({ userId: user.profile.legacyId, token: 'myToken' }).save();
 
         const response: request.Response = await requester
