@@ -4,12 +4,11 @@ import mongoose from 'mongoose';
 import sinon, { SinonSandbox } from 'sinon';
 import type request from 'superagent';
 
-import { OktaUser } from "services/okta.interfaces";
+import { OktaUser } from 'services/okta.interfaces';
 import RenewModel from 'models/renew.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { stubConfigValue } from '../utils/helpers';
-import {OktaUser} from '../../../src/services/okta.interfaces';
-import {mockOktaUpdatePassword} from './okta.mocks';
+import {getMockOktaUser, mockOktaUpdatePassword} from './okta.mocks';
 
 chai.should();
 
