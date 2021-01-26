@@ -22,16 +22,14 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-    });
 
-    beforeEach(async () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, {
             'settings.defaultApp': 'gfw',
             'authProvider': 'OKTA'
         });
 
-        requester = await getTestAgent(true);
+        requester = await getTestAgent();
     });
 
     it('Registering a user without the actual data returns a 200 error (TODO: this should return a 422)', async () => {
@@ -96,12 +94,14 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         response.text.should.include('We\'ve sent you an email. Click the link in it to confirm your account.');
     });
 
+    after(async () => {
+        sandbox.restore();
+        await closeTestAgent();
+    });
+
     afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
-
-        sandbox.restore();
-        await closeTestAgent();
     });
 });

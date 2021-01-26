@@ -27,7 +27,7 @@ describe('[OKTA] Find users by id', () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        requester = await getTestAgent(true);
+        requester = await getTestAgent();
     });
 
     it('Find users without being logged in returns a 401', async () => {

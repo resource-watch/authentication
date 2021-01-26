@@ -22,13 +22,11 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-    });
 
-    beforeEach(async () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        requester = await getTestAgent(true);
+        requester = await getTestAgent();
     });
 
     it('Registering a user without being logged in returns a 422 error - JSON version', async () => {
@@ -135,12 +133,14 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         response.body.data.extraUserData.should.have.property('apps').and.eql(user.profile.apps);
     });
 
+    after(async () => {
+        sandbox.restore();
+        await closeTestAgent();
+    });
+
     afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
-
-        sandbox.restore();
-        await closeTestAgent();
     });
 });
