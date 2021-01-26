@@ -143,6 +143,17 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(data);
     }
 
+    static async deleteUser(id: string): Promise<IUser> {
+        const user: OktaUser = await OktaService.getOktaUserById(id);
+
+        await axios.delete(
+            `${config.get('okta.url')}/api/v1/users/${user.id}`,
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        return OktaService.convertOktaUserToIUser(user);
+    }
+
     static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
         const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
             headers: OktaService.getOktaRequestHeaders(),

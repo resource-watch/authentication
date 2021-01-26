@@ -119,30 +119,6 @@ export default class OktaUserService {
         return user.save();
     }
 
-    static async deleteUser(id: string): Promise<UserDocument> {
-        const isValidId: boolean = mongoose.Types.ObjectId.isValid(id);
-
-        if (!isValidId) {
-            logger.info(`[Auth Service - deleteUser] Invalid id ${id} provided`);
-            throw new UnprocessableEntityError(`Invalid id ${id} provided`);
-        }
-
-        let user: UserDocument;
-        try {
-            user = await UserModel.findById(id).exec();
-        } catch (e) {
-            logger.info(`[Auth Service - deleteUser] Failed to load user by id '${id}'`);
-            return null;
-        }
-
-        if (!user) {
-            logger.info(`[Auth Service - deleteUser] No user found with id '${id}'`);
-            return null;
-        }
-
-        return user.deleteOne();
-    }
-
     static async confirmUser(confirmationToken: string): Promise<UserDocument> {
         const exist: UserTempDocument = await UserTempModel.findOne({ confirmationToken });
         if (!exist) {
