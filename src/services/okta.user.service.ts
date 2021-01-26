@@ -1,12 +1,10 @@
 import { Context } from 'koa';
 import JWT, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import crypto from 'crypto';
 import mongoose from 'mongoose';
 import { isEqual } from 'lodash';
 
 import logger from 'logger';
-import MailService from 'services/mail.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
@@ -143,46 +141,6 @@ export default class OktaUserService {
         }
 
         return user.deleteOne();
-    }
-
-    static async emailExists(email: string): Promise<boolean> {
-        const exist: UserDocument = await UserModel.findOne({ email });
-        const existTemp: IUserTemp = await UserTempModel.findOne({ email });
-        return !!(exist || existTemp);
-    }
-
-    static async createUserWithoutPassword(data: IUser & { apps: string[]; callbackUrl: string }, generalConfig: Record<string, any>): Promise<void> {
-        const salt: string = bcrypt.genSaltSync();
-        const pass: string = crypto.randomBytes(8).toString('hex');
-        const user: IUserTemp = await new UserTempModel({
-            provider: 'local',
-            email: data.email,
-            role: data.role,
-            password: bcrypt.hashSync(pass, salt),
-            confirmationToken: crypto.randomBytes(20).toString('hex'),
-            salt,
-            extraUserData: data.extraUserData,
-        }).save();
-
-        logger.info('Sending mail');
-        try {
-            const mailService: MailService = new MailService();
-            await mailService.setup();
-            await mailService.sendConfirmationMailWithPassword(
-                {
-                    email: user.email,
-                    confirmationToken: user.confirmationToken,
-                    password: pass,
-                    callbackUrl: data.callbackUrl || ''
-                },
-                [{ address: user.email }],
-                generalConfig
-            );
-        } catch (err) {
-            logger.info('Error', err);
-            throw err;
-        }
-
     }
 
     static async confirmUser(confirmationToken: string): Promise<UserDocument> {

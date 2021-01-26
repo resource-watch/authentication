@@ -2,16 +2,19 @@ import nock from 'nock';
 import chai from 'chai';
 import chaiDateTime from 'chai-datetime';
 import type request from 'superagent';
+import sinon, { SinonSandbox } from "sinon";
 
 import UserModel from 'models/user.model';
 import UserTempSchema, {IUserTemp} from 'models/user-temp.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken } from '../utils/helpers';
+import { stubConfigValue } from '../utils/helpers';
+import { mockOktaFailedSignUp, mockOktaSuccessfulSignUp, mockValidJWT } from "./okta.mocks";
 
 chai.should();
 chai.use(chaiDateTime);
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -22,11 +25,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
+    });
 
-        requester = await getTestAgent();
+    beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        await UserModel.deleteMany({}).exec();
-        await UserTempSchema.deleteMany({}).exec();
+        requester = await getTestAgent(true);
     });
 
     it('Creating an user while not logged in should return 401 Unauthorized', async () => {
@@ -41,7 +46,7 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     it('Creating an user while logged in as a USER should return 403 Forbidden', async () => {
-        const { token } = await createUserAndToken({ role: 'USER' });
+        const token: string = mockValidJWT({ role: 'USER' });
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
@@ -54,7 +59,7 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     it('Creating an ADMIN user while logged in as a MANAGER should return 403 Forbidden', async () => {
-        const { token } = await createUserAndToken({ role: 'MANAGER' });
+        const token: string = mockValidJWT({ role: 'MANAGER' });
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
@@ -68,7 +73,7 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     it('Creating an user while logged in as a MANAGER not providing apps should return 400 Bad Request', async () => {
-        const { token } = await createUserAndToken({ role: 'MANAGER' });
+        const token: string = mockValidJWT({ role: 'MANAGER' });
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
@@ -82,15 +87,22 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     it('Creating an user with an email that already exists in the DB should return 400 Bad Request', async () => {
-        const { token, user } = await createUserAndToken({ role: 'MANAGER' });
+        const email: string = 'test@example.com';
+        const token: string = mockValidJWT({
+            role: 'MANAGER',
+            extraUserData: { apps: ['rw'] },
+            email
+        });
+        mockOktaFailedSignUp('login: An object with this field already exists in the current organization');
+
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 role: 'USER',
-                extraUserData: { apps: user.extraUserData.apps },
-                email: user.email
+                extraUserData: { apps: ['rw'] },
+                email
             });
 
         response.status.should.equal(400);
@@ -100,7 +112,7 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     it('Creating an user with apps that the current user does not manage should return 403 Forbidden', async () => {
-        const { token } = await createUserAndToken({ role: 'MANAGER' });
+        const token: string = mockValidJWT({ role: 'MANAGER' });
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
@@ -118,38 +130,37 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     it('Creating an user with valid data should return 200 OK and the created user data', async () => {
-        // Mock email sent after creation of user
-        nock('https://api.sparkpost.com')
-            .post('/api/v1/transmissions')
-            .reply(200);
+        const apps: string[] = ['rw'];
+        const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
+        const user: OktaUser = mockOktaSuccessfulSignUp({ apps });
 
-        const { token, user } = await createUserAndToken({ role: 'MANAGER' });
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
             .send({
-                role: 'USER',
-                extraUserData: { apps: user.extraUserData.apps },
-                email: 'new.email3@example.com'
+                role: user.profile.role,
+                extraUserData: { apps },
+                email: user.profile.email,
+                photo: user.profile.role,
             });
 
         response.status.should.equal(200);
         response.body.should.be.an('object');
-
-        const createdUser: IUserTemp = await UserTempSchema.findOne({ email: 'new.email3@example.com' });
-        createdUser.should.be.an('object');
-        createdUser.email.should.equal('new.email3@example.com');
+        response.body.should.have.property('id').and.eql(user.profile.legacyId);
+        response.body.should.have.property('email').and.eql(user.profile.email);
+        response.body.should.have.property('name').and.eql(user.profile.displayName);
+        response.body.should.have.property('role').and.eql(user.profile.role);
+        response.body.should.have.property('extraUserData').and.eql({ apps });
+        response.body.should.have.property('photo').and.eql(user.profile.photo);
     });
 
-    after(closeTestAgent);
-
     afterEach(async () => {
-        await UserModel.deleteMany({}).exec();
-        await UserTempSchema.deleteMany({}).exec();
-
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        sandbox.restore();
+        await closeTestAgent();
     });
 });
