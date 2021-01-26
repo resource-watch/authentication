@@ -231,14 +231,23 @@ export class OktaProvider extends BaseProvider {
 
     static async updateMe(ctx: Context): Promise<void> {
         logger.info(`Update user me`);
+        const user: IUser = Utils.getUser(ctx);
+        const { body } = ctx.request;
 
-        const user: UserDocument = Utils.getUser(ctx);
-        const userUpdate: UserDocument = await OktaUserService.updateUser(user.id, ctx.request.body, user);
-        if (!userUpdate) {
-            ctx.throw(404, 'User not found');
-            return;
+        const updateData: OktaUpdateUserPayload = {
+            ...body.name && { displayName: body.name },
+            ...body.photo && { photo: body.photo },
+            ...body.role && { role: body.role },
+            ...body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps },
+        };
+
+        try {
+            const updatedUser: IUser = await OktaService.updateUser(user.id, updateData);
+            ctx.body = UserSerializer.serialize(updatedUser);
+        } catch (err) {
+            logger.error('Error updating my user, ', err);
+            ctx.throw(500, 'Internal server error');
         }
-        ctx.body = UserSerializer.serialize(userUpdate);
     }
 
     static async deleteUser(ctx: Context): Promise<void> {

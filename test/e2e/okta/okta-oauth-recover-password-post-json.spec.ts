@@ -4,6 +4,7 @@ import mongoose from 'mongoose';
 import sinon, { SinonSandbox } from 'sinon';
 import type request from 'superagent';
 
+import { OktaUser } from "services/okta.interfaces";
 import RenewModel from 'models/renew.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { stubConfigValue } from '../utils/helpers';
@@ -102,7 +103,8 @@ describe('[OKTA] OAuth endpoints tests - Recover password post - JSON version', 
     });
 
     it('Recover password post with correct token and matching passwords should redirect to the configured URL (happy case) - JSON format', async () => {
-        const user: OktaUser = mockOktaUpdatePassword();
+        const user: OktaUser = getMockOktaUser();
+        mockOktaUpdatePassword(user);
         await new RenewModel({ userId: user.profile.legacyId, token: 'myToken' }).save();
 
         const response: request.Response = await requester
