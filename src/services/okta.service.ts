@@ -91,6 +91,41 @@ export default class OktaService {
         return OktaService.getOktaUserByEmail(data._embedded.user.profile.login);
     }
 
+    static async createUserWithoutPassword(
+        email: string,
+        name: string,
+        role: string,
+        apps: string[],
+        photo?: string,
+    ): Promise<IUserTemp> {
+        const { data }: { data: OktaUser } = await axios.post(
+            `${config.get('okta.url')}/api/v1/users?activate=false`,
+            {
+                profile: {
+                    firstName: 'RW API',
+                    lastName: 'User',
+                    displayName: name,
+                    email,
+                    login: email,
+                    legacyId: uuidv4(),
+                    provider: 'local',
+                    role,
+                    apps,
+                    photo,
+                }
+            },
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        await axios.post(
+            `${config.get('okta.url')}/api/v1/users/${data.id}/lifecycle/activate?sendEmail=true`,
+            {},
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        return OktaService.convertOktaUserToIUser(data);
+    }
+
     static async getUsers(search: string, pageOptions: OktaPaginationOptions): Promise<OktaUser[]> {
         const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
             headers: OktaService.getOktaRequestHeaders(),
