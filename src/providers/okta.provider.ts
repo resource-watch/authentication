@@ -216,38 +216,40 @@ export class OktaProvider extends BaseProvider {
         ctx.body = { data };
     }
 
-    static async updateUser(ctx: Context): Promise<void> {
-        logger.info(`Update user with id ${ctx.params.id}`);
-        ctx.assert(ctx.params.id, 400, 'Id param required');
-
-        const user: UserDocument = Utils.getUser(ctx);
-        const userUpdate: UserDocument = await OktaUserService.updateUser(ctx.params.id, ctx.request.body, user);
-        if (!userUpdate) {
-            ctx.throw(404, 'User not found');
-            return;
-        }
-        ctx.body = UserSerializer.serialize(userUpdate);
-    }
-
-    static async updateMe(ctx: Context): Promise<void> {
-        logger.info(`Update user me`);
+    private static async performUpdateRequest(ctx: Context, id: string): Promise<void> {
         const user: IUser = Utils.getUser(ctx);
         const { body } = ctx.request;
 
         const updateData: OktaUpdateUserPayload = {
             ...body.name && { displayName: body.name },
             ...body.photo && { photo: body.photo },
-            ...body.role && { role: body.role },
-            ...body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps },
+            ...user.role === 'ADMIN' && body.role && { role: body.role },
+            ...user.role === 'ADMIN' && body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps },
         };
 
         try {
-            const updatedUser: IUser = await OktaService.updateUser(user.id, updateData);
+            const updatedUser: IUser = await OktaService.updateUser(id, updateData);
             ctx.body = UserSerializer.serialize(updatedUser);
         } catch (err) {
             logger.error('Error updating my user, ', err);
+            if (err instanceof UserNotFoundError) {
+                ctx.throw(404, 'User not found');
+            }
+
             ctx.throw(500, 'Internal server error');
         }
+    }
+
+    static async updateUser(ctx: Context): Promise<void> {
+        logger.info(`Update user with id ${ctx.params.id}`);
+        ctx.assert(ctx.params.id, 400, 'Id param required');
+        return OktaProvider.performUpdateRequest(ctx, ctx.params.id);
+    }
+
+    static async updateMe(ctx: Context): Promise<void> {
+        logger.info(`Update user me`);
+        const user: IUser = Utils.getUser(ctx);
+        return OktaProvider.performUpdateRequest(ctx, user.id);
     }
 
     static async deleteUser(ctx: Context): Promise<void> {

@@ -4,13 +4,17 @@ import chaiDateTime from 'chai-datetime';
 import UserModel, { UserDocument } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken } from '../utils/helpers';
+import {stubConfigValue} from '../utils/helpers';
 import type request from 'superagent';
+import sinon, {SinonSandbox} from "sinon";
+import {OktaUser} from "services/okta.interfaces";
+import {getMockOktaUser, mockGetUserByIdNotFound, mockOktaUpdateUser, mockValidJWT} from "./okta.mocks";
 
 chai.should();
 chai.use(chaiDateTime);
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -21,11 +25,13 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
+    });
 
-        requester = await getTestAgent();
+    beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
-        await UserModel.deleteMany({}).exec();
-
+        requester = await getTestAgent(true);
     });
 
     it('Updating a user while not logged in should return a 401', async () => {
@@ -40,7 +46,13 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
     });
 
     it('Updating a user while logged in as USER should return a 403', async () => {
-        const { token } = await createUserAndToken({ role: 'USER' });
+        const user: OktaUser = getMockOktaUser({ role: 'USER' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
 
         const response: request.Response = await requester
             .patch(`/auth/user/1`)
@@ -54,7 +66,13 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
     });
 
     it('Updating a user while logged in as MANAGER should return a 403', async () => {
-        const { token } = await createUserAndToken({ role: 'MANAGER' });
+        const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
 
         const response: request.Response = await requester
             .patch(`/auth/user/1`)
@@ -68,10 +86,11 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
     });
 
     it('Updating a user with an id that does not match an existing user should return a 404', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockGetUserByIdNotFound('1234');
 
         const response: request.Response = await requester
-            .patch(`/auth/user/41224d776a326fb40f000001`)
+            .patch(`/auth/user/1234`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -81,26 +100,19 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         response.body.errors[0].detail.should.equal('User not found');
     });
 
-    it('Updating user with an invalid id of a user that does not exist returns a 422', async () => {
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
-
-        const response: request.Response = await requester
-            .patch(`/auth/user/1234`)
-            .set('Authorization', `Bearer ${token}`);
-
-        response.status.should.equal(422);
-        response.body.should.have.property('errors').and.be.an('array');
-        response.body.errors[0].should.have.property('detail').and.equal(`Invalid id 1234 provided`);
-    });
-
     it('Updating an existing user should return a 200 and the updated user data', async () => {
-        const startDate: Date = new Date();
+        const userToBeUpdated: OktaUser = getMockOktaUser();
+        const token: string = mockValidJWT({ role: 'ADMIN' });
 
-        const { token } = await createUserAndToken({ role: 'ADMIN' });
-        const { user } = await createUserAndToken({ role: 'USER' });
+        mockOktaUpdateUser(userToBeUpdated, {
+            displayName: 'changed name',
+            photo: 'http://www.changed-photo.com',
+            role: 'MANAGER',
+            apps: ['changed-apps'],
+        });
 
         const response: request.Response = await requester
-            .patch(`/auth/user/${user.id}`)
+            .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
             .send({
@@ -122,32 +134,22 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             });
 
         response.status.should.equal(200);
-
         response.body.data.should.have.property('name').and.equal('changed name');
         response.body.data.should.have.property('photo').and.equal('http://www.changed-photo.com');
         response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
         response.body.data.should.have.property('role').and.equal('MANAGER');
-
-        response.body.data.should.have.property('id').and.equal(user.id.toString());
-        response.body.data.should.have.property('email').and.equal(user.email);
+        response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
+        response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
         response.body.data.should.have.property('createdAt');
         response.body.data.should.have.property('updatedAt');
-
-        (new Date(response.body.data.updatedAt)).should.be.afterTime(startDate);
-        (new Date(response.body.data.createdAt)).should.be.equalDate(new Date(user.createdAt));
-
-        const updatedUser: UserDocument = await UserModel.findOne({ email: user.email }).exec();
-
-        response.body.should.deep.equal(UserSerializer.serialize(updatedUser));
     });
 
-    after(closeTestAgent);
-
     afterEach(async () => {
-        await UserModel.deleteMany({}).exec();
-
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        sandbox.restore();
+        await closeTestAgent();
     });
 });
