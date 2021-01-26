@@ -55,12 +55,6 @@ export interface OktaUpdateUserPayload {
     apps?: string[];
 }
 
-export interface OktaPaginationOptions {
-    limit: number;
-    before?: string;
-    after?: string;
-}
-
 export interface OktaRequestHeaders {
     Accept: string;
     'Content-Type': string;

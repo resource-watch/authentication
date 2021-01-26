@@ -1,13 +1,12 @@
 import nock from 'nock';
 import chai from 'chai';
-import sinon, { SinonSandbox } from "sinon";
+import sinon, { SinonSandbox } from 'sinon';
 import type request from 'superagent';
 
-import { OktaUser } from "services/okta.interfaces";
+import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserAndToken } from '../utils/helpers';
-import type request from 'superagent';
-import chaiDateTime from 'chai-datetime';
+import {stubConfigValue} from '../utils/helpers';
+import {getMockOktaUser, mockOktaUpdateUser, mockValidJWT} from './okta.mocks';
 
 chai.should();
 

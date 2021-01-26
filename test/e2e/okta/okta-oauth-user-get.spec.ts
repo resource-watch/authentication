@@ -47,6 +47,8 @@ describe('[OKTA] GET users by id', () => {
 
     it('Get user with id of a user that does not exist returns a 404', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockGetUserByIdNotFound('41224d776a326fb40f000001');
+
         const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`)
             .set('Authorization', `Bearer ${token}`);
