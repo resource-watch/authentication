@@ -2,12 +2,12 @@ import axios from 'axios';
 import config from 'config';
 import logger from 'logger';
 import { v4 as uuidv4 } from 'uuid';
-import crypto from "crypto";
+import crypto from 'crypto';
 
-import { IUser } from "models/user.model";
-import { IUserTemp } from "models/user-temp.model";
-import RenewModel from "models/renew.model";
-import { OktaPaginationOptions, OktaRequestHeaders, OktaUser } from "services/okta.interfaces";
+import { IUser } from 'models/user.model';
+import { IUserTemp } from 'models/user-temp.model';
+import RenewModel from 'models/renew.model';
+import { OktaPaginationOptions, OktaRequestHeaders, OktaUser } from 'services/okta.interfaces';
 
 export default class OktaService {
 
@@ -29,7 +29,7 @@ export default class OktaService {
     static async sendPasswordRecoveryEmail(email: string): Promise<void> {
         await axios.post(
             `${config.get('okta.url')}/api/v1/authn/recovery/password`,
-            { username: email, "factorType": "EMAIL" },
+            { username: email, 'factorType': 'EMAIL' },
             { headers: OktaService.getOktaRequestHeaders() }
         );
 
@@ -65,8 +65,8 @@ export default class OktaService {
                     email,
                     login: email,
                     legacyId: uuidv4(),
-                    "role": "USER",
-                    "apps": ["rw"]
+                    'role': 'USER',
+                    'apps': ['rw']
                 }
             },
             { headers: OktaService.getOktaRequestHeaders() }

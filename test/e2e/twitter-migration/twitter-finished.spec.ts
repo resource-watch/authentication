@@ -6,8 +6,8 @@ import ChaiString from 'chai-string';
 import UserModel from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserInDB } from "../utils/helpers";
-import request from "superagent";
+import { createUserInDB } from '../utils/helpers';
+import request from 'superagent';
 
 chai.should();
 chai.use(ChaiString);

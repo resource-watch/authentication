@@ -1,12 +1,12 @@
 import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from "sinon";
+import sinon, { SinonSandbox } from 'sinon';
 
-import { OktaUser } from "services/okta.interfaces";
+import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { stubConfigValue } from "../utils/helpers";
-import { mockOktaFailedSignUp, mockOktaSuccessfulSignUp } from "./okta.mocks";
+import { stubConfigValue } from '../utils/helpers';
+import { mockOktaFailedSignUp, mockOktaSuccessfulSignUp } from './okta.mocks';
 
 chai.should();
 

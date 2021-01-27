@@ -1,5 +1,5 @@
 import chai from 'chai';
-import config from "config";
+import config from 'config';
 import nock from 'nock';
 import crypto from 'crypto';
 import JWT from 'jsonwebtoken';

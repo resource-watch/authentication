@@ -1,13 +1,13 @@
-import { Context, Next } from "koa";
-import { RouterContext } from "koa-router";
-import passport from "koa-passport";
-import logger from "logger";
-import Utils from "utils";
-import Settings, { IThirdPartyAuth } from "services/settings.service";
-import UserModel, { UserDocument } from "models/user.model";
-import { Strategy } from "passport";
-import BaseProvider from "providers/base.provider";
-import { Strategy as GoogleStrategy, StrategyOptions } from "passport-google-oauth20";
+import { Context, Next } from 'koa';
+import { RouterContext } from 'koa-router';
+import passport from 'koa-passport';
+import logger from 'logger';
+import Utils from 'utils';
+import Settings, { IThirdPartyAuth } from 'services/settings.service';
+import UserModel, { UserDocument } from 'models/user.model';
+import { Strategy } from 'passport';
+import BaseProvider from 'providers/base.provider';
+import { Strategy as GoogleStrategy, StrategyOptions } from 'passport-google-oauth20';
 // @ts-ignore
 import { Strategy as GoogleTokenStrategy } from 'passport-google-token';
 

@@ -1,14 +1,14 @@
 import nock from 'nock';
 import chai from 'chai';
 import mongoose from 'mongoose';
-import sinon, { SinonSandbox } from "sinon";
+import sinon, { SinonSandbox } from 'sinon';
 import type request from 'superagent';
 
 import RenewModel from 'models/renew.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { stubConfigValue } from "../utils/helpers";
-import {OktaUser} from "../../../src/services/okta.interfaces";
-import {mockOktaUpdatePassword} from "./okta.mocks";
+import { stubConfigValue } from '../utils/helpers';
+import {OktaUser} from '../../../src/services/okta.interfaces';
+import {mockOktaUpdatePassword} from './okta.mocks';
 
 chai.should();
 

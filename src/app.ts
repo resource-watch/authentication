@@ -1,5 +1,5 @@
 import config from 'config';
-import { Server } from "http";
+import { Server } from 'http';
 import Koa from 'koa';
 import koaBody from 'koa-body';
 import koaLogger from 'koa-logger';
@@ -126,7 +126,7 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                 url: process.env.LOCAL_URL,
                 token: process.env.CT_TOKEN,
                 skipGetLoggedUser: true,
-                fastlyEnabled: process.env.FASTLY_ENABLED as boolean|"true"|"false",
+                fastlyEnabled: process.env.FASTLY_ENABLED as boolean|'true'|'false',
                 fastlyServiceId: process.env.FASTLY_SERVICEID,
                 fastlyAPIKey: process.env.FASTLY_APIKEY
 

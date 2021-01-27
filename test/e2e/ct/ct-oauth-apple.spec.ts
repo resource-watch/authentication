@@ -9,7 +9,7 @@ import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
 import { stubConfigValue } from '../utils/helpers';
-import config from "config";
+import config from 'config';
 
 const should: Chai.Should = chai.should();
 

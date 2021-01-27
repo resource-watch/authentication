@@ -1,13 +1,13 @@
 import chai from 'chai';
 import nock from 'nock';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from "sinon";
+import sinon, { SinonSandbox } from 'sinon';
 
 import { IUser, UserDocument } from 'models/user.model';
-import { OktaUser } from "services/okta.interfaces";
+import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { ensureHasPaginationElements, stubConfigValue } from '../utils/helpers';
-import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from "./okta.mocks";
+import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
 
 chai.should();
 

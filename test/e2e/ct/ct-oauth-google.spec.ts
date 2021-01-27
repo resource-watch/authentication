@@ -2,7 +2,7 @@ import nock from 'nock';
 import chai from 'chai';
 import config from 'config';
 import JWT from 'jsonwebtoken';
-import chaiString from "chai-string";
+import chaiString from 'chai-string';
 import UserModel, { UserDocument } from 'models/user.model';
 import UserService from 'services/user.service';
 

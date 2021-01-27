@@ -2,7 +2,7 @@ import nock from 'nock';
 import chai from 'chai';
 import config from 'config';
 import { isEqual } from 'lodash';
-import sinon, { SinonSandbox } from "sinon";
+import sinon, { SinonSandbox } from 'sinon';
 
 import UserModel, { UserDocument } from 'models/user.model';
 import UserTempModel, { IUserTemp } from 'models/user-temp.model';

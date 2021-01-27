@@ -1,25 +1,25 @@
-import { Context, Next } from "koa";
-import { RouterContext } from "koa-router";
-import passport from "koa-passport";
-import { URL } from "url";
-import logger from "logger";
-import Utils from "utils";
-import { PaginateResult, Types } from "mongoose";
-import { omit } from "lodash";
-import UserService from "services/user.service";
-import Settings, { IApplication, IThirdPartyAuth } from "services/settings.service";
-import { IUserTemp } from "models/user-temp.model";
-import { IRenew } from "models/renew.model";
-import UserTempSerializer from "serializers/user-temp.serializer";
-import UserSerializer from "serializers/user.serializer";
-import UnprocessableEntityError from "errors/unprocessableEntity.error";
-import UnauthorizedError from "errors/unauthorized.error";
-import UserModel, { UserDocument } from "models/user.model";
-import bcrypt from "bcrypt";
-import { Strategy } from "passport";
-import { Strategy as LocalStrategy } from "passport-local";
-import BaseProvider from "providers/base.provider";
-import { serialize } from "v8";
+import { Context, Next } from 'koa';
+import { RouterContext } from 'koa-router';
+import passport from 'koa-passport';
+import { URL } from 'url';
+import logger from 'logger';
+import Utils from 'utils';
+import { PaginateResult, Types } from 'mongoose';
+import { omit } from 'lodash';
+import UserService from 'services/user.service';
+import Settings, { IApplication, IThirdPartyAuth } from 'services/settings.service';
+import { IUserTemp } from 'models/user-temp.model';
+import { IRenew } from 'models/renew.model';
+import UserTempSerializer from 'serializers/user-temp.serializer';
+import UserSerializer from 'serializers/user.serializer';
+import UnprocessableEntityError from 'errors/unprocessableEntity.error';
+import UnauthorizedError from 'errors/unauthorized.error';
+import UserModel, { UserDocument } from 'models/user.model';
+import bcrypt from 'bcrypt';
+import { Strategy } from 'passport';
+import { Strategy as LocalStrategy } from 'passport-local';
+import BaseProvider from 'providers/base.provider';
+import { serialize } from 'v8';
 
 export class LocalProvider extends BaseProvider {
 

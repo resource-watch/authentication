@@ -81,40 +81,40 @@ export default class Settings {
         Settings.settings = {
             applications: {
                 rw: {
-                    name: "RW API",
-                    logo: "https://resourcewatch.org/static/images/logo-embed.png",
-                    principalColor: "#c32d7b",
+                    name: 'RW API',
+                    logo: 'https://resourcewatch.org/static/images/logo-embed.png',
+                    principalColor: '#c32d7b',
                     sendNotifications: true,
-                    emailSender: "noreply@resourcewatch.org",
-                    emailSenderName: "Resource Watch",
-                    confirmUrlRedirect: "https://resourcewatch.org"
+                    emailSender: 'noreply@resourcewatch.org',
+                    emailSenderName: 'Resource Watch',
+                    confirmUrlRedirect: 'https://resourcewatch.org'
                 },
                 prep: {
-                    name: "PREP",
-                    logo: "https://prepdata.org/prep-logo.png",
-                    principalColor: "#263e57",
+                    name: 'PREP',
+                    logo: 'https://prepdata.org/prep-logo.png',
+                    principalColor: '#263e57',
                     sendNotifications: true,
-                    emailSender: "noreply@prepdata.org",
-                    emailSenderName: "PREP",
-                    confirmUrlRedirect: "https://prepdata.org"
+                    emailSender: 'noreply@prepdata.org',
+                    emailSenderName: 'PREP',
+                    confirmUrlRedirect: 'https://prepdata.org'
                 },
                 gfw: {
-                    name: "GFW",
-                    logo: "https://www.globalforestwatch.org/packs/gfw-9c5fe396ee5b15cb5f5b639a7ef771bd.png",
-                    principalColor: "#97be32",
+                    name: 'GFW',
+                    logo: 'https://www.globalforestwatch.org/packs/gfw-9c5fe396ee5b15cb5f5b639a7ef771bd.png',
+                    principalColor: '#97be32',
                     sendNotifications: true,
-                    emailSender: "noreply@globalforestwatch.org",
-                    emailSenderName: "GFW",
-                    confirmUrlRedirect: "https://www.globalforestwatch.org"
+                    emailSender: 'noreply@globalforestwatch.org',
+                    emailSenderName: 'GFW',
+                    confirmUrlRedirect: 'https://www.globalforestwatch.org'
                 },
-                "forest-atlas": {
-                    name: "Forest Atlas",
-                    logo: "https://wriorg.s3.amazonaws.com/s3fs-public/styles/large/public/forest-atlases-logo-1.png?itok=BV_4QvsM",
-                    principalColor: "#008d6a",
+                'forest-atlas': {
+                    name: 'Forest Atlas',
+                    logo: 'https://wriorg.s3.amazonaws.com/s3fs-public/styles/large/public/forest-atlases-logo-1.png?itok=BV_4QvsM',
+                    principalColor: '#008d6a',
                     sendNotifications: true,
-                    emailSender: "noreply@resourcewatch.org",
-                    emailSenderName: "Forest Atlas",
-                    confirmUrlRedirect: "https://www.wri.org/our-work/project/forest-atlases"
+                    emailSender: 'noreply@resourcewatch.org',
+                    emailSenderName: 'Forest Atlas',
+                    confirmUrlRedirect: 'https://www.wri.org/our-work/project/forest-atlases'
                 }
             },
             jwt: {
@@ -136,7 +136,7 @@ export default class Settings {
             thirdParty: {
                 rw: {
                     facebook: {
-                        scope: ["email"],
+                        scope: ['email'],
                         clientSecret: config.get('settings.thirdParty.rw.facebook.clientSecret'),
                         clientID: config.get('settings.thirdParty.rw.facebook.clientID'),
                         active: (
@@ -147,8 +147,8 @@ export default class Settings {
                     },
                     google: {
                         scope: [
-                            "https://www.googleapis.com/auth/plus.me",
-                            "https://www.googleapis.com/auth/userinfo.email"
+                            'https://www.googleapis.com/auth/plus.me',
+                            'https://www.googleapis.com/auth/userinfo.email'
                         ],
                         clientSecret: config.get('settings.thirdParty.rw.google.clientSecret'),
                         clientID: config.get('settings.thirdParty.rw.google.clientID'),
@@ -170,7 +170,7 @@ export default class Settings {
                 },
                 gfw: {
                     facebook: {
-                        scope: ["email"],
+                        scope: ['email'],
                         clientSecret: config.get('settings.thirdParty.gfw.facebook.clientSecret'),
                         clientID: config.get('settings.thirdParty.gfw.facebook.clientID'),
                         active: (
@@ -181,8 +181,8 @@ export default class Settings {
                     },
                     google: {
                         scope: [
-                            "https://www.googleapis.com/auth/plus.me",
-                            "https://www.googleapis.com/auth/userinfo.email"
+                            'https://www.googleapis.com/auth/plus.me',
+                            'https://www.googleapis.com/auth/userinfo.email'
                         ],
                         clientSecret: config.get('settings.thirdParty.gfw.google.clientSecret'),
                         clientID: config.get('settings.thirdParty.gfw.google.clientID'),
@@ -217,7 +217,7 @@ export default class Settings {
                 },
                 prep: {
                     facebook: {
-                        scope: ["email"],
+                        scope: ['email'],
                         clientSecret: config.get('settings.thirdParty.prep.facebook.clientSecret'),
                         clientID: config.get('settings.thirdParty.prep.facebook.clientID'),
                         active: (
@@ -229,8 +229,8 @@ export default class Settings {
                     },
                     google: {
                         scope: [
-                            "https://www.googleapis.com/auth/plus.me",
-                            "https://www.googleapis.com/auth/userinfo.email"
+                            'https://www.googleapis.com/auth/plus.me',
+                            'https://www.googleapis.com/auth/userinfo.email'
                         ],
                         clientSecret: config.get('settings.thirdParty.prep.google.clientSecret'),
                         clientID: config.get('settings.thirdParty.prep.google.clientID'),

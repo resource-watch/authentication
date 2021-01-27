@@ -8,9 +8,9 @@ import UserModel, { UserDocument } from 'models/user.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
-import { stubConfigValue } from "../utils/helpers";
-import config from "config";
-import axios, { AxiosResponse } from "axios";
+import { stubConfigValue } from '../utils/helpers';
+import config from 'config';
+import axios, { AxiosResponse } from 'axios';
 
 const should: Chai.Should = chai.should();
 

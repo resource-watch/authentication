@@ -1,19 +1,19 @@
-import Application, { Context, Next } from "koa";
-import passport from "koa-passport";
-import jwt, { Options } from "koa-jwt";
-import config from "config";
+import Application, { Context, Next } from 'koa';
+import passport from 'koa-passport';
+import jwt, { Options } from 'koa-jwt';
+import config from 'config';
 
 import logger from 'logger';
-import UserService from "services/user.service";
-import Settings from "services/settings.service";
+import UserService from 'services/user.service';
+import OktaUserService from 'services/okta.user.service';
+import Settings from 'services/settings.service';
 import authRouterGenerator from 'routes/auth.router';
 import { router as TwitterRouter } from 'routes/auth/twitter.router';
-import FacebookProvider from "providers/facebook.provider";
-import LocalProvider from "providers/local.provider";
-import GoogleProvider from "providers/google.provider";
-import AppleProvider from "providers/apple.provider";
-import TwitterProvider from "providers/twitter.provider";
-import OktaUserService from "./services/okta.user.service";
+import FacebookProvider from 'providers/facebook.provider';
+import LocalProvider from 'providers/local.provider';
+import GoogleProvider from 'providers/google.provider';
+import AppleProvider from 'providers/apple.provider';
+import TwitterProvider from 'providers/twitter.provider';
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');

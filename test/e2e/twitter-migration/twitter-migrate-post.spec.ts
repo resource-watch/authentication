@@ -6,7 +6,7 @@ import type request from 'superagent';
 import UserModel, { UserDocument } from 'models/user.model';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
-import { createUserInDB } from "../utils/helpers";
+import { createUserInDB } from '../utils/helpers';
 
 const should: Chai.Should = chai.should();
 chai.use(ChaiString);
