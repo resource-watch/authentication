@@ -1,13 +1,13 @@
-import { Context, Next } from "koa";
-import { RouterContext } from "koa-router";
-import logger from "logger";
-import Utils from "utils";
-import Settings, { IThirdPartyAuth } from "services/settings.service";
-import UserModel, { UserDocument } from "models/user.model";
-import passport from "koa-passport";
-import { Strategy as FacebookStrategy, StrategyOption } from "passport-facebook";
-import FacebookTokenStrategy from "passport-facebook-token";
-import BaseProvider from "providers/base.provider";
+import { Context, Next } from 'koa';
+import { RouterContext } from 'koa-router';
+import logger from 'logger';
+import Utils from 'utils';
+import Settings, { IThirdPartyAuth } from 'services/settings.service';
+import UserModel, { UserDocument } from 'models/user.model';
+import passport from 'koa-passport';
+import { Strategy as FacebookStrategy, StrategyOption } from 'passport-facebook';
+import FacebookTokenStrategy from 'passport-facebook-token';
+import BaseProvider from 'providers/base.provider';
 
 export class FacebookProvider extends BaseProvider {
 

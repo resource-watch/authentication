@@ -1,10 +1,10 @@
 import nock from 'nock';
 import chai from 'chai';
-import chaiDateTime from "chai-datetime";
+import chaiDateTime from 'chai-datetime';
 import type request from 'superagent';
 
 import UserModel from 'models/user.model';
-import UserTempSchema, { IUserTemp } from "models/user-temp.model";
+import UserTempSchema, { IUserTemp } from 'models/user-temp.model';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserAndToken } from '../utils/helpers';
 

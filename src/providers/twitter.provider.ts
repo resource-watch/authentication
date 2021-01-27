@@ -1,14 +1,14 @@
-import { Context, Next } from "koa";
-import { RouterContext } from "koa-router";
-import passport from "koa-passport";
-import logger from "logger";
-import Utils from "utils";
-import UserService from "services/user.service";
-import Settings, { IThirdPartyAuth } from "services/settings.service";
-import { UserDocument } from "models/user.model";
-import { Strategy } from "passport";
-import { IStrategyOption, Strategy as TwitterStrategy } from "passport-twitter";
-import BaseProvider from "providers/base.provider";
+import { Context, Next } from 'koa';
+import { RouterContext } from 'koa-router';
+import passport from 'koa-passport';
+import logger from 'logger';
+import Utils from 'utils';
+import UserService from 'services/user.service';
+import Settings, { IThirdPartyAuth } from 'services/settings.service';
+import { UserDocument } from 'models/user.model';
+import { Strategy } from 'passport';
+import { IStrategyOption, Strategy as TwitterStrategy } from 'passport-twitter';
+import BaseProvider from 'providers/base.provider';
 
 export class TwitterProvider extends BaseProvider {
 

@@ -1,4 +1,4 @@
-import { Context } from "koa";
+import { Context } from 'koa';
 import JWT, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -11,7 +11,7 @@ import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import UserTempModel, {IUserTemp, UserTempDocument} from 'models/user-temp.model';
-import Settings from "services/settings.service";
+import Settings from 'services/settings.service';
 
 const { ObjectId } = mongoose.Types;
 
@@ -316,7 +316,7 @@ export default class UserService {
     static async sendResetMail(email: string, generalConfig: Record<string, any>, originApp: string): Promise<IRenew> {
         logger.info('[UserService] Generating token to email', email);
 
-        const user: UserDocument = await UserModel.findOne({ email, provider: "local" });
+        const user: UserDocument = await UserModel.findOne({ email, provider: 'local' });
         if (!user) {
             logger.info('[UserService] User not found');
             return null;

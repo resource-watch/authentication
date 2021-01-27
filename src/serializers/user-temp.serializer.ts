@@ -1,5 +1,5 @@
-import { IUserTemp } from "models/user-temp.model";
-import { ISerializedResponse } from "serializers/serializer.interface";
+import { IUserTemp } from 'models/user-temp.model';
+import { ISerializedResponse } from 'serializers/serializer.interface';
 
 export default class UserTempSerializer {
 

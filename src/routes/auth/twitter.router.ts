@@ -1,11 +1,11 @@
 import Router from 'koa-router';
 import logger from 'logger';
 import passport from 'koa-passport';
-import Settings, { IApplication, ISettings } from "services/settings.service";
-import UserService from "services/user.service";
-import { UserDocument } from "models/user.model";
-import { IUser } from "models/user.model";
-import { Context, Next } from "koa";
+import Settings, { IApplication, ISettings } from 'services/settings.service';
+import UserService from 'services/user.service';
+import { UserDocument } from 'models/user.model';
+import { IUser } from 'models/user.model';
+import { Context, Next } from 'koa';
 
 const router: Router = new Router({ prefix: '/auth/twitter' });
 

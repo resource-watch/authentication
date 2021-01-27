@@ -1,17 +1,17 @@
-import config from "config";
-import { Context, DefaultState, Next } from "koa";
+import config from 'config';
+import { Context, DefaultState, Next } from 'koa';
 import passport from 'koa-passport';
 import Router from 'koa-router';
 import { cloneDeep } from 'lodash';
 import logger from 'logger';
 import Utils from 'utils';
 
-import Settings, { IApplication } from "services/settings.service";
-import AppleProvider from "providers/apple.provider";
-import FacebookProvider from "providers/facebook.provider";
-import GoogleProvider from "providers/google.provider";
+import Settings, { IApplication } from 'services/settings.service';
+import AppleProvider from 'providers/apple.provider';
+import FacebookProvider from 'providers/facebook.provider';
+import GoogleProvider from 'providers/google.provider';
 import LocalProvider from 'providers/local.provider';
-import OktaProvider from "providers/okta.provider";
+import OktaProvider from 'providers/okta.provider';
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     logger.info('Setting callbackUrl');

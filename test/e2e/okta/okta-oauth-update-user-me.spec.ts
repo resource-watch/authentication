@@ -6,7 +6,7 @@ import UserSerializer from 'serializers/user.serializer';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserAndToken } from '../utils/helpers';
 import type request from 'superagent';
-import chaiDateTime from "chai-datetime";
+import chaiDateTime from 'chai-datetime';
 
 chai.should();
 chai.use(chaiDateTime);

@@ -1,5 +1,5 @@
-import { UserDocument } from "models/user.model";
-import { ISerializedResponse } from "serializers/serializer.interface";
+import { UserDocument } from 'models/user.model';
+import { ISerializedResponse } from 'serializers/serializer.interface';
 
 export default class UserSerializer {
 

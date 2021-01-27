@@ -1,7 +1,7 @@
-import { Context, Next } from "koa";
+import { Context, Next } from 'koa';
 import logger from 'logger';
-import Settings from "services/settings.service";
-import { UserDocument } from "models/user.model";
+import Settings from 'services/settings.service';
+import { UserDocument } from 'models/user.model';
 
 export default class Utils {
 

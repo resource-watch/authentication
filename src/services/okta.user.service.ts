@@ -1,4 +1,4 @@
-import { Context } from "koa";
+import { Context } from 'koa';
 import JWT, { SignOptions } from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
 import crypto from 'crypto';
@@ -11,9 +11,9 @@ import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserModel, { IUser, UserDocument } from 'models/user.model';
 import RenewModel, { IRenew } from 'models/renew.model';
 import UserTempModel, {IUserTemp, UserTempDocument} from 'models/user-temp.model';
-import Settings from "services/settings.service";
-import OktaService from "services/okta.service";
-import { OktaUser } from "services/okta.interfaces";
+import Settings from 'services/settings.service';
+import OktaService from 'services/okta.service';
+import { OktaUser } from 'services/okta.interfaces';
 
 export interface PaginatedIUserResult {
     docs: IUser[];

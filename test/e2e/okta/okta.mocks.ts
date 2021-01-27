@@ -1,5 +1,5 @@
-import nock from "nock";
-import config from "config";
+import nock from 'nock';
+import config from 'config';
 import faker from 'faker';
 
 import {
@@ -8,24 +8,24 @@ import {
     OktaSuccessfulLoginResponse,
     OktaUser,
     OktaUserProfile
-} from "services/okta.interfaces";
-import {createTokenForUser} from "../utils/helpers";
+} from 'services/okta.interfaces';
+import {createTokenForUser} from '../utils/helpers';
 
 export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
     const email: string = faker.internet.email();
     const firstName: string = faker.name.firstName();
     const lastName: string = faker.name.lastName();
     return {
-        "id": faker.random.uuid(),
-        "status": "PROVISIONED",
-        "created": "2020-11-05T22:24:09.000Z",
-        "activated": "2020-11-05T22:24:09.000Z",
-        "statusChanged": "2020-11-05T22:24:09.000Z",
-        "lastLogin": null,
-        "lastUpdated": "2020-11-05T22:24:09.000Z",
-        "passwordChanged": null,
-        "type": { "id": faker.random.uuid() },
-        "profile": {
+        'id': faker.random.uuid(),
+        'status': 'PROVISIONED',
+        'created': '2020-11-05T22:24:09.000Z',
+        'activated': '2020-11-05T22:24:09.000Z',
+        'statusChanged': '2020-11-05T22:24:09.000Z',
+        'lastLogin': null,
+        'lastUpdated': '2020-11-05T22:24:09.000Z',
+        'passwordChanged': null,
+        'type': { 'id': faker.random.uuid() },
+        'profile': {
             legacyId: faker.random.uuid(),
             login: email,
             email,
@@ -38,15 +38,15 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
             photo: faker.image.imageUrl(),
             ...override,
         },
-        "credentials": {
-            "provider": {
-                "type": "OKTA",
-                "name": "OKTA"
+        'credentials': {
+            'provider': {
+                'type': 'OKTA',
+                'name': 'OKTA'
             }
         },
-        "_links": {
-            "self": {
-                "href": "https://wri.okta.com/api/v1/users/00uk4x3281Yka1zn85d5"
+        '_links': {
+            'self': {
+                'href': 'https://wri.okta.com/api/v1/users/00uk4x3281Yka1zn85d5'
             }
         }
     };
@@ -65,19 +65,19 @@ export const mockOktaListUsers: (query?: {}, users?: OktaUser[], statusCode?: nu
 
 export const mockOktaSuccessfulLogin: () => OktaSuccessfulLoginResponse = () => {
     const successfulLoginResponse: OktaSuccessfulLoginResponse = {
-        "expiresAt": "2021-01-19T11:29:41.000Z",
-        "status": "SUCCESS",
-        "sessionToken": "20111upCJzH_F3NPjEgqPFNjJGprtSWwjbl8Ehvv_EyYk10wbaUY83L",
-        "_embedded": {
-            "user": {
-                "id": "00ukgm6zKTLFgB4Qf5d5",
-                "passwordChanged": "2020-11-06T16:15:53.000Z",
-                "profile": {
-                    "login": faker.internet.email(),
-                    "firstName": faker.name.firstName(),
-                    "lastName": faker.name.lastName(),
-                    "locale": "en",
-                    "timeZone": "America/Los_Angeles"
+        'expiresAt': '2021-01-19T11:29:41.000Z',
+        'status': 'SUCCESS',
+        'sessionToken': '20111upCJzH_F3NPjEgqPFNjJGprtSWwjbl8Ehvv_EyYk10wbaUY83L',
+        '_embedded': {
+            'user': {
+                'id': '00ukgm6zKTLFgB4Qf5d5',
+                'passwordChanged': '2020-11-06T16:15:53.000Z',
+                'profile': {
+                    'login': faker.internet.email(),
+                    'firstName': faker.name.firstName(),
+                    'lastName': faker.name.lastName(),
+                    'locale': 'en',
+                    'timeZone': 'America/Los_Angeles'
                 }
             }
         }
@@ -92,11 +92,11 @@ export const mockOktaSuccessfulLogin: () => OktaSuccessfulLoginResponse = () => 
 
 export const mockOktaFailedLogin: () => OktaFailedAPIResponse = () => {
     const failedLoginResponse: OktaFailedAPIResponse = {
-        "errorCode": "E0000004",
-        "errorSummary": "Authentication failed",
-        "errorLink": "E0000004",
-        "errorId": "oaeXDfN2vJFQlyrTZJGc3FrAA",
-        "errorCauses": []
+        'errorCode': 'E0000004',
+        'errorSummary': 'Authentication failed',
+        'errorLink': 'E0000004',
+        'errorId': 'oaeXDfN2vJFQlyrTZJGc3FrAA',
+        'errorCauses': []
     };
 
     nock(config.get('okta.url'))
@@ -155,11 +155,11 @@ export const mockOktaSuccessfulSignUp: (override?: Partial<OktaUserProfile>) => 
 
 export const mockOktaFailedSignUp: (errorSummary: string) => OktaFailedAPIResponse = (errorSummary: string) => {
     const failedLoginResponse: OktaFailedAPIResponse = {
-        "errorCode": "E0000004",
+        'errorCode': 'E0000004',
         errorSummary,
-        "errorLink": "E0000004",
-        "errorId": "oaeXDfN2vJFQlyrTZJGc3FrAA",
-        "errorCauses": [{ errorSummary }],
+        'errorLink': 'E0000004',
+        'errorId': 'oaeXDfN2vJFQlyrTZJGc3FrAA',
+        'errorCauses': [{ errorSummary }],
     };
 
     nock(config.get('okta.url'))
