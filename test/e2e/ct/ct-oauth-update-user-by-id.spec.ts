@@ -1,6 +1,6 @@
 import nock from 'nock';
 import chai from 'chai';
-import chaiDateTime from "chai-datetime";
+import chaiDateTime from 'chai-datetime';
 import UserModel, { UserDocument } from 'models/user.model';
 import UserSerializer from 'serializers/user.serializer';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';

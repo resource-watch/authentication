@@ -1,11 +1,11 @@
-import config from "config";
+import config from 'config';
 import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
-import Sinon, { SinonSandbox } from "sinon";
+import Sinon, { SinonSandbox } from 'sinon';
 
 import UserModel, { IUser, UserDocument } from 'models/user.model';
 import TempUserModel, { IUserTemp } from 'models/user-temp.model';
-import { OktaUser } from "services/okta.interfaces";
+import { OktaUser } from 'services/okta.interfaces';
 
 const { ObjectId } = mongoose.Types;
 

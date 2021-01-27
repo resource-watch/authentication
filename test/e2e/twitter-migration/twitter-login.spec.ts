@@ -3,12 +3,12 @@ import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
 
-import Settings from "services/settings.service";
+import Settings from 'services/settings.service';
 import UserModel, { UserDocument } from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserInDB } from "../utils/helpers";
-import request from "superagent";
+import { createUserInDB } from '../utils/helpers';
+import request from 'superagent';
 
 const should: Chai.Should = chai.should();
 chai.use(ChaiString);

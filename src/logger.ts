@@ -1,6 +1,6 @@
 import config = require('config');
 import bunyan = require('bunyan');
-import type Logger from "bunyan";
+import type Logger from 'bunyan';
 
 const streams: Record<string, unknown>[] = [
     {

@@ -1,21 +1,21 @@
-import { Context } from "koa";
-import { RouterContext } from "koa-router";
-import { URL } from "url";
-import logger from "logger";
-import Utils from "utils";
-import { omit } from "lodash";
+import { Context } from 'koa';
+import { RouterContext } from 'koa-router';
+import { URL } from 'url';
+import logger from 'logger';
+import Utils from 'utils';
+import { omit } from 'lodash';
 
-import OktaUserService, { PaginatedIUserResult } from "services/okta.user.service";
-import Settings, { IApplication, IThirdPartyAuth } from "services/settings.service";
-import { IUserTemp } from "models/user-temp.model";
-import { IRenew } from "models/renew.model";
-import UserTempSerializer from "serializers/user-temp.serializer";
-import UserSerializer from "serializers/user.serializer";
-import UnprocessableEntityError from "errors/unprocessableEntity.error";
-import UnauthorizedError from "errors/unauthorized.error";
-import UserModel, { IUser, UserDocument } from "models/user.model";
-import BaseProvider from "providers/base.provider";
-import OktaService from "services/okta.service";
+import OktaUserService, { PaginatedIUserResult } from 'services/okta.user.service';
+import Settings, { IApplication, IThirdPartyAuth } from 'services/settings.service';
+import { IUserTemp } from 'models/user-temp.model';
+import { IRenew } from 'models/renew.model';
+import UserTempSerializer from 'serializers/user-temp.serializer';
+import UserSerializer from 'serializers/user.serializer';
+import UnprocessableEntityError from 'errors/unprocessableEntity.error';
+import UnauthorizedError from 'errors/unauthorized.error';
+import UserModel, { IUser, UserDocument } from 'models/user.model';
+import BaseProvider from 'providers/base.provider';
+import OktaService from 'services/okta.service';
 
 export class OktaProvider extends BaseProvider {
 

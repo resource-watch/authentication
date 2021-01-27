@@ -1,13 +1,13 @@
 import nock from 'nock';
 import chai from 'chai';
-import sinon, { SinonSandbox } from "sinon";
+import sinon, { SinonSandbox } from 'sinon';
 import type request from 'superagent';
 
 import RenewModel from 'models/renew.model';
-import { OktaUser } from "services/okta.interfaces";
+import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { stubConfigValue } from "../utils/helpers";
-import { mockOktaSendResetPasswordEmail } from "./okta.mocks";
+import { stubConfigValue } from '../utils/helpers';
+import { mockOktaSendResetPasswordEmail } from './okta.mocks';
 
 chai.should();
 
