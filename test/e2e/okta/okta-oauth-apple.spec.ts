@@ -10,14 +10,18 @@ import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
 import { stubConfigValue } from "../utils/helpers";
 import config from "config";
+import axios, { AxiosResponse } from "axios";
 
 const should: Chai.Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 let sandbox: SinonSandbox;
-let b64string:string;
+let b64string: string;
 
 const { expect } = chai;
+
+let appleKeys: AxiosResponse;
+let keys: KeyPairSyncResult<string, string>;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -41,7 +45,31 @@ describe('[OKTA] Apple auth endpoint tests', () => {
 
         b64string = config.get('settings.thirdParty.gfw.apple.privateKeyString');
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw', 'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString() });
+        stubConfigValue(sandbox, {
+            'settings.defaultApp': 'gfw',
+            'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString()
+        });
+
+        nock.cleanAll();
+        nock.enableNetConnect();
+        appleKeys = await axios.get('https://appleid.apple.com/auth/keys');
+        nock.cleanAll();
+        nock.disableNetConnect();
+        nock.enableNetConnect(process.env.HOST_IP);
+
+        keys = crypto.generateKeyPairSync('rsa', {
+            modulusLength: 4096,
+            publicKeyEncoding: {
+                type: 'spki',
+                format: 'pem'
+            },
+            privateKeyEncoding: {
+                type: 'pkcs8',
+                format: 'pem'
+            }
+        });
+
+        const jwkKey: RSA_JWK = pem2jwk(keys.publicKey);
 
         requester = await getTestAgent(true);
 
@@ -211,47 +239,27 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         const existingUser: UserDocument = await UserModel.findOne({ providerId: '000958.a4550a8804284886a5b5116a1c0351af.1425' }).exec();
         should.not.exist(existingUser);
 
-        const keys: KeyPairSyncResult<string, string> = crypto.generateKeyPairSync('rsa', {
-            modulusLength: 4096,
-            publicKeyEncoding: {
-                type: 'spki',
-                format: 'pem'
-            },
-            privateKeyEncoding: {
-                type: 'pkcs8',
-                format: 'pem'
-            }
-        });
-
         const jwkKey: RSA_JWK = pem2jwk(keys.publicKey);
 
         nock('https://appleid.apple.com')
             .get('/auth/keys')
             .times(2)
             .reply(200, {
-                keys: [
-                    {
-                        kty: 'RSA',
-                        kid: '77D88Kf',
-                        use: 'sig',
-                        alg: 'RS256',
-                        n: jwkKey.n,
-                        e: jwkKey.e
-                    }
-                ]
-            });
+                    keys: appleKeys.data.keys.map((elem: Record<string, any>) => ({ ...elem, n: jwkKey.n, e: jwkKey.e }))
+                }
+            );
 
         const tokenContent: Record<string, any> = {
             iss: 'https://appleid.apple.com',
             aud: 'org.resourcewatch.api.dev.auth',
             exp: Math.floor(Date.now() / 1000) + 100,
-            iat: 1603962083,
+            iat: Math.floor(Date.now() / 1000) - 100,
             sub: '000958.a4550a8804284886a5b5116a1c0351af.1425',
             at_hash: 'f0M-78UN58lEDlwW9ZnXdQ',
             email: 'dj8e99g34n@privaterelay.appleid.com',
             email_verified: 'true',
             is_private_email: 'true',
-            auth_time: 1603962070,
+            auth_time: Math.floor(Date.now() / 1000),
             nonce_supported: true
         };
         const token: string = jwt.sign(tokenContent, keys.privateKey, { algorithm: 'RS256' });
@@ -298,47 +306,27 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         existingUser.should.have.property('providerId').and.equal('000958.a4550a8804284886a5b5116a1c0351af.1425');
         existingUser.should.have.property('userToken').and.equal(undefined);
 
-        const keys: KeyPairSyncResult<string, string> = crypto.generateKeyPairSync('rsa', {
-            modulusLength: 4096,
-            publicKeyEncoding: {
-                type: 'spki',
-                format: 'pem'
-            },
-            privateKeyEncoding: {
-                type: 'pkcs8',
-                format: 'pem'
-            }
-        });
-
         const jwkKey: RSA_JWK = pem2jwk(keys.publicKey);
 
         nock('https://appleid.apple.com')
             .get('/auth/keys')
-            .times(2)
+            .times(1)
             .reply(200, {
-                keys: [
-                    {
-                        kty: 'RSA',
-                        kid: '86D88Kf',
-                        use: 'sig',
-                        alg: 'RS256',
-                        n: jwkKey.n,
-                        e: jwkKey.e
-                    }
-                ]
-            });
+                    keys: appleKeys.data.keys.map((elem: Record<string, any>) => ({ ...elem, n: jwkKey.n, e: jwkKey.e }))
+                }
+            );
 
         const tokenContent: Record<string, any> = {
             iss: 'https://appleid.apple.com',
             aud: 'org.resourcewatch.api.dev.auth',
             exp: Math.floor(Date.now() / 1000) + 100,
-            iat: 1603962083,
+            iat: Math.floor(Date.now() / 1000) - 100,
             sub: '000958.a4550a8804284886a5b5116a1c0351af.1425',
             at_hash: 'f0M-78UN58lEDlwW9ZnXdQ',
             email: 'dj8e99g34n@privaterelay.appleid.com',
             email_verified: 'true',
             is_private_email: 'true',
-            auth_time: 1603962070,
+            auth_time: Math.floor(Date.now() / 1000),
             nonce_supported: true
         };
         const token: string = jwt.sign(tokenContent, keys.privateKey, { algorithm: 'RS256' });
@@ -380,4 +368,5 @@ describe('[OKTA] Apple auth endpoint tests', () => {
             sandbox.restore();
         }
     });
-});
+})
+;
