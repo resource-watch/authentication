@@ -74,13 +74,14 @@ class TwitterRouter {
 
     static async migrate(ctx: Context): Promise<void> {
         if (!ctx.session) {
-            logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
+            logger.info('No user found in current session when migrating a user. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
         }
 
         const sessionUser: UserDocument = getUser(ctx);
         if (!sessionUser) {
-            logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
+            logger.info('No user found in current session when migrating a user. Redirecting to the migration start page.');
+            logger.debug('Cookie header:', ctx.req.headers.cookie);
             logger.debug('State content:', ctx.state);
             logger.debug('Session content:', ctx.session);
             return ctx.redirect('/auth/twitter/start');
@@ -127,13 +128,13 @@ class TwitterRouter {
 
     static async finished(ctx: Context): Promise<void> {
         if (!ctx.session) {
-            logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
+            logger.info('No user found in current session when presenting the migration success page. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
         }
 
         const sessionUser: UserDocument = getUser(ctx);
         if (!sessionUser) {
-            logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
+            logger.info('No user found in current session when presenting the migration success page. Redirecting to the migration start page.');
             return ctx.redirect('/auth/twitter/start');
         }
 
