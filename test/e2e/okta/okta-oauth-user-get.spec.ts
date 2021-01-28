@@ -6,7 +6,7 @@ import sinon, { SinonSandbox } from 'sinon';
 import { OktaUser } from 'services/okta.interfaces';
 import { assertOktaTokenInfo, stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
+import {getMockOktaUser, mockGetUserByIdNotFound, mockOktaListUsers, mockValidJWT} from './okta.mocks';
 
 chai.should();
 

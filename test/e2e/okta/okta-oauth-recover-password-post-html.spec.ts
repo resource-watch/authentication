@@ -8,7 +8,7 @@ import RenewModel from 'models/renew.model';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { stubConfigValue } from '../utils/helpers';
-import { mockOktaUpdatePassword } from './okta.mocks';
+import {getMockOktaUser, mockOktaUpdatePassword} from './okta.mocks';
 
 chai.should();
 

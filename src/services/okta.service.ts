@@ -3,11 +3,17 @@ import config from 'config';
 import logger from 'logger';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
+import { isEqual } from 'lodash';
 
-import { IUser } from 'models/user.model';
-import { IUserTemp } from 'models/user-temp.model';
-import RenewModel from 'models/renew.model';
-import { OktaPaginationOptions, OktaRequestHeaders, OktaUser } from 'services/okta.interfaces';
+import UserModel, {IUser, UserDocument} from 'models/user.model';
+import UserTempModel, { UserTempDocument} from 'models/user-temp.model';
+import RenewModel, {IRenew} from 'models/renew.model';
+import {OktaCreateUserPayload, OktaRequestHeaders, OktaUpdateUserPayload, OktaUser} from 'services/okta.interfaces';
+import JWT, {SignOptions} from 'jsonwebtoken';
+import Settings from 'services/settings.service';
+import UnprocessableEntityError from 'errors/unprocessableEntity.error';
+import UserNotFoundError from 'errors/userNotFound.error';
+import {Context} from 'koa';
 
 export default class OktaService {
 
@@ -227,33 +233,6 @@ export default class OktaService {
         const { data }: { data: OktaUser } = await axios.put(
             `${config.get('okta.url')}/api/v1/users/${oktaUser.id}`,
             { credentials: { password: { value: password } } },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return OktaService.convertOktaUserToIUser(data);
-    }
-
-    static async signUpWithoutPassword(email: string, name: string): Promise<IUserTemp> {
-        const { data }: { data: OktaUser } = await axios.post(
-            `${config.get('okta.url')}/api/v1/users?activate=false`,
-            {
-                profile: {
-                    firstName: 'RW API',
-                    lastName: 'User',
-                    displayName: name,
-                    email,
-                    login: email,
-                    legacyId: uuidv4(),
-                    'role': 'USER',
-                    'apps': ['rw']
-                }
-            },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        await axios.post(
-            `${config.get('okta.url')}/api/v1/users/${data.id}/lifecycle/activate?sendEmail=true`,
-            {},
             { headers: OktaService.getOktaRequestHeaders() }
         );
 
