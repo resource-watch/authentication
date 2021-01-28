@@ -13,7 +13,8 @@
   },
   "server": {
     "internalUrl": "INTERNAL_URL",
-    "publicUrl": "PUBLIC_URL"
+    "publicUrl": "PUBLIC_URL",
+    "sessionKey": "SESSION_KEY"
   },
   "application": {
     "name": "APP_NAME",

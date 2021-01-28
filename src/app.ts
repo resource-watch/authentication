@@ -83,7 +83,8 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
             }));
             app.use(koaSimpleHealthCheck());
 
-            app.keys = ['twitter'];
+            app.keys = [config.get('server.sessionKey')];
+
             // @ts-ignore
             app.use(session({ store: redisStore({ url: config.get('redis.url') }) }));
 
