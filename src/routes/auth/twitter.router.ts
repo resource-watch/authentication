@@ -81,6 +81,8 @@ class TwitterRouter {
         const sessionUser: UserDocument = getUser(ctx);
         if (!sessionUser) {
             logger.info('No user found in current session when presenting the migration form. Redirecting to the migration start page.');
+            logger.debug('State content:', ctx.state);
+            logger.debug('Session content:', ctx.session);
             return ctx.redirect('/auth/twitter/start');
         }
 
