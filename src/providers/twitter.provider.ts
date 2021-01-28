@@ -18,7 +18,8 @@ export class TwitterProvider extends BaseProvider {
         profile: Record<string, any>,
         done: (error: any, user?: any, message?: any) => void
     ): Promise<void> {
-        logger.info('[TwitterProvider] Registering user', profile);
+        logger.info('[TwitterProvider] Registering twitter user');
+        logger.debug('[TwitterProvider] User details: ', profile);
 
         const user: UserDocument = await UserService.getUser({
             provider: 'twitter',

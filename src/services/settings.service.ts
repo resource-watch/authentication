@@ -40,7 +40,6 @@ interface IAppleAuth {
 
 interface IJwtAuth {
     expiresInMinutes: number;
-    passthrough: boolean;
     secret: string;
     active: boolean;
 }
@@ -119,7 +118,6 @@ export default class Settings {
             },
             jwt: {
                 expiresInMinutes: 0.0,
-                passthrough: true,
                 secret: config.get('jwt.token'),
                 active: true
             },
