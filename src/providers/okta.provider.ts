@@ -395,8 +395,6 @@ export class OktaProvider extends BaseProvider {
                 });
             }
         } catch (err) {
-            logger.error('Error creating user: ', err);
-
             let error: string = 'Error creating user.';
 
             if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: The field cannot be left blank') {
@@ -406,6 +404,8 @@ export class OktaProvider extends BaseProvider {
             if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {
                 error = 'Email exists';
             }
+
+            logger.error('Error creating user: ', err);
 
             if (ctx.request.type === 'application/json') {
                 throw new UnprocessableEntityError(error);
