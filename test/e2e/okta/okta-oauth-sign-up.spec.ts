@@ -6,7 +6,7 @@ import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
 import { stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { mockOktaFailedSignUp, mockOktaSuccessfulSignUp } from './okta.mocks';
+import {getMockOktaUser, mockOktaFailedSignUp, mockOktaSuccessfulSignUp} from './okta.mocks';
 
 chai.should();
 

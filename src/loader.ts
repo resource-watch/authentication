@@ -5,7 +5,6 @@ import config from 'config';
 
 import logger from 'logger';
 import UserService from 'services/user.service';
-import OktaUserService from 'services/okta.user.service';
 import Settings from 'services/settings.service';
 import authRouterGenerator from 'routes/auth.router';
 import { router as TwitterRouter } from 'routes/auth/twitter.router';
@@ -14,6 +13,7 @@ import LocalProvider from 'providers/local.provider';
 import GoogleProvider from 'providers/google.provider';
 import AppleProvider from 'providers/apple.provider';
 import TwitterProvider from 'providers/twitter.provider';
+import OktaService from 'services/okta.service';
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
