@@ -80,6 +80,7 @@ class TwitterRouter {
 
         const sessionUser: UserDocument = getUser(ctx);
         if (!sessionUser) {
+            ctx.flash('error', 'No user found in current session.');
             logger.info('No user found in current session when migrating a user. Redirecting to the migration start page.');
             logger.debug('Cookie header:', ctx.req.headers.cookie);
             logger.debug('State content:', ctx.state);

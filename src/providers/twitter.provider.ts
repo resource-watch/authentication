@@ -30,6 +30,7 @@ export class TwitterProvider extends BaseProvider {
 
         if (!user) {
             done(null, false, { message: 'No RW API user found for this Twitter account' });
+            return;
         } else {
             let email: string = null;
             if (profile?.emails?.length > 0) {
