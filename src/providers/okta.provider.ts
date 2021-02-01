@@ -1,9 +1,10 @@
-import { Context } from 'koa';
+import {Context, Next} from 'koa';
 import { RouterContext } from 'koa-router';
 import { URL } from 'url';
 import logger from 'logger';
 import Utils from 'utils';
 import { omit } from 'lodash';
+import { v4 as uuidv4 } from 'uuid';
 
 import Settings, { IApplication, IThirdPartyAuth } from 'services/settings.service';
 import { IRenew } from 'models/renew.model';
@@ -14,10 +15,73 @@ import UnauthorizedError from 'errors/unauthorized.error';
 import { IUser, UserDocument } from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
-import {OktaUpdateUserPayload} from 'services/okta.interfaces';
+import {OktaUpdateUserPayload, OktaUser, OktaUpdateUserProtectedFieldsPayload} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 
 export class OktaProvider extends BaseProvider {
+
+    /**
+     * OAuth token callback. This is the endpoint where Okta returns to after social login.
+     *
+     * If social auth was successful, query will contain a "code", used to exchange for an access token with Okta's
+     * OAuth API. If unsuccessful, query will contain an "error" message.
+     *
+     * @param ctx {Context} Koa request context.
+     * @param next {Next} Next middleware to be called.
+     */
+    static async authCodeCallback(ctx: Context, next: Next): Promise<void> {
+        try {
+            const { code, error, state } = ctx.query;
+
+            if (error) {
+                logger.error('Error returned from OAuth authorize call to Okta, ', error);
+                return ctx.redirect('/auth/fail?error=true');
+            }
+
+            if (state !== ctx.session.oAuthState) {
+                logger.error('OAuth state does not match the state stored in session.');
+                return ctx.redirect('/auth/fail?error=true');
+            }
+
+            const updateData: OktaUpdateUserProtectedFieldsPayload = {};
+            let user: OktaUser = await OktaService.getUserForAuthorizationCode(code);
+
+            if (!user.profile.legacyId) {
+                updateData.legacyId = uuidv4();
+            }
+
+            if (!user.profile.role) {
+                updateData.role = 'USER';
+            }
+
+            if (!user.profile.apps) {
+                updateData.apps = [];
+            }
+
+            // If updateData is not empty, trigger user update
+            if (Object.keys(updateData).length > 0) {
+                user = await OktaService.updateUserProtectedFields(user.id, updateData);
+            }
+
+            const newUser: IUser = await OktaService.convertOktaUserToIUser(user);
+            await ctx.login(newUser);
+            return next();
+        } catch (err) {
+            logger.error('Error requesting OAuth token to Okta, ', err);
+            return ctx.redirect('/auth/fail?error=true');
+        }
+    }
+
+    /**
+     * Redirect user to Okta's OAuth authorize endpoint including FB as identity provider.
+     *
+     * @param ctx {Context} Koa request context.
+     */
+    static async facebook(ctx: Context): Promise<void> {
+        const state: string = uuidv4();
+        ctx.session.oAuthState = state;
+        return ctx.redirect(OktaService.getFacebookOAuthRedirect(state));
+    }
 
     static async localCallback(ctx: Context & RouterContext): Promise<void> {
         try {
@@ -581,6 +645,21 @@ export class OktaProvider extends BaseProvider {
             ctx.redirect('/auth/fail');
         }
 
+    }
+
+    static async createToken(ctx: Context): Promise<string> {
+        logger.info('Generating token');
+        return OktaService.createToken(Utils.getUser(ctx));
+    }
+
+    static async generateJWT(ctx: Context): Promise<void> {
+        logger.info('Generating token');
+        try {
+            const token: string = await OktaProvider.createToken(ctx);
+            ctx.body = { token };
+        } catch (e) {
+            logger.info(e);
+        }
     }
 
     static async resetPassword(ctx: Context): Promise<void> {

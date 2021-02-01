@@ -71,18 +71,20 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
 
     // TODO: add a proper interface definition here
     let UserProvider: Record<string, any>;
+    let FBProvider: Record<string, any>;
 
     switch (authProvider) {
 
         case 'CT':
             UserProvider = LocalProvider;
+            FBProvider = FacebookProvider;
             break;
         case 'OKTA':
             UserProvider = OktaProvider;
+            FBProvider = OktaProvider;
             break;
         default:
             throw new Error(`Unknown Auth provider ${authProvider}`);
-            break;
 
     }
 
@@ -93,7 +95,7 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     router.get('/google/token', GoogleProvider.googleToken, GoogleProvider.generateJWT);
 
     router.get('/facebook/token', FacebookProvider.facebookToken, FacebookProvider.generateJWT);
-    router.get('/facebook', setCallbackUrl, FacebookProvider.facebook);
+    router.get('/facebook', setCallbackUrl, FBProvider.facebook);
     router.get('/facebook/callback', FacebookProvider.facebookCallback, FacebookProvider.updateApplications);
 
     router.get('/apple', setCallbackUrl, AppleProvider.apple);
@@ -137,6 +139,10 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.updateUser);
 // @ts-ignore
     router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.deleteUser);
+
+    if (authProvider === 'OKTA') {
+        router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
+    }
 
     return router;
 };
