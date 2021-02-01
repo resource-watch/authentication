@@ -37,7 +37,7 @@
     "token": ""
   },
   "okta": {
-    "url": "https://wri-admin.okta.com",
+    "url": "https://wri.okta.com",
     "apiKey": null
   },
   "settings": {

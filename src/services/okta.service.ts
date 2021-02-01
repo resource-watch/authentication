@@ -8,12 +8,20 @@ import { isEqual } from 'lodash';
 import UserModel, {IUser, UserDocument} from 'models/user.model';
 import UserTempModel, { UserTempDocument} from 'models/user-temp.model';
 import RenewModel, {IRenew} from 'models/renew.model';
-import {OktaCreateUserPayload, OktaRequestHeaders, OktaUpdateUserPayload, OktaUser} from 'services/okta.interfaces';
+import {
+    OktaCreateUserPayload,
+    OktaOAuthTokenPayload,
+    OktaRequestHeaders,
+    OktaUpdateUserPayload, 
+    OktaUpdateUserProtectedFieldsPayload,
+    OktaUser
+} from 'services/okta.interfaces';
 import JWT, {SignOptions} from 'jsonwebtoken';
 import Settings from 'services/settings.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserNotFoundError from 'errors/userNotFound.error';
 import {Context} from 'koa';
+import {URL} from 'url';
 
 export default class OktaService {
 
@@ -290,6 +298,19 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(data);
     }
 
+    static async updateUserProtectedFields(
+        oktaId: string,
+        payload: OktaUpdateUserProtectedFieldsPayload
+    ): Promise<OktaUser> {
+        const { data }: { data: OktaUser } = await axios.post(
+            `${config.get('okta.url')}/api/v1/users/${oktaId}`,
+            { profile: payload },
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        return data;
+    }
+
     static async deleteUser(id: string): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
 
@@ -299,6 +320,49 @@ export default class OktaService {
         );
 
         return OktaService.convertOktaUserToIUser(user);
+    }
+
+    static getFacebookOAuthRedirect(state: string): string {
+        const oktaOAuthURL: URL = new URL(`${config.get('okta.url')}/oauth2/default/v1/authorize`);
+        oktaOAuthURL.searchParams.append('client_id', '0oa3ynlf5ODYGyYeo5d6');
+        oktaOAuthURL.searchParams.append('response_type', 'code');
+        oktaOAuthURL.searchParams.append('response_mode', 'query');
+        oktaOAuthURL.searchParams.append('scope', 'openid profile email');
+        oktaOAuthURL.searchParams.append('redirect_uri', 'http://localhost:9050/auth/authorization-code/callback');
+        oktaOAuthURL.searchParams.append('idp', '0oa4m4l48ypfUq0UQ5d6');
+        oktaOAuthURL.searchParams.append('state', state);
+        return oktaOAuthURL.href;
+    }
+
+    static async getOktaUserByOktaId(id: string): Promise<OktaUser> {
+        const { data }: { data: OktaUser } = await axios.get(
+            `${config.get('okta.url')}/api/v1/users/${id}`,
+            { headers: OktaService.getOktaRequestHeaders() }
+        );
+
+        return data;
+    }
+
+    static async getUserForAuthorizationCode(code: string): Promise<OktaUser> {
+        const basicAuth: string = Buffer.from('0oa3ynlf5ODYGyYeo5d6:MJG3p-Rb9Kt_A5lFB34M879Etap3GpbJ02txMBCG').toString('base64');
+        const { data } = await axios.post(
+            `${config.get('okta.url')}/oauth2/default/v1/token?grant_type=authorization_code&code=${code}&redirect_uri=http://localhost:9050/auth/authorization-code/callback`,
+            {
+                grant_type: 'authorization_code',
+                redirect_uri: `http://localhost:9050/auth/authorization-code/callback`,
+                code,
+            },
+            {
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    Authorization: `Basic ${basicAuth}`
+                }
+            },
+        );
+
+        const { uid } = JWT.decode(data.access_token) as OktaOAuthTokenPayload;
+        return OktaService.getOktaUserByOktaId(uid);
     }
 
     private static getOktaSearchCriteria(query: Record<string, any>): string {
@@ -320,7 +384,7 @@ export default class OktaService {
         return searchCriteria.filter(el => el !== '').join(' and ');
     }
 
-    private static convertOktaUserToIUser(user: OktaUser): IUser {
+    static convertOktaUserToIUser(user: OktaUser): IUser {
         return {
             id: user.profile.legacyId,
             // @ts-ignore
