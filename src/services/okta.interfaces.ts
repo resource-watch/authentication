@@ -1,3 +1,7 @@
+export interface OktaOAuthTokenPayload {
+    uid: string;
+}
+
 export interface JWTPayload {
     id: string;
     email: string;
@@ -51,6 +55,13 @@ export interface OktaCreateUserPayload {
 export interface OktaUpdateUserPayload {
     displayName?: string;
     photo?: string;
+    role?: string;
+    apps?: string[];
+}
+
+export interface OktaUpdateUserProtectedFieldsPayload {
+    legacyId?: string;
+    displayName?: string;
     role?: string;
     apps?: string[];
 }
