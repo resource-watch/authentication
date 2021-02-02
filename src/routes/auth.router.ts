@@ -72,16 +72,19 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     // TODO: add a proper interface definition here
     let UserProvider: Record<string, any>;
     let FBProvider: Record<string, any>;
+    let GProvider: Record<string, any>;
 
     switch (authProvider) {
 
         case 'CT':
             UserProvider = LocalProvider;
             FBProvider = FacebookProvider;
+            GProvider = GoogleProvider;
             break;
         case 'OKTA':
             UserProvider = OktaProvider;
             FBProvider = OktaProvider;
+            GProvider = OktaProvider;
             break;
         default:
             throw new Error(`Unknown Auth provider ${authProvider}`);
@@ -90,7 +93,7 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
 
     const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
-    router.get('/google', setCallbackUrl, GoogleProvider.google);
+    router.get('/google', setCallbackUrl, GProvider.google);
     router.get('/google/callback', GoogleProvider.googleCallback, GoogleProvider.updateApplications);
     router.get('/google/token', GoogleProvider.googleToken, GoogleProvider.generateJWT);
 

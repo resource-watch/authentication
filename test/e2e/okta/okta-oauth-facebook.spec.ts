@@ -32,7 +32,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         requester = await getTestAgent(true);
     });
 
-    it('Visiting /auth/facebook while not being logged in should redirect to the login page', async () => {
+    it('Visiting /auth/facebook while not being logged in should redirect to Okta\'s OAuth URL', async () => {
         const response: request.Response = await requester.get(`/auth/facebook`).redirects(0);
         response.should.redirect;
         response.header.location.should.contain(config.get('okta.url'));

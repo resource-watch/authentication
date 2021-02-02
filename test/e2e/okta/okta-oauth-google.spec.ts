@@ -8,11 +8,14 @@ import UserService from 'services/user.service';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
+import sinon, {SinonSandbox} from 'sinon';
+import {stubConfigValue} from '../utils/helpers';
 
 const should: Chai.Should = chai.should();
 chai.use(chaiString);
 
 let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -23,263 +26,27 @@ describe('[OKTA] Google auth endpoint tests', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        await UserModel.deleteMany({}).exec();
-
-        nock.cleanAll();
     });
 
     beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
+
         requester = await getTestAgent(true);
     });
 
-    it('Visiting /auth/google while not being logged in should redirect to the login page', async () => {
-        const response: request.Response = await requester
-            .get(`/auth/google`)
-            .redirects(0);
-
-        response.status.should.equal(302);
-        response.header['content-type'].should.equalIgnoreCase('text/plain; charset=UTF-8');
-        response.should.redirectTo(/^https:\/\/accounts\.google\.com\//);
-    });
-
-    it('Visiting /auth/google/callback while being logged in should redirect to the login successful page', async () => {
-        const missingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.not.exist(missingUser);
-
-        nock('https://www.googleapis.com')
-            .post('/oauth2/v4/token', {
-                grant_type: 'authorization_code',
-                redirect_uri: `${config.get('server.publicUrl')}/auth/google/callback`,
-                client_id: config.get('settings.thirdParty.rw.google.clientID'),
-                client_secret: config.get('settings.thirdParty.rw.google.clientSecret'),
-                code: 'TEST_GOOGLE_OAUTH2_CALLBACK_CODE'
-            })
-            .reply(200, {
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
-                expires_in: 3599,
-                scope: 'openid https://www.googleapis.com/auth/userinfo.email',
-                token_type: 'Bearer',
-                id_token: 'some_id_token'
-            });
-
-        nock('https://www.googleapis.com')
-            .get('/oauth2/v3/userinfo')
-            .query({
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN'
-            })
-            .reply(200, {
-                sub: '113994825016233013735',
-                name: 'John Doe',
-                given_name: 'John',
-                family_name: 'Doe',
-                picture: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260',
-                email: 'john.doe@vizzuality.com',
-                email_verified: true,
-                hd: 'vizzuality.com'
-            });
-
-        await requester
-            .get(`/auth`);
-
-        const responseOne: request.Response = await requester
-            .get(`/auth/google/callback?code=TEST_GOOGLE_OAUTH2_CALLBACK_CODE&scope=openid%20email%20https://www.googleapis.com/auth/userinfo.email`)
-            .redirects(0);
-
-        responseOne.should.redirect;
-        responseOne.should.redirectTo(new RegExp(`/auth/success$`));
-
-        const responseTwo: request.Response = await requester
-            .get('/auth/success');
-
-        responseTwo.should.be.html;
-        responseTwo.text.should.include('Welcome to the RW API');
-
-        const confirmedUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.exist(confirmedUser);
-        confirmedUser.should.have.property('email')
-            .and
-            .equal('john.doe@vizzuality.com');
-        confirmedUser.should.have.property('name')
-            .and
-            .equal('John Doe');
-        confirmedUser.should.have.property('photo')
-            .and
-            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        confirmedUser.should.have.property('role')
-            .and
-            .equal('USER');
-        confirmedUser.should.have.property('provider')
-            .and
-            .equal('google');
-        confirmedUser.should.have.property('providerId')
-            .and
-            .equal('113994825016233013735');
-    });
-
-    it('Visiting /auth/google/callback while being logged in with a callbackUrl param should redirect to the callback URL page', async () => {
-        const missingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.not.exist(missingUser);
-
-        nock('https://www.googleapis.com')
-            .post('/oauth2/v4/token', {
-                grant_type: 'authorization_code',
-                redirect_uri: `${config.get('server.publicUrl')}/auth/google/callback`,
-                client_id: config.get('settings.thirdParty.rw.google.clientID'),
-                client_secret: config.get('settings.thirdParty.rw.google.clientSecret'),
-                code: 'TEST_GOOGLE_OAUTH2_CALLBACK_CODE'
-            })
-            .reply(200, {
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
-                expires_in: 3599,
-                scope: 'openid https://www.googleapis.com/auth/userinfo.email',
-                token_type: 'Bearer',
-                id_token: 'some_id_token'
-            });
-
-        nock('https://www.googleapis.com')
-            .get('/oauth2/v3/userinfo')
-            .query({
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN'
-            })
-            .reply(200, {
-                sub: '113994825016233013735',
-                name: 'John Doe',
-                given_name: 'John',
-                family_name: 'Doe',
-                picture: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260',
-                email: 'john.doe@vizzuality.com',
-                email_verified: true,
-                hd: 'vizzuality.com'
-            });
-
-        nock('https://www.wikipedia.org')
-            .get('/')
-            .reply(200, 'ok');
-
-        await requester
-            .get(`/auth?callbackUrl=https://www.wikipedia.org`);
-
-        const responseOne: request.Response = await requester
-            .get(`/auth/google/callback?code=TEST_GOOGLE_OAUTH2_CALLBACK_CODE&scope=openid%20email%20https://www.googleapis.com/auth/userinfo.email`)
-            .redirects(0);
-
-        responseOne.should.redirect;
-        responseOne.should.redirectTo(new RegExp(`/auth/success$`));
-
-        const responseTwo: request.Response = await requester
-            .get('/auth/success');
-
-        responseTwo.should.redirect;
-        responseTwo.should.redirectTo('https://www.wikipedia.org/');
-
-        const confirmedUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.exist(confirmedUser);
-        confirmedUser.should.have.property('email')
-            .and
-            .equal('john.doe@vizzuality.com');
-        confirmedUser.should.have.property('name')
-            .and
-            .equal('John Doe');
-        confirmedUser.should.have.property('photo')
-            .and
-            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        confirmedUser.should.have.property('role')
-            .and
-            .equal('USER');
-        confirmedUser.should.have.property('provider')
-            .and
-            .equal('google');
-        confirmedUser.should.have.property('providerId')
-            .and
-            .equal('113994825016233013735');
-    });
-
-    it('Visiting /auth/google/callback while being logged in with an updated callbackUrl param should redirect to the new callback URL page', async () => {
-        const missingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.not.exist(missingUser);
-
-        nock('https://www.googleapis.com')
-            .post('/oauth2/v4/token', {
-                grant_type: 'authorization_code',
-                redirect_uri: `${config.get('server.publicUrl')}/auth/google/callback`,
-                client_id: config.get('settings.thirdParty.rw.google.clientID'),
-                client_secret: config.get('settings.thirdParty.rw.google.clientSecret'),
-                code: 'TEST_GOOGLE_OAUTH2_CALLBACK_CODE'
-            })
-            .reply(200, {
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
-                expires_in: 3599,
-                scope: 'openid https://www.googleapis.com/auth/userinfo.email',
-                token_type: 'Bearer',
-                id_token: 'some_id_token'
-            });
-
-        nock('https://www.googleapis.com')
-            .get('/oauth2/v3/userinfo')
-            .query({
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN'
-            })
-            .reply(200, {
-                sub: '113994825016233013735',
-                name: 'John Doe',
-                given_name: 'John',
-                family_name: 'Doe',
-                picture: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260',
-                email: 'john.doe@vizzuality.com',
-                email_verified: true,
-                hd: 'vizzuality.com'
-            });
-
-        nock('https://www.wikipedia.org')
-            .get('/')
-            .reply(200, 'ok');
-
-        await requester
-            .get(`/auth?callbackUrl=https://www.google.com`);
-
-        await requester
-            .get(`/auth?callbackUrl=https://www.wikipedia.org`);
-
-        const responseOne: request.Response = await requester
-            .get(`/auth/google/callback?code=TEST_GOOGLE_OAUTH2_CALLBACK_CODE&scope=openid%20email%20https://www.googleapis.com/auth/userinfo.email`)
-            .redirects(0);
-
-        responseOne.should.redirect;
-        responseOne.should.redirectTo(new RegExp(`/auth/success$`));
-
-        const responseTwo: request.Response = await requester
-            .get('/auth/success');
-
-        responseTwo.should.redirect;
-        responseTwo.should.redirectTo('https://www.wikipedia.org/');
-
-        const confirmedUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.exist(confirmedUser);
-        confirmedUser.should.have.property('email')
-            .and
-            .equal('john.doe@vizzuality.com');
-        confirmedUser.should.have.property('name')
-            .and
-            .equal('John Doe');
-        confirmedUser.should.have.property('photo')
-            .and
-            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        confirmedUser.should.have.property('role')
-            .and
-            .equal('USER');
-        confirmedUser.should.have.property('provider')
-            .and
-            .equal('google');
-        confirmedUser.should.have.property('providerId')
-            .and
-            .equal('113994825016233013735');
+    it('Visiting /auth/google while not being logged in should redirect to Okta\'s OAuth URL', async () => {
+        const response: request.Response = await requester.get(`/auth/google`).redirects(0);
+        response.should.redirect;
+        response.header.location.should.contain(config.get('okta.url'));
+        response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
+        response.header.location.should.contain(`client_id=${config.get('okta.clientId')}`);
+        response.header.location.should.contain(`response_type=code`);
+        response.header.location.should.contain(`response_mode=query`);
+        response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
+        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
+        response.header.location.should.contain(`idp=${config.get('okta.gfw.google.idp')}`);
+        response.header.location.should.match(/state=\w/);
     });
 
     it('Visiting /auth/google/token with a valid Google OAuth token should generate a new token', async () => {
@@ -482,14 +249,12 @@ describe('[OKTA] Google auth endpoint tests', () => {
             .equal(response.body.token);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        UserModel.deleteMany({})
-            .exec();
-
-        closeTestAgent();
+        sandbox.restore();
+        await closeTestAgent();
     });
 });
