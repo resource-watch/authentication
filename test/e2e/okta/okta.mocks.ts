@@ -6,7 +6,7 @@ import { isEqual } from 'lodash';
 import {
     JWTPayload, OktaCreateUserPayload,
     OktaFailedAPIResponse,
-    OktaSuccessfulLoginResponse, OktaUpdateUserPayload,
+    OktaSuccessfulLoginResponse, OktaSuccessfulOAuthTokenResponse, OktaUpdateUserPayload,
     OktaUser,
     OktaUserProfile
 } from 'services/okta.interfaces';
@@ -113,6 +113,13 @@ export const mockGetUserById: (user: OktaUser, times?: number) => void = (user, 
         .query({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` })
         .times(times)
         .reply(200, [user]);
+};
+
+export const mockGetUserByOktaId: (id: string, user: OktaUser, times?: number) => void = (id, user, times = 1) => {
+    nock(config.get('okta.url'))
+        .get(`/api/v1/users/${id}`)
+        .times(times)
+        .reply(200, user);
 };
 
 export const mockGetUserByIdNotFound: (id: string, times?: number) => void = (id, times = 1) => {
@@ -231,4 +238,22 @@ export const mockOktaSendResetPasswordEmail: (override?: Partial<OktaUserProfile
         .reply(200, { ...user });
 
     return user;
+};
+
+export const mockOktaOAuthToken: (override?: Partial<OktaSuccessfulOAuthTokenResponse>) => OktaSuccessfulOAuthTokenResponse = (override = {}) => {
+    const successfulOAuthTokenResponse: OktaSuccessfulOAuthTokenResponse = {
+        'token_type': 'Bearer',
+        'expires_in': 3600,
+        'access_token': 'eyJraWQiOiJydk9jdFBwTGNjLW54MWQzSGFrcXFsaUhlcUF1UnBhMVRkSVNCVlNOU0ZzIiwiYWxnIjoiUlMyNTYifQ.eyJ2ZXIiOjEsImp0aSI6IkFULjF3VGhUdDRXMlJmQzVxUnZYZDNyMUFVUzRHTExhU2ZXaHM2eGZHRE0xZXMiLCJpc3MiOiJodHRwczovL3dyaS5va3RhLmNvbS9vYXV0aDIvZGVmYXVsdCIsImF1ZCI6ImFwaTovL2RlZmF1bHQiLCJpYXQiOjE2MTE5MzUwNTMsImV4cCI6MTYxMTkzODY1MywiY2lkIjoiMG9hM3lubGY1T0RZR3lZZW81ZDYiLCJ1aWQiOiIwMHVrZ202ektUTEZnQjRRZjVkNSIsInNjcCI6WyJlbWFpbCIsIm9wZW5pZCIsInByb2ZpbGUiXSwic3ViIjoiaGVucmlxdWUucGFjaGVjb0B2aXp6dWFsaXR5LmNvbSJ9.j7YwJiQIX8p8b_CJ8kTZx2HeH5bNoWZhecepDlMXCw8ZrUcuX2PgjoiQVtx0XnSoyEQTI743WRfFFUV0d1fBfW1GM_35eDGwuLrguHcfdSu2iUwjBMxYB0aRWlKg1CfF744Lizbwn-o8hYdv8AmaQQ521EOmqB3j_YL2PDLWScGFooOAxLuY1cLrpDtqUEFNDKWsbeV1xQbPJbiijAwl0d-XvLY0n2MQ6kTH4VoXiaaSWrl9j08uaJjGpeWiMyqEhZdx-TSvBToglppijOScNt0empmdxJD4cislEDTxUxoRdJMO3JYjvYayy5ib-nJSxS8eO6CPivHQVzoPjboe0w',
+        'scope': 'email openid profile',
+        'id_token': 'eyJraWQiOiJydk9jdFBwTGNjLW54MWQzSGFrcXFsaUhlcUF1UnBhMVRkSVNCVlNOU0ZzIiwiYWxnIjoiUlMyNTYifQ.eyJzdWIiOiIwMHVrZ202ektUTEZnQjRRZjVkNSIsIm5hbWUiOiJIZW5yaXF1ZSBQYWNoZWNvIiwiZW1haWwiOiJoZW5yaXF1ZS5wYWNoZWNvQHZpenp1YWxpdHkuY29tIiwidmVyIjoxLCJpc3MiOiJodHRwczovL3dyaS5va3RhLmNvbS9vYXV0aDIvZGVmYXVsdCIsImF1ZCI6IjBvYTN5bmxmNU9EWUd5WWVvNWQ2IiwiaWF0IjoxNjExOTM1MDUzLCJleHAiOjE2MTE5Mzg2NTMsImp0aSI6IklELmZoZEpGTTJ2b214cE1zYUV1c2NuNGVsa3pnamJITXdvRUg4aUxPUVpMbE0iLCJhbXIiOlsicHdkIiwibWZhIiwib3RwIl0sImlkcCI6IjAwb2pvcGhoVkhQRUxOYTEyNWQ1IiwicHJlZmVycmVkX3VzZXJuYW1lIjoiaGVucmlxdWUucGFjaGVjb0B2aXp6dWFsaXR5LmNvbSIsImF1dGhfdGltZSI6MTYxMTkxODAxMSwiYXRfaGFzaCI6ImVTX3ZUVU9aVnNVRHBUUUloNnhYSUEifQ.fsbdWHZy4IGZ9qD35wcxHyfzSTzPwN5opZYYlAaRA1D-YP2WFbTQECcyGTbBqhyGs4tmih71CJcqel948VBeTzOC2dGQJtpGMBlnbNp_aRDtQEVIwcpj-WzQnz0NMw65ty1tT4ZH6K1mKZq0r0jX88uPeLdBB-b7c4PIN_F_ZNV_NrH6h4gc5_KzXxHDcMiTvYYzQaTLHOJwyavYX28hALM7bCGudeDmZI3dz2ZuD5oCvF9uO272gi0KAv7YsFqAVn7EBxeW3KuObJ0wd1FaGBvh2suyNBcLjBxvDP2GGieA7ezujuucnouKgPwHSnL_LEvHXzGta2UCe3mLt7V50Q',
+        ...override
+    };
+
+    nock(config.get('okta.url'))
+        .post('/oauth2/default/v1/token')
+        .query(() => true)
+        .reply(200, successfulOAuthTokenResponse);
+
+    return successfulOAuthTokenResponse;
 };

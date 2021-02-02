@@ -12,7 +12,7 @@ import {
     OktaCreateUserPayload,
     OktaOAuthTokenPayload,
     OktaRequestHeaders,
-    OktaUpdateUserPayload, 
+    OktaUpdateUserPayload,
     OktaUpdateUserProtectedFieldsPayload,
     OktaUser
 } from 'services/okta.interfaces';
@@ -324,12 +324,12 @@ export default class OktaService {
 
     static getFacebookOAuthRedirect(state: string): string {
         const oktaOAuthURL: URL = new URL(`${config.get('okta.url')}/oauth2/default/v1/authorize`);
-        oktaOAuthURL.searchParams.append('client_id', '0oa3ynlf5ODYGyYeo5d6');
+        oktaOAuthURL.searchParams.append('client_id', config.get('okta.clientId'));
         oktaOAuthURL.searchParams.append('response_type', 'code');
         oktaOAuthURL.searchParams.append('response_mode', 'query');
         oktaOAuthURL.searchParams.append('scope', 'openid profile email');
         oktaOAuthURL.searchParams.append('redirect_uri', 'http://localhost:9050/auth/authorization-code/callback');
-        oktaOAuthURL.searchParams.append('idp', '0oa4m4l48ypfUq0UQ5d6');
+        oktaOAuthURL.searchParams.append('idp', config.get('okta.gfw.facebook.idp'));
         oktaOAuthURL.searchParams.append('state', state);
         return oktaOAuthURL.href;
     }
