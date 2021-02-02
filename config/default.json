@@ -38,7 +38,23 @@
   },
   "okta": {
     "url": "https://wri.okta.com",
-    "apiKey": null
+    "apiKey": null,
+    "clientId": null,
+    "gfw": {
+      "facebook": { "idp": null },
+      "google": { "idp": null },
+      "apple": { "idp": null }
+    },
+    "rw": {
+      "facebook": { "idp": null },
+      "google": { "idp": null },
+      "apple": { "idp": null }
+    },
+    "prep": {
+      "facebook": { "idp": null },
+      "google": { "idp": null },
+      "apple": { "idp": null }
+    }
   },
   "settings": {
     "defaultApp": "gfw",

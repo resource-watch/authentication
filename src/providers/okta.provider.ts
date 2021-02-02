@@ -17,6 +17,7 @@ import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
 import {OktaUpdateUserPayload, OktaUser, OktaUpdateUserProtectedFieldsPayload} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
+import config from 'config';
 
 export class OktaProvider extends BaseProvider {
 
@@ -38,13 +39,18 @@ export class OktaProvider extends BaseProvider {
                 return ctx.redirect('/auth/fail?error=true');
             }
 
+            if (!code) {
+                logger.error('No code provided by Okta\'s OAuth authorize call, ', error);
+                return ctx.redirect('/auth/fail?error=true');
+            }
+
             if (state !== ctx.session.oAuthState) {
                 logger.error('OAuth state does not match the state stored in session.');
                 return ctx.redirect('/auth/fail?error=true');
             }
 
-            const updateData: OktaUpdateUserProtectedFieldsPayload = {};
             let user: OktaUser = await OktaService.getUserForAuthorizationCode(code);
+            const updateData: OktaUpdateUserProtectedFieldsPayload = {};
 
             if (!user.profile.legacyId) {
                 updateData.legacyId = uuidv4();
@@ -501,32 +507,16 @@ export class OktaProvider extends BaseProvider {
             apple: false
         };
 
-        if (
-            Settings.getSettings().thirdParty &&
-            Settings.getSettings().thirdParty[originApp]?.twitter?.active
-        ) {
-            thirdParty.twitter = Settings.getSettings().thirdParty[originApp].twitter.active;
+        if (config.get(`okta.${originApp}.google.idp`)) {
+            thirdParty.google = true;
         }
 
-        if (
-            Settings.getSettings().thirdParty &&
-            Settings.getSettings().thirdParty[originApp]?.google?.active
-        ) {
-            thirdParty.google = Settings.getSettings().thirdParty[originApp].google.active;
+        if (config.get(`okta.${originApp}.facebook.idp`)) {
+            thirdParty.facebook = true;
         }
 
-        if (
-            Settings.getSettings().thirdParty &&
-            Settings.getSettings().thirdParty[originApp]?.facebook?.active
-        ) {
-            thirdParty.facebook = Settings.getSettings().thirdParty[originApp].facebook.active;
-        }
-
-        if (
-            Settings.getSettings().thirdParty &&
-            Settings.getSettings().thirdParty[originApp]?.apple?.active
-        ) {
-            thirdParty.apple = Settings.getSettings().thirdParty[originApp].apple.active;
+        if (config.get(`okta.${originApp}.apple.idp`)) {
+            thirdParty.apple = true;
         }
 
         await ctx.render('login', {

@@ -102,3 +102,11 @@ export interface OktaSuccessfulLoginResponse {
         }
     };
 }
+
+export interface OktaSuccessfulOAuthTokenResponse {
+    token_type: string;
+    expires_in: number;
+    access_token: string;
+    scope: string;
+    id_token: string;
+}
