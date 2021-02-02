@@ -1,21 +1,26 @@
 import {Context, Next} from 'koa';
-import { RouterContext } from 'koa-router';
-import { URL } from 'url';
+import {RouterContext} from 'koa-router';
+import {URL} from 'url';
 import logger from 'logger';
 import Utils from 'utils';
-import { omit } from 'lodash';
-import { v4 as uuidv4 } from 'uuid';
+import {omit} from 'lodash';
+import {v4 as uuidv4} from 'uuid';
 
-import Settings, { IApplication, IThirdPartyAuth } from 'services/settings.service';
-import { IRenew } from 'models/renew.model';
+import Settings, {IApplication, IThirdPartyAuth} from 'services/settings.service';
+import {IRenew} from 'models/renew.model';
 import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
-import { IUser, UserDocument } from 'models/user.model';
+import {IUser, UserDocument} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
-import {OktaUpdateUserPayload, OktaUser, OktaUpdateUserProtectedFieldsPayload} from 'services/okta.interfaces';
+import {
+    OktaOAuthProvider,
+    OktaUpdateUserPayload,
+    OktaUpdateUserProtectedFieldsPayload,
+    OktaUser
+} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 
@@ -78,15 +83,16 @@ export class OktaProvider extends BaseProvider {
         }
     }
 
-    /**
-     * Redirect user to Okta's OAuth authorize endpoint including FB as identity provider.
-     *
-     * @param ctx {Context} Koa request context.
-     */
     static async facebook(ctx: Context): Promise<void> {
         const state: string = uuidv4();
         ctx.session.oAuthState = state;
-        return ctx.redirect(OktaService.getFacebookOAuthRedirect(state));
+        return ctx.redirect(OktaService.getOAuthRedirect(state, OktaOAuthProvider.FACEBOOK));
+    }
+
+    static async google(ctx: Context): Promise<void> {
+        const state: string = uuidv4();
+        ctx.session.oAuthState = state;
+        return ctx.redirect(OktaService.getOAuthRedirect(state, OktaOAuthProvider.GOOGLE));
     }
 
     static async localCallback(ctx: Context & RouterContext): Promise<void> {

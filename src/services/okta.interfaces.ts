@@ -110,3 +110,9 @@ export interface OktaSuccessfulOAuthTokenResponse {
     scope: string;
     id_token: string;
 }
+
+export enum OktaOAuthProvider {
+    FACEBOOK = 'facebook',
+    GOOGLE = 'google',
+    APPLE = 'apple',
+}
