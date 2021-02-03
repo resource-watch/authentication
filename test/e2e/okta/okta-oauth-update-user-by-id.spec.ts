@@ -7,7 +7,13 @@ import {stubConfigValue} from '../utils/helpers';
 import type request from 'superagent';
 import sinon, {SinonSandbox} from 'sinon';
 import {OktaUser} from 'services/okta.interfaces';
-import {getMockOktaUser, mockGetUserByIdNotFound, mockOktaUpdateUser, mockValidJWT} from './okta.mocks';
+import {
+    getMockOktaUser,
+    mockGetUserById,
+    mockGetUserByIdNotFound,
+    mockOktaUpdateUser,
+    mockValidJWT
+} from './okta.mocks';
 
 chai.should();
 chai.use(chaiDateTime);
@@ -101,6 +107,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         const userToBeUpdated: OktaUser = getMockOktaUser();
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockGetUserById(userToBeUpdated);
         mockOktaUpdateUser(userToBeUpdated, {
             displayName: 'changed name',
             photo: 'http://www.changed-photo.com',

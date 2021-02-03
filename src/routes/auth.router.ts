@@ -12,6 +12,7 @@ import FacebookProvider from 'providers/facebook.provider';
 import GoogleProvider from 'providers/google.provider';
 import LocalProvider from 'providers/local.provider';
 import OktaProvider from 'providers/okta.provider';
+import OktaFacebookProvider from 'providers/okta.facebook.provider';
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     logger.info('Setting callbackUrl');
@@ -83,7 +84,7 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
             break;
         case 'OKTA':
             UserProvider = OktaProvider;
-            FBProvider = OktaProvider;
+            FBProvider = OktaFacebookProvider;
             GProvider = OktaProvider;
             break;
         default:
@@ -97,9 +98,9 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     router.get('/google/callback', GoogleProvider.googleCallback, GoogleProvider.updateApplications);
     router.get('/google/token', GoogleProvider.googleToken, GoogleProvider.generateJWT);
 
-    router.get('/facebook/token', FacebookProvider.facebookToken, FacebookProvider.generateJWT);
+    router.get('/facebook/token', FBProvider.facebookToken, UserProvider.generateJWT);
     router.get('/facebook', setCallbackUrl, FBProvider.facebook);
-    router.get('/facebook/callback', FacebookProvider.facebookCallback, FacebookProvider.updateApplications);
+    router.get('/facebook/callback', FBProvider.facebookCallback, FBProvider.updateApplications);
 
     router.get('/apple', setCallbackUrl, AppleProvider.apple);
     router.post('/apple/callback', AppleProvider.appleCallback, AppleProvider.updateApplications);
