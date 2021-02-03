@@ -47,7 +47,6 @@ export class OktaFacebookProvider extends BaseProvider {
     }
 
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
-
         try {
             logger.info('[OktaFacebookProvider] Registering user', profile);
             let oktaUser: OktaUser = await OktaService.findOktaUserByProviderId(OktaOAuthProvider.FACEBOOK, profile.id);

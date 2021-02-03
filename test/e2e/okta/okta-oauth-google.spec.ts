@@ -3,15 +3,21 @@ import chai from 'chai';
 import config from 'config';
 import JWT from 'jsonwebtoken';
 import chaiString from 'chai-string';
-import UserModel, { UserDocument } from 'models/user.model';
-import UserService from 'services/user.service';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 import sinon, {SinonSandbox} from 'sinon';
 import {stubConfigValue} from '../utils/helpers';
+import {JWTPayload, OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {
+    getMockOktaUser,
+    mockOktaCreateUser,
+    mockOktaListUsers,
+    mockOktaSendActivationEmail,
+    mockOktaUpdateUser
+} from './okta.mocks';
 
-const should: Chai.Should = chai.should();
+chai.should();
 chai.use(chaiString);
 
 let requester: ChaiHttp.Agent;
@@ -33,8 +39,6 @@ describe('[OKTA] Google auth endpoint tests', () => {
         stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
         requester = await getTestAgent(true);
-
-        await UserModel.deleteMany({}).exec();
     });
 
     it('Visiting /auth/google while not being logged in should redirect to Okta\'s OAuth URL', async () => {
@@ -51,48 +55,27 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.header.location.should.match(/state=\w/);
     });
 
-    it('Visiting /auth/google/token with a valid Google OAuth token should generate a new token', async () => {
-        await new UserModel({
-            name: 'John Doe',
+    it('Visiting /auth/google/token with a valid Google OAuth token for an existing user should generate a new token for the existing user', async () => {
+        const providerId: string = '113994825016233013735';
+        const user: OktaUser = getMockOktaUser({
             email: 'john.doe@vizzuality.com',
-            role: 'USER',
-            provider: 'google',
-            providerId: '113994825016233013735',
-            photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
-        }).save();
+            displayName: 'John Doe',
+            provider: OktaOAuthProvider.GOOGLE,
+            providerId,
+        });
 
-        const existingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.exist(existingUser);
-        existingUser.should.have.property('email')
-            .and
-            .equal('john.doe@vizzuality.com');
-        existingUser.should.have.property('name')
-            .and
-            .equal('John Doe');
-        existingUser.should.have.property('photo')
-            .and
-            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        existingUser.should.have.property('role')
-            .and
-            .equal('USER');
-        existingUser.should.have.property('provider')
-            .and
-            .equal('google');
-        existingUser.should.have.property('providerId')
-            .and
-            .equal('113994825016233013735');
-        existingUser.should.have.property('userToken')
-            .and
-            .equal(undefined);
+        mockOktaListUsers({
+            limit: 1,
+            search: `(profile.provider eq "${OktaOAuthProvider.GOOGLE}") and (profile.providerId eq "${providerId}")`
+        }, [user]);
+
+        mockOktaUpdateUser(user, { email: 'john.doe@vizzuality.com' });
 
         nock('https://www.googleapis.com')
             .get('/oauth2/v1/userinfo')
-            .query({
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN'
-            })
+            .query({ access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN' })
             .reply(200, {
-                id: '113994825016233013735',
+                id: providerId,
                 email: 'john.doe@vizzuality.com',
                 verified_email: true,
                 name: 'John Doe',
@@ -108,92 +91,47 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.status.should.equal(200);
         response.header['content-type'].should.equalIgnoreCase('application/json; charset=utf-8');
         response.body.should.be.an('object');
-        response.body.should.have.property('token')
-            .and
-            .be
-            .a('string');
+        response.body.should.have.property('token').and.be.a('string');
 
-        JWT.verify(response.body.token, process.env.JWT_SECRET);
-
-        // @ts-ignore
-        const decodedTokenData: Record<string, any> = JWT.verify(response.body.token, process.env.JWT_SECRET);
-        const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
-        isTokenRevoked.should.equal(false);
-
-        const userWithToken: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.exist(userWithToken);
-        userWithToken.should.have.property('email')
-            .and
-            .equal('john.doe@vizzuality.com')
-            .and
-            .equal(decodedTokenData.email);
-        userWithToken.should.have.property('name')
-            .and
-            .equal('John Doe')
-            .and
-            .equal(decodedTokenData.name);
-        userWithToken.should.have.property('photo')
-            .and
-            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260')
-            .and
-            .equal(decodedTokenData.photo);
-        userWithToken.should.have.property('role')
-            .and
-            .equal('USER')
-            .and
-            .equal(decodedTokenData.role);
-        userWithToken.should.have.property('provider')
-            .and
-            .equal('google')
-            .and
-            .equal(decodedTokenData.provider);
-        userWithToken.should.have.property('providerId')
-            .and
-            .equal('113994825016233013735');
-        userWithToken.should.have.property('userToken')
-            .and
-            .equal(response.body.token);
+        const tokenPayload: JWTPayload = JWT.verify(response.body.token, process.env.JWT_SECRET) as JWTPayload;
+        tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
+        tokenPayload.should.have.property('role').and.eql('USER');
+        tokenPayload.should.have.property('email').and.eql(user.profile.email);
+        tokenPayload.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
+        tokenPayload.should.have.property('photo').and.eql(user.profile.photo);
+        tokenPayload.should.have.property('name').and.eql(user.profile.displayName);
     });
 
     it('Visiting /auth/google/token with a valid Google OAuth token should generate a new token - account with no email address', async () => {
-        const savedUser: UserDocument = await new UserModel({
-            name: 'John Doe',
-            role: 'USER',
-            provider: 'google',
-            providerId: '113994825016233013735',
-            photo: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260'
-        }).save();
+        const providerId: string = '113994825016233013735';
+        const user: OktaUser = getMockOktaUser({
+            email: 'john.doe@vizzuality.com',
+            displayName: 'John Doe',
+            provider: OktaOAuthProvider.GOOGLE,
+            providerId,
+        });
 
-        const existingUser: UserDocument = await UserModel.findOne({ _id: savedUser.id })
-            .exec();
-        should.exist(existingUser);
-        existingUser.should.have.property('name')
-            .and
-            .equal('John Doe');
-        existingUser.should.have.property('photo')
-            .and
-            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260');
-        existingUser.should.have.property('role')
-            .and
-            .equal('USER');
-        existingUser.should.have.property('provider')
-            .and
-            .equal('google');
-        existingUser.should.have.property('providerId')
-            .and
-            .equal('113994825016233013735');
-        existingUser.should.have.property('userToken')
-            .and
-            .equal(undefined);
+        mockOktaListUsers({
+            limit: 1,
+            search: `(profile.provider eq "${OktaOAuthProvider.GOOGLE}") and (profile.providerId eq "${providerId}")`
+        }, []);
+
+        mockOktaCreateUser(user, {
+            email: 'john.doe@vizzuality.com',
+            name: 'John Doe',
+            photo: null,
+            role: 'USER',
+            apps: [],
+        });
+
+        mockOktaSendActivationEmail(user);
 
         nock('https://www.googleapis.com')
             .get('/oauth2/v1/userinfo')
-            .query({
-                access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN'
-            })
+            .query({ access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN' })
             .reply(200, {
-                id: '113994825016233013735',
+                id: providerId,
+                email: 'john.doe@vizzuality.com',
                 verified_email: true,
                 name: 'John Doe',
                 given_name: 'John',
@@ -208,47 +146,15 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.status.should.equal(200);
         response.header['content-type'].should.equalIgnoreCase('application/json; charset=utf-8');
         response.body.should.be.an('object');
-        response.body.should.have.property('token')
-            .and
-            .be
-            .a('string');
+        response.body.should.have.property('token').and.be.a('string');
 
-        JWT.verify(response.body.token, process.env.JWT_SECRET);
-
-        // @ts-ignore
-        const decodedTokenData: Record<string, any> = JWT.verify(response.body.token, process.env.JWT_SECRET);
-        const isTokenRevoked: boolean = await UserService.checkRevokedToken(null, decodedTokenData);
-        isTokenRevoked.should.equal(false);
-
-        const userWithToken: UserDocument = await UserModel.findOne({ _id: savedUser.id })
-            .exec();
-        should.exist(userWithToken);
-        userWithToken.should.have.property('name')
-            .and
-            .equal('John Doe')
-            .and
-            .equal(decodedTokenData.name);
-        userWithToken.should.have.property('photo')
-            .and
-            .equal('https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260')
-            .and
-            .equal(decodedTokenData.photo);
-        userWithToken.should.have.property('role')
-            .and
-            .equal('USER')
-            .and
-            .equal(decodedTokenData.role);
-        userWithToken.should.have.property('provider')
-            .and
-            .equal('google')
-            .and
-            .equal(decodedTokenData.provider);
-        userWithToken.should.have.property('providerId')
-            .and
-            .equal('113994825016233013735');
-        userWithToken.should.have.property('userToken')
-            .and
-            .equal(response.body.token);
+        const tokenPayload: JWTPayload = JWT.verify(response.body.token, process.env.JWT_SECRET) as JWTPayload;
+        tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
+        tokenPayload.should.have.property('role').and.eql('USER');
+        tokenPayload.should.have.property('email').and.eql(user.profile.email);
+        tokenPayload.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
+        tokenPayload.should.have.property('photo').and.eql(user.profile.photo);
+        tokenPayload.should.have.property('name').and.eql(user.profile.displayName);
     });
 
     afterEach(async () => {

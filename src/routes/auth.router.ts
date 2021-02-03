@@ -13,6 +13,7 @@ import GoogleProvider from 'providers/google.provider';
 import LocalProvider from 'providers/local.provider';
 import OktaProvider from 'providers/okta.provider';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
+import OktaGoogleProvider from 'providers/okta.google.provider';
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     logger.info('Setting callbackUrl');
@@ -85,7 +86,7 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
         case 'OKTA':
             UserProvider = OktaProvider;
             FBProvider = OktaFacebookProvider;
-            GProvider = OktaProvider;
+            GProvider = OktaGoogleProvider;
             break;
         default:
             throw new Error(`Unknown Auth provider ${authProvider}`);
@@ -95,8 +96,8 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
     router.get('/google', setCallbackUrl, GProvider.google);
-    router.get('/google/callback', GoogleProvider.googleCallback, GoogleProvider.updateApplications);
-    router.get('/google/token', GoogleProvider.googleToken, GoogleProvider.generateJWT);
+    router.get('/google/callback', GProvider.googleCallback, GProvider.updateApplications);
+    router.get('/google/token', GProvider.googleToken, UserProvider.generateJWT);
 
     router.get('/facebook/token', FBProvider.facebookToken, UserProvider.generateJWT);
     router.get('/facebook', setCallbackUrl, FBProvider.facebook);

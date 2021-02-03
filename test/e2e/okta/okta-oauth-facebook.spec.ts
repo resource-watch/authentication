@@ -95,9 +95,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.body.should.be.an('object');
         response.body.should.have.property('token').and.be.a('string');
 
-        JWT.verify(response.body.token, process.env.JWT_SECRET);
-
-        const tokenPayload: JWTPayload = JWT.decode(response.body.token) as JWTPayload;
+        const tokenPayload: JWTPayload = JWT.verify(response.body.token, process.env.JWT_SECRET) as JWTPayload;
         tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
         tokenPayload.should.have.property('role').and.eql('USER');
         tokenPayload.should.have.property('email').and.eql(user.profile.email);
@@ -155,9 +153,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.body.should.be.an('object');
         response.body.should.have.property('token').and.be.a('string');
 
-        JWT.verify(response.body.token, process.env.JWT_SECRET);
-
-        const tokenPayload: JWTPayload = JWT.decode(response.body.token) as JWTPayload;
+        const tokenPayload: JWTPayload = JWT.verify(response.body.token, process.env.JWT_SECRET) as JWTPayload;
         tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
         tokenPayload.should.have.property('role').and.eql('USER');
         tokenPayload.should.have.property('email').and.eql(user.profile.email);

@@ -9,6 +9,7 @@ import UserModel, {IUser, UserDocument} from 'models/user.model';
 import UserTempModel, { UserTempDocument} from 'models/user-temp.model';
 import RenewModel, {IRenew} from 'models/renew.model';
 import {
+    JWTPayload,
     OktaCreateUserPayload, OktaOAuthProvider,
     OktaOAuthTokenPayload,
     OktaRequestHeaders,
@@ -138,7 +139,7 @@ export default class OktaService {
         return OktaService.updatePasswordForUser(renew.userId, newPassword);
     }
 
-    static async checkRevokedToken(ctx: Context, payload: Record<string, any>): Promise<boolean> {
+    static async checkRevokedToken(ctx: Context, payload: JWTPayload): Promise<boolean> {
         logger.info('Checking if token is revoked');
 
         let isRevoked: boolean = false;
