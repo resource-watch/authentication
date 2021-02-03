@@ -61,6 +61,7 @@ export interface OktaUpdateUserPayload {
 
 export interface OktaUpdateUserProtectedFieldsPayload {
     legacyId?: string;
+    email?: string;
     displayName?: string;
     role?: string;
     apps?: string[];

@@ -7,7 +7,13 @@ import sinon, { SinonSandbox } from 'sinon';
 import {OktaUser} from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { stubConfigValue } from '../utils/helpers';
-import {getMockOktaUser, mockOktaFailedSignUp, mockOktaSuccessfulSignUp, mockValidJWT} from './okta.mocks';
+import {
+    getMockOktaUser,
+    mockOktaFailedSignUp,
+    mockOktaSendActivationEmail,
+    mockOktaCreateUser,
+    mockValidJWT
+} from './okta.mocks';
 
 chai.should();
 chai.use(chaiDateTime);
@@ -131,13 +137,14 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
         const user: OktaUser = getMockOktaUser({ apps });
 
-        mockOktaSuccessfulSignUp(user, {
+        mockOktaCreateUser(user, {
             email: user.profile.email,
             name: '',
             role: user.profile.role,
             photo: user.profile.photo,
             apps,
         });
+        mockOktaSendActivationEmail(user);
 
         const response: request.Response = await requester
             .post(`/auth/user`)

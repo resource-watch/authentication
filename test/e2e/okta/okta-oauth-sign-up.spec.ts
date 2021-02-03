@@ -6,7 +6,12 @@ import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
 import { stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import {getMockOktaUser, mockOktaFailedSignUp, mockOktaSuccessfulSignUp} from './okta.mocks';
+import {
+    getMockOktaUser,
+    mockOktaFailedSignUp,
+    mockOktaSendActivationEmail,
+    mockOktaCreateUser
+} from './okta.mocks';
 
 chai.should();
 
@@ -45,10 +50,11 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
 
     it('Registering a user with correct data and no app returns a 200', async () => {
         const user: OktaUser = getMockOktaUser();
-        mockOktaSuccessfulSignUp(user, {
+        mockOktaCreateUser(user, {
             email: user.profile.email,
             name: '',
         });
+        mockOktaSendActivationEmail(user);
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
@@ -75,11 +81,12 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
     // User registration - with app
     it('Registering a user with correct data and app returns a 200', async () => {
         const user: OktaUser = getMockOktaUser({ apps: ['rw'] });
-        mockOktaSuccessfulSignUp(user, {
+        mockOktaCreateUser(user, {
             email: user.profile.email,
             name: '',
             apps: ['rw'],
         });
+        mockOktaSendActivationEmail(user);
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)

@@ -6,7 +6,7 @@ import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {stubConfigValue} from '../utils/helpers';
-import {getMockOktaUser, mockOktaUpdateUser, mockValidJWT} from './okta.mocks';
+import {getMockOktaUser, mockGetUserById, mockOktaUpdateUser, mockValidJWT} from './okta.mocks';
 
 chai.should();
 
@@ -49,6 +49,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             extraUserData: { apps: user.profile.apps },
         });
 
+        mockGetUserById(user);
         mockOktaUpdateUser(user, {});
 
         const response: request.Response = await requester
@@ -74,6 +75,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             extraUserData: { apps: user.profile.apps },
         });
 
+        mockGetUserById(user);
         mockOktaUpdateUser(user, {
             displayName: 'changed name',
             photo: 'http://www.changed-photo.com',
@@ -121,6 +123,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             extraUserData: { apps: user.profile.apps },
         });
 
+        mockGetUserById(user);
         mockOktaUpdateUser(user, {
             displayName: 'changed name',
             photo: 'http://www.changed-photo.com',
