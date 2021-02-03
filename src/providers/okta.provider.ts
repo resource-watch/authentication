@@ -15,12 +15,7 @@ import UnauthorizedError from 'errors/unauthorized.error';
 import {IUser, UserDocument} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
-import {
-    OktaOAuthProvider,
-    OktaUpdateUserPayload,
-    OktaUpdateUserProtectedFieldsPayload,
-    OktaUser
-} from 'services/okta.interfaces';
+import { OktaUpdateUserPayload, OktaUpdateUserProtectedFieldsPayload, OktaUser } from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 
@@ -81,18 +76,6 @@ export class OktaProvider extends BaseProvider {
             logger.error('Error requesting OAuth token to Okta, ', err);
             return ctx.redirect('/auth/fail?error=true');
         }
-    }
-
-    static async facebook(ctx: Context): Promise<void> {
-        const state: string = uuidv4();
-        ctx.session.oAuthState = state;
-        return ctx.redirect(OktaService.getOAuthRedirect(state, OktaOAuthProvider.FACEBOOK));
-    }
-
-    static async google(ctx: Context): Promise<void> {
-        const state: string = uuidv4();
-        ctx.session.oAuthState = state;
-        return ctx.redirect(OktaService.getOAuthRedirect(state, OktaOAuthProvider.GOOGLE));
     }
 
     static async localCallback(ctx: Context & RouterContext): Promise<void> {
