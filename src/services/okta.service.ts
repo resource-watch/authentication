@@ -210,6 +210,11 @@ export default class OktaService {
         return user;
     }
 
+    static async findOktaUserByProviderId(provider: OktaOAuthProvider, providerId: string): Promise<OktaUser> {
+        const [user] = await OktaService.searchOktaUsers({ limit: 1, provider, providerId });
+        return user || null;
+    }
+
     static async getOktaUserByEmail(email: string): Promise<IUser> {
         const { data }: { data: OktaUser } = await axios.get(
             `${config.get('okta.url')}/api/v1/users/${email}`,
@@ -370,7 +375,7 @@ export default class OktaService {
 
         const searchCriteria: string[] = [];
         Object.keys(query)
-            .filter((param) => ['id', 'name', 'provider', 'email', 'role', 'apps'].includes(param))
+            .filter((param) => ['id', 'name', 'provider', 'providerId', 'email', 'role', 'apps'].includes(param))
             .forEach((field: string) => {
                 if (query[field]) {
                     if (Array.isArray(query[field])) {
@@ -420,6 +425,7 @@ export default class OktaService {
             case 'apps':
             case 'role':
             case 'provider':
+            case 'providerId':
                 return 'eq';
 
             default:

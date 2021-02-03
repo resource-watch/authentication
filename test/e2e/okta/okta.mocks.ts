@@ -4,9 +4,13 @@ import faker from 'faker';
 import { isEqual } from 'lodash';
 
 import {
-    JWTPayload, OktaCreateUserPayload,
+    JWTPayload,
+    OktaCreateUserPayload,
     OktaFailedAPIResponse,
-    OktaSuccessfulLoginResponse, OktaSuccessfulOAuthTokenResponse, OktaUpdateUserPayload,
+    OktaSuccessfulLoginResponse,
+    OktaSuccessfulOAuthTokenResponse,
+    OktaUpdateUserPayload,
+    OktaUpdateUserProtectedFieldsPayload,
     OktaUser,
     OktaUserProfile
 } from 'services/okta.interfaces';
@@ -163,7 +167,7 @@ export const mockValidJWT: (override?: Partial<JWTPayload>, times?: number) => s
     return token;
 };
 
-export const mockOktaSuccessfulSignUp: (user: OktaUser, payload: OktaCreateUserPayload) => void = (user, payload) => {
+export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload) => void = (user, payload) => {
     nock(config.get('okta.url'))
         .post('/api/v1/users?activate=false', (body) => [
             body.profile.email === payload.email,
@@ -173,7 +177,9 @@ export const mockOktaSuccessfulSignUp: (user: OktaUser, payload: OktaCreateUserP
             !payload.photo || body.profile.photo === payload.photo,
         ].every(el => !!el))
         .reply(200, user);
+};
 
+export const mockOktaSendActivationEmail: (user: OktaUser) => void = (user) => {
     nock(config.get('okta.url'))
         .post(`/api/v1/users/${user.id}/lifecycle/activate?sendEmail=true`)
         .reply(200, user);
@@ -204,11 +210,8 @@ export const mockOktaUpdatePassword: (user: OktaUser, times?: number) => void = 
         .reply(200, { ...user });
 };
 
-export const mockOktaUpdateUser: (mockUser: OktaUser, updateData: OktaUpdateUserPayload, times?: number) => void =
+export const mockOktaUpdateUser: (mockUser: OktaUser, updateData: OktaUpdateUserPayload | OktaUpdateUserProtectedFieldsPayload, times?: number) => void =
     (user, updateData, times = 1) => {
-
-    mockGetUserById(user, times);
-
     nock(config.get('okta.url'))
         .post(`/api/v1/users/${user.id}`, (body) => isEqual(body, { profile: updateData }))
         .times(times)

@@ -33,6 +33,8 @@ describe('[OKTA] Google auth endpoint tests', () => {
         stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
         requester = await getTestAgent(true);
+
+        await UserModel.deleteMany({}).exec();
     });
 
     it('Visiting /auth/google while not being logged in should redirect to Okta\'s OAuth URL', async () => {

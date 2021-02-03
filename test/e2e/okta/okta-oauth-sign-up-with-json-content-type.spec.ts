@@ -6,7 +6,12 @@ import sinon, { SinonSandbox } from 'sinon';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { stubConfigValue } from '../utils/helpers';
-import {getMockOktaUser, mockOktaFailedSignUp, mockOktaSuccessfulSignUp} from './okta.mocks';
+import {
+    getMockOktaUser,
+    mockOktaFailedSignUp,
+    mockOktaSendActivationEmail,
+    mockOktaCreateUser
+} from './okta.mocks';
 
 chai.should();
 
@@ -45,11 +50,12 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
 
     it('Registering a user with correct data and no app returns a 200', async () => {
         const user: OktaUser = getMockOktaUser({ apps: [] });
-        mockOktaSuccessfulSignUp(user, {
+        mockOktaCreateUser(user, {
             email: user.profile.email,
             name: '',
             role: 'USER',
         });
+        mockOktaSendActivationEmail(user);
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
@@ -82,12 +88,13 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
 
     it('Registering a user with correct data and app returns a 200', async () => {
         const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
-        mockOktaSuccessfulSignUp(user, {
+        mockOktaCreateUser(user, {
             email: user.profile.email,
             name: '',
             role: 'USER',
             apps: ['gfw'],
         });
+        mockOktaSendActivationEmail(user);
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
@@ -108,12 +115,13 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
 
     it('Registering a user with a custom role should return a 200 and ignore the role', async () => {
         const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
-        mockOktaSuccessfulSignUp(user, {
+        mockOktaCreateUser(user, {
             email: user.profile.email,
             name: '',
             role: 'USER',
             apps: ['gfw'],
         });
+        mockOktaSendActivationEmail(user);
 
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
