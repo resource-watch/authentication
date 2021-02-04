@@ -42,7 +42,6 @@ node {
         case "dev":
           sh("echo Deploying to DEV cluster")
           sh("kubectl config use-context ${KUBECTL_CONTEXT_PREFIX}_${CLOUD_PROJECT_NAME}_${CLOUD_PROJECT_ZONE}_${KUBE_DEV_CLUSTER}")
-          sh("kubectl apply -f k8s/services/")
           sh("kubectl apply -f k8s/dev/")
           sh("kubectl set image deployment ${appName} ${appName}=${imageTag} --record -n core")
           break
