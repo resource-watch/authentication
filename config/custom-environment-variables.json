@@ -28,6 +28,7 @@
     "url": "OKTA_API_URL",
     "apiKey": "OKTA_API_KEY",
     "clientId": "OKTA_CLIENT_ID",
+    "clientSecret": "OKTA_CLIENT_SECRET",
     "gfw": {
       "facebook": { "idp": "OKTA_GFW_FACEBOOK_IDP" },
       "google": { "idp": "OKTA_GFW_GOOGLE_IDP" },
