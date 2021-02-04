@@ -69,12 +69,6 @@ export interface OktaUpdateUserProtectedFieldsPayload {
     apps?: string[];
 }
 
-export interface OktaRequestHeaders {
-    Accept: string;
-    'Content-Type': string;
-    Authorization: string;
-}
-
 export interface OktaErrorCause {
     errorSummary: string;
 }
