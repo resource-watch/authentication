@@ -12,7 +12,7 @@ import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
-import {IUser, UserDocument} from 'models/user.model';
+import {IUser} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
 import { OktaUpdateUserPayload, OktaUpdateUserProtectedFieldsPayload, OktaUser } from 'services/okta.interfaces';
@@ -119,7 +119,7 @@ export class OktaProvider extends BaseProvider {
 
     static async checkLogged(ctx: Context): Promise<void> {
         if (Utils.getUser(ctx)) {
-            const userToken: UserDocument = Utils.getUser(ctx);
+            const userToken: IUser = Utils.getUser(ctx);
             const user: IUser = await OktaService.getUserById(userToken.id);
 
             ctx.body = {
@@ -142,7 +142,7 @@ export class OktaProvider extends BaseProvider {
 
     static async getUsers(ctx: Context): Promise<void> {
         logger.info('Get Users');
-        const user: UserDocument = Utils.getUser(ctx);
+        const user: IUser = Utils.getUser(ctx);
         if (!user.extraUserData || !user.extraUserData.apps) {
             ctx.throw(403, 'Not authorized');
             return;
@@ -267,7 +267,7 @@ export class OktaProvider extends BaseProvider {
     static async createUser(ctx: Context): Promise<void> {
         logger.info(`Create user with body ${ctx.request.body}`);
         const { body } = ctx.request;
-        const user: UserDocument = Utils.getUser(ctx);
+        const user: IUser = Utils.getUser(ctx);
         if (!user) {
             ctx.throw(401, 'Not logged');
             return;
@@ -444,34 +444,12 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async confirmUser(ctx: Context): Promise<void> {
-        logger.info('Confirming user');
-        const user: UserDocument = await OktaService.confirmUser(ctx.params.token);
-        if (!user) {
-            ctx.throw(400, 'User expired or token not found');
-            return;
-        }
-        if (ctx.query.callbackUrl) {
-            ctx.redirect(ctx.query.callbackUrl);
-            return;
-        }
-
-        const userFirstApp: string = (user?.extraUserData?.apps?.length > 0) ? user.extraUserData.apps[0] : null;
-
-        if (userFirstApp && Settings.getSettings().local[userFirstApp]?.confirmUrlRedirect) {
-            ctx.redirect(Settings.getSettings().local[userFirstApp].confirmUrlRedirect);
-            return;
-        }
-
-        if (Settings.getSettings().local.confirmUrlRedirect) {
-            ctx.redirect(Settings.getSettings().local.confirmUrlRedirect);
-            return;
-        }
-        ctx.body = UserSerializer.serialize(user);
+        ctx.throw('Method not supported');
     }
 
     static async loginView(ctx: Context): Promise<void> {
         // check if the user has session
-        const user: UserDocument = Utils.getUser(ctx);
+        const user: IUser = Utils.getUser(ctx);
         if (user) {
             logger.info('User has session');
 
