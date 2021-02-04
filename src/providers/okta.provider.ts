@@ -358,8 +358,7 @@ export class OktaProvider extends BaseProvider {
         const thirdParty: Record<string, any> = {
             twitter: false,
             google: false,
-            facebook: false,
-            basic: false
+            facebook: false
         };
 
         if (appConfig.twitter?.active) {

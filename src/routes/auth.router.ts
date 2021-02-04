@@ -109,8 +109,6 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
 
     router.get('/', setCallbackUrl, UserProvider.redirectLogin);
 // @ts-ignore
-    router.get('/basic', passport.authenticate('basic'), UserProvider.success);
-// @ts-ignore
     router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, UserProvider.loginView);
     router.post('/login', UserProvider.localCallback);
     router.get('/fail', loadApplicationGeneralConfig, UserProvider.failAuth);

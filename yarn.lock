@@ -1105,11 +1105,6 @@ base64url@3.x.x:
   resolved "https://registry.yarnpkg.com/base64url/-/base64url-3.0.1.tgz#6399d572e2bc3f90a9a8b22d5dbb0a32d33f788d"
   integrity sha512-ir1UPr3dkwexU7FdV8qBBbNDRUhMmIekYMFZfi+C/sLNnRESKPl23nB9b2pltqfOQNnGzsDdId90AEtG5tCx4A==
 
-basic-auth@^1.0.4:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/basic-auth/-/basic-auth-1.1.0.tgz#45221ee429f7ee1e5035be3f51533f1cdfd29884"
-  integrity sha1-RSIe5Cn37h5QNb4/UVM/HN/SmIQ=
-
 bcrypt-pbkdf@^1.0.0:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/bcrypt-pbkdf/-/bcrypt-pbkdf-1.0.2.tgz#a4301d389b6a43f9b67ff3ca11a3f6637e360e9e"
@@ -3000,13 +2995,6 @@ koa-convert@^1.2.0:
   dependencies:
     co "^4.6.0"
     koa-compose "^3.0.0"
-
-koa-ctx-basic-auth@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/koa-ctx-basic-auth/-/koa-ctx-basic-auth-1.0.0.tgz#0a1e760806a70c8536499da48aefeba40cf9703c"
-  integrity sha1-Ch52CAanDIU2SZ2kiu/rpAz5cDw=
-  dependencies:
-    basic-auth "^1.0.4"
 
 koa-generic-session@1.11.7:
   version "1.11.7"
