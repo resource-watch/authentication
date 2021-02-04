@@ -23,6 +23,7 @@ services:
       LOCAL_URL: http://127.0.0.1:9000
       HOST_IP: 127.0.0.1
       FASTLY_ENABLED: "false"
+      GFW_APPLE_AUTH_KEY: "test"
     command: test
     depends_on:
       - mongo
