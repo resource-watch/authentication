@@ -6,7 +6,13 @@ import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 import sinon, {SinonSandbox} from 'sinon';
 import {getUUID, stubConfigValue} from '../utils/helpers';
-import {getMockOktaUser, mockGetUserByOktaId, mockOktaOAuthToken} from './okta.mocks';
+import {
+    getMockOktaUser,
+    mockGetUserById,
+    mockGetUserByOktaId,
+    mockOktaOAuthToken,
+    mockOktaUpdateUser
+} from './okta.mocks';
 import {JWTPayload, OktaOAuthTokenPayload, OktaSuccessfulOAuthTokenResponse, OktaUser} from 'services/okta.interfaces';
 import config from 'config';
 
@@ -71,7 +77,7 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
         await validateTokenRequestAndaPayload(user);
     });
 
-    it('Visiting /auth/facebook/callback with a valid OAuth code with a callbackUrl param should redirect to the callback URL page', async () => {
+    it('Visiting /auth/authorization-code/callback with a valid OAuth code with a callbackUrl param should redirect to the callback URL page', async () => {
         const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
         const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
         const user: OktaUser = getMockOktaUser();
@@ -97,7 +103,7 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
         await validateTokenRequestAndaPayload(user);
     });
 
-    it('Visiting /auth/facebook/callback with a valid OAuth code with an updated callbackUrl param should redirect to the new callback URL page', async () => {
+    it('Visiting /auth/authorization-code/callback with a valid OAuth code with an updated callbackUrl param should redirect to the new callback URL page', async () => {
         const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
         const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
         const user: OktaUser = getMockOktaUser();
@@ -181,6 +187,28 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
                 apps: [],
             }
         });
+    });
+
+    it('User applications are correctly updated if provided by query parameter when visiting /auth/authorization-code/callback with a valid OAuth codes', async () => {
+        const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
+        const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
+        const user: OktaUser = getMockOktaUser();
+        mockGetUserByOktaId(tokenData.uid, user);
+
+        // Requests for updating user applications
+        mockGetUserById(user);
+        mockOktaUpdateUser(user, { apps: ['rw', 'gfw'] });
+
+        await requester.get(`/auth?applications=rw,gfw`);
+
+        const responseOne: request.Response = await requester
+            .get(`/auth/authorization-code/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
+            .redirects(0);
+
+        responseOne.should.redirect;
+        responseOne.should.redirectTo(new RegExp(`/auth/success$`));
+
+        await validateTokenRequestAndaPayload({ ...user, profile: { ...user.profile, apps: ['rw', 'gfw' ]} });
     });
 
     afterEach(async () => {

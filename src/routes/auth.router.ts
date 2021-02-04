@@ -99,15 +99,15 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
     router.get('/google', setCallbackUrl, GProvider.google);
-    router.get('/google/callback', GProvider.googleCallback, GProvider.updateApplications);
+    router.get('/google/callback', GProvider.googleCallback, UserProvider.updateApplications);
     router.get('/google/token', GProvider.googleToken, UserProvider.generateJWT);
 
     router.get('/facebook', setCallbackUrl, FBProvider.facebook);
-    router.get('/facebook/callback', FBProvider.facebookCallback, FBProvider.updateApplications);
+    router.get('/facebook/callback', FBProvider.facebookCallback, UserProvider.updateApplications);
     router.get('/facebook/token', FBProvider.facebookToken, UserProvider.generateJWT);
 
     router.get('/apple', setCallbackUrl, AProvider.apple);
-    router.post('/apple/callback', AProvider.appleCallback, AProvider.updateApplications);
+    router.post('/apple/callback', AProvider.appleCallback, UserProvider.updateApplications);
     router.get('/apple/token', AProvider.appleToken, UserProvider.generateJWT);
 
     router.get('/', setCallbackUrl, UserProvider.redirectLogin);
