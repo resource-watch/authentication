@@ -107,7 +107,9 @@ export class OktaFacebookProvider extends BaseProvider {
     static async facebook(ctx: Context & RouterContext): Promise<void> {
         const state: string = uuidv4();
         ctx.session.oAuthState = state;
-        return ctx.redirect(OktaService.getOAuthRedirect(state, OktaOAuthProvider.FACEBOOK));
+
+        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.FACEBOOK, Utils.getOriginApp(ctx), state);
+        return ctx.redirect(url);
     }
 
     static async facebookToken(ctx: Context & RouterContext, next: Next): Promise<void> {

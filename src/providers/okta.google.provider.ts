@@ -118,7 +118,9 @@ export class OktaGoogleProvider extends BaseProvider {
     static async google(ctx: Context): Promise<void> {
         const state: string = uuidv4();
         ctx.session.oAuthState = state;
-        return ctx.redirect(OktaService.getOAuthRedirect(state, OktaOAuthProvider.GOOGLE));
+
+        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.GOOGLE, Utils.getOriginApp(ctx), state);
+        return ctx.redirect(url);
     }
 
     static async googleToken(ctx: Context & RouterContext, next: Next): Promise<void> {

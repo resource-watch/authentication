@@ -35,7 +35,12 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
 
     beforeEach(async () => {
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
+        stubConfigValue(sandbox, {
+            'authProvider': 'OKTA',
+            'okta.gfw.facebook.idp': 'GFW_FB_IDP',
+            'okta.rw.facebook.idp': 'RW_FB_IDP',
+            'okta.prep.facebook.idp': 'PREP_FB_IDP',
+        });
 
         requester = await getTestAgent(true);
     });
@@ -50,7 +55,35 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
         response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
+        response.header.location.should.contain(`idp=${config.get('okta.rw.facebook.idp')}`);
+        response.header.location.should.match(/state=\w/);
+    });
+
+    it('Visiting /auth/facebook with query parameter indicating GFW should redirect to Okta\'s OAuth URL with the correct IDP for GFW', async () => {
+        const response: request.Response = await requester.get(`/auth/facebook?origin=gfw`).redirects(0);
+        response.should.redirect;
+        response.header.location.should.contain(config.get('okta.url'));
+        response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
+        response.header.location.should.contain(`client_id=${config.get('okta.clientId')}`);
+        response.header.location.should.contain(`response_type=code`);
+        response.header.location.should.contain(`response_mode=query`);
+        response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
+        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.gfw.facebook.idp')}`);
+        response.header.location.should.match(/state=\w/);
+    });
+
+    it('Visiting /auth/facebook with query parameter indicating PREP should redirect to Okta\'s OAuth URL with the correct IDP for PREP', async () => {
+        const response: request.Response = await requester.get(`/auth/facebook?origin=prep`).redirects(0);
+        response.should.redirect;
+        response.header.location.should.contain(config.get('okta.url'));
+        response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
+        response.header.location.should.contain(`client_id=${config.get('okta.clientId')}`);
+        response.header.location.should.contain(`response_type=code`);
+        response.header.location.should.contain(`response_mode=query`);
+        response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
+        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
+        response.header.location.should.contain(`idp=${config.get('okta.prep.facebook.idp')}`);
         response.header.location.should.match(/state=\w/);
     });
 

@@ -90,6 +90,9 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         stubConfigValue(sandbox, {
             'settings.defaultApp': 'gfw',
             'authProvider': 'OKTA',
+            'okta.gfw.apple.idp': 'GFW_APPLE_IDP',
+            'okta.rw.apple.idp': 'RW_APPLE_IDP',
+            'okta.prep.apple.idp': 'PREP_APPLE_IDP',
             'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString()
         });
 
@@ -107,6 +110,34 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
         response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.gfw.apple.idp')}`);
+        response.header.location.should.match(/state=\w/);
+    });
+
+    it('Visiting /auth/apple with query parameter indicating RW should redirect to Okta\'s OAuth URL with the correct IDP for RW', async () => {
+        const response: request.Response = await requester.get(`/auth/apple?origin=rw`).redirects(0);
+        response.should.redirect;
+        response.header.location.should.contain(config.get('okta.url'));
+        response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
+        response.header.location.should.contain(`client_id=${config.get('okta.clientId')}`);
+        response.header.location.should.contain(`response_type=code`);
+        response.header.location.should.contain(`response_mode=query`);
+        response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
+        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
+        response.header.location.should.contain(`idp=${config.get('okta.rw.apple.idp')}`);
+        response.header.location.should.match(/state=\w/);
+    });
+
+    it('Visiting /auth/apple with query parameter indicating PREP should redirect to Okta\'s OAuth URL with the correct IDP for PREP', async () => {
+        const response: request.Response = await requester.get(`/auth/apple?origin=prep`).redirects(0);
+        response.should.redirect;
+        response.header.location.should.contain(config.get('okta.url'));
+        response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
+        response.header.location.should.contain(`client_id=${config.get('okta.clientId')}`);
+        response.header.location.should.contain(`response_type=code`);
+        response.header.location.should.contain(`response_mode=query`);
+        response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
+        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
+        response.header.location.should.contain(`idp=${config.get('okta.prep.apple.idp')}`);
         response.header.location.should.match(/state=\w/);
     });
 
