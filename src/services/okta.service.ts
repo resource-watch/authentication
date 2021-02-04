@@ -3,7 +3,7 @@ import config from 'config';
 import logger from 'logger';
 import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
-import { isEqual } from 'lodash';
+import { isEqual, difference } from 'lodash';
 
 import UserModel, {IUser, UserDocument} from 'models/user.model';
 import UserTempModel, { UserTempDocument} from 'models/user-temp.model';
@@ -44,7 +44,7 @@ export default class OktaService {
                 name: user.name
             }, Settings.getSettings().jwt.secret, options);
         } catch (e) {
-            logger.info('[UserService] Error to generate token', e);
+            logger.info('[OktaService] Error to generate token', e);
             return null;
         }
     }
@@ -65,7 +65,7 @@ export default class OktaService {
     }
 
     static async getUsers(apps: string[], query: Record<string, string>): Promise<IUser[]> {
-        logger.info('[UserService] Get users with apps', apps);
+        logger.info('[OktaService] Get users with apps', apps);
         const limit: number = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
         const before: string = query['page[before]'];
         const after: string = query['page[after]'];
@@ -123,7 +123,7 @@ export default class OktaService {
     }
 
     static async getRenewModel(token: string): Promise<IRenew> {
-        logger.info('[UserService]obtaining renew model of token', token);
+        logger.info('[OktaService]obtaining renew model of token', token);
         return RenewModel.findOne({ token });
     }
 
@@ -132,7 +132,7 @@ export default class OktaService {
 
         const renew: IRenew = await RenewModel.findOne({ token });
         if (!renew) {
-            logger.info('[UserService] Token not found');
+            logger.info('[OktaService] Token not found');
             return null;
         }
 
@@ -170,7 +170,7 @@ export default class OktaService {
                 return isRevoked;
             } catch (err) {
                 logger.error(err);
-                logger.info('[UserService] User ID in token does not match an existing user');
+                logger.info('[OktaService] User ID in token does not match an existing user');
                 return true;
             }
         }
@@ -178,28 +178,15 @@ export default class OktaService {
         return isRevoked;
     }
 
-    static async updateApplicationsForUser(id: string, applications: string[]): Promise<UserDocument> {
-        logger.info('[UserService] Searching user with id ', id, applications);
-        const user: UserDocument = await UserModel.findById(id);
-        if (!user) {
-            logger.info('[UserService] User not found');
-            return null;
+    static async updateApplicationsForUser(id: string, newApps: string[]): Promise<IUser> {
+        logger.info('[OktaService] Searching user with id ', id, newApps);
+        let oktaUser: OktaUser = await OktaService.getOktaUserById(id);
+
+        if (difference(newApps, oktaUser.profile.apps).length !== 0) {
+            oktaUser = await OktaService.updateUserProtectedFields(oktaUser.id, { apps: newApps });
         }
-        if (!user.extraUserData) {
-            user.extraUserData = {
-                apps: []
-            };
-        } else {
-            user.extraUserData = { ...user.extraUserData };
-        }
-        for (let i: number = 0, { length } = applications; i < length; i += 1) {
-            if (user.extraUserData.apps.indexOf(applications[i]) === -1) {
-                user.extraUserData.apps.push(applications[i].toLowerCase());
-            }
-        }
-        user.markModified('extraUserData');
-        await user.save();
-        return user;
+
+        return OktaService.convertOktaUserToIUser(oktaUser);
     }
 
     static async getOktaUserById(id: string): Promise<OktaUser> {
@@ -376,7 +363,7 @@ export default class OktaService {
     }
 
     private static getOktaSearchCriteria(query: Record<string, any>): string {
-        logger.debug('[UserService] getOktaSearchCriteria Object.keys(query)', Object.keys(query));
+        logger.debug('[OktaService] getOktaSearchCriteria Object.keys(query)', Object.keys(query));
 
         const searchCriteria: string[] = [];
         Object.keys(query)
