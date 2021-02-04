@@ -1,7 +1,5 @@
-import axios from 'axios';
 import config from 'config';
 import logger from 'logger';
-import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { isEqual, difference } from 'lodash';
 
@@ -9,12 +7,12 @@ import {IUser} from 'models/user.model';
 import RenewModel, {IRenew} from 'models/renew.model';
 import {
     JWTPayload,
-    OktaCreateUserPayload, OktaOAuthProvider,
-    OktaOAuthTokenPayload,
-    OktaRequestHeaders,
+    OktaCreateUserPayload,
+    OktaOAuthProvider,
+    OktaSuccessfulLoginResponse,
     OktaUpdateUserPayload,
     OktaUpdateUserProtectedFieldsPayload,
-    OktaUser
+    OktaUser,
 } from 'services/okta.interfaces';
 import JWT, {SignOptions} from 'jsonwebtoken';
 import Settings from 'services/settings.service';
@@ -22,6 +20,7 @@ import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserNotFoundError from 'errors/userNotFound.error';
 import {Context} from 'koa';
 import {URL} from 'url';
+import OktaApiService from 'services/okta.api.service';
 
 export default class OktaService {
 
@@ -49,36 +48,23 @@ export default class OktaService {
     }
 
     static async searchOktaUsers(query: Record<string, any>): Promise<OktaUser[]> {
-        const search: string = OktaService.getOktaSearchCriteria(query);
-        const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
-            headers: OktaService.getOktaRequestHeaders(),
-            params: {
-                ...(search && { search }),
-                ...(query.limit && { limit: query.limit }),
-                ...(query.after && { after: query.after }),
-                ...(query.before && { before: query.before }),
-            }
-        });
-
-        return data;
+        return OktaApiService.getOktaUserList(
+            OktaService.getOktaSearchCriteria(query),
+            query.limit,
+            query.after,
+            query.before
+        );
     }
 
     static async getUsers(apps: string[], query: Record<string, string>): Promise<IUser[]> {
         logger.info('[OktaService] Get users with apps', apps);
-        const limit: number = query['page[size]'] ? parseInt(query['page[size]'], 10) : 10;
-        const before: string = query['page[before]'];
-        const after: string = query['page[after]'];
-        const search: string = OktaService.getOktaSearchCriteria({ ...query, apps });
 
-        const { data }: { data: OktaUser[] } = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
-            headers: OktaService.getOktaRequestHeaders(),
-            params: {
-                limit,
-                ...(search && { search }),
-                ...(after && { after }),
-                ...(before && { before }),
-            }
-        });
+        const data: OktaUser[] = await OktaApiService.getOktaUserList(
+            OktaService.getOktaSearchCriteria({ ...query, apps }),
+            query['page[size]'] ? query['page[size]'] : '10',
+            query['page[after]'],
+            query['page[before]'],
+        );
 
         return data.map(OktaService.convertOktaUserToIUser);
     }
@@ -183,20 +169,12 @@ export default class OktaService {
     }
 
     static async getOktaUserByEmail(email: string): Promise<IUser> {
-        const { data }: { data: OktaUser } = await axios.get(
-            `${config.get('okta.url')}/api/v1/users/${email}`,
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return OktaService.convertOktaUserToIUser(data);
+        const user: OktaUser = await OktaApiService.getOktaUserByEmail(email);
+        return OktaService.convertOktaUserToIUser(user);
     }
 
     static async sendPasswordRecoveryEmail(email: string): Promise<void> {
-        await axios.post(
-            `${config.get('okta.url')}/api/v1/authn/recovery/password`,
-            { username: email, 'factorType': 'EMAIL' },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
+        await OktaApiService.postPasswordRecoveryEmail(email);
 
         const user: IUser = await OktaService.getOktaUserByEmail(email);
 
@@ -209,89 +187,37 @@ export default class OktaService {
 
     static async updatePasswordForUser(userId: string, password: string): Promise<IUser> {
         const oktaUser: OktaUser = await OktaService.getOktaUserById(userId);
-
-        const { data }: { data: OktaUser } = await axios.put(
-            `${config.get('okta.url')}/api/v1/users/${oktaUser.id}`,
-            { credentials: { password: { value: password } } },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return OktaService.convertOktaUserToIUser(data);
+        const updatedUser: OktaUser = await OktaApiService.putPasswordByOktaUserId(oktaUser.id, password);
+        return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
     static async login(username: string, password: string): Promise<IUser> {
-        const { data } = await axios.post(
-            `${config.get('okta.url')}/api/v1/authn`,
-            { username, password },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return OktaService.getOktaUserByEmail(data._embedded.user.profile.login);
+        const response: OktaSuccessfulLoginResponse = await OktaApiService.postLogin(username, password);
+        return OktaService.getOktaUserByEmail(response._embedded.user.profile.login);
     }
 
     static async createUserWithoutPassword(payload: OktaCreateUserPayload): Promise<IUser> {
-        const { data }: { data: OktaUser } = await axios.post(
-            `${config.get('okta.url')}/api/v1/users?activate=false`,
-            {
-                profile: {
-                    firstName: 'RW API',
-                    lastName: 'User',
-                    displayName: payload.name || '',
-                    email: payload.email,
-                    login: payload.email,
-                    legacyId: uuidv4(),
-                    role: payload.role || 'USER',
-                    apps: payload.apps || [],
-                    photo: payload.photo || null,
-                    provider: payload.provider || 'local',
-                    providerId: payload.providerId || null,
-                }
-            },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        await axios.post(
-            `${config.get('okta.url')}/api/v1/users/${data.id}/lifecycle/activate?sendEmail=true`,
-            {},
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return OktaService.convertOktaUserToIUser(data);
+        const newUser: OktaUser = await OktaApiService.postUser(payload);
+        await OktaApiService.postUserActivationEmail(newUser.id);
+        return OktaService.convertOktaUserToIUser(newUser);
     }
 
     static async updateUser(id: string, payload: OktaUpdateUserPayload): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
-
-        const { data }: { data: OktaUser } = await axios.post(
-            `${config.get('okta.url')}/api/v1/users/${user.id}`,
-            { profile: payload },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return OktaService.convertOktaUserToIUser(data);
+        const updatedUser: OktaUser = await OktaApiService.postUserByOktaId(user.id, payload);
+        return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
     static async updateUserProtectedFields(
         oktaId: string,
         payload: OktaUpdateUserProtectedFieldsPayload
     ): Promise<OktaUser> {
-        const { data }: { data: OktaUser } = await axios.post(
-            `${config.get('okta.url')}/api/v1/users/${oktaId}`,
-            { profile: payload },
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return data;
+        return OktaApiService.postUserByOktaId(oktaId, payload);
     }
 
     static async deleteUser(id: string): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
-
-        await axios.delete(
-            `${config.get('okta.url')}/api/v1/users/${user.id}`,
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
+        await OktaApiService.deleteUserByOktaId(user.id);
         return OktaService.convertOktaUserToIUser(user);
     }
 
@@ -302,43 +228,19 @@ export default class OktaService {
         oktaOAuthURL.searchParams.append('response_mode', 'query');
         oktaOAuthURL.searchParams.append('scope', 'openid profile email');
         oktaOAuthURL.searchParams.append('redirect_uri', 'http://localhost:9050/auth/authorization-code/callback');
+        // TODO: fix application here
         oktaOAuthURL.searchParams.append('idp', config.get(`okta.gfw.${provider}.idp`));
         oktaOAuthURL.searchParams.append('state', state);
         return oktaOAuthURL.href;
     }
 
     static async getOktaUserByOktaId(id: string): Promise<OktaUser> {
-        const { data }: { data: OktaUser } = await axios.get(
-            `${config.get('okta.url')}/api/v1/users/${id}`,
-            { headers: OktaService.getOktaRequestHeaders() }
-        );
-
-        return data;
+        return OktaApiService.getOktaUserById(id);
     }
 
     static async getUserForAuthorizationCode(code: string): Promise<OktaUser> {
-        const basicAuth: string = Buffer
-            .from(`${config.get('okta.clientId')}:${config.get('okta.clientSecret')}`)
-            .toString('base64');
-
-        const { data } = await axios.post(
-            `${config.get('okta.url')}/oauth2/default/v1/token?grant_type=authorization_code&code=${code}&redirect_uri=http://localhost:9050/auth/authorization-code/callback`,
-            {
-                grant_type: 'authorization_code',
-                redirect_uri: `http://localhost:9050/auth/authorization-code/callback`,
-                code,
-            },
-            {
-                headers: {
-                    Accept: 'application/json',
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    Authorization: `Basic ${basicAuth}`
-                }
-            },
-        );
-
-        const { uid } = JWT.decode(data.access_token) as OktaOAuthTokenPayload;
-        return OktaService.getOktaUserByOktaId(uid);
+        const oktaId: string = await OktaApiService.postOAuthToken(code);
+        return OktaService.getOktaUserByOktaId(oktaId);
     }
 
     private static getOktaSearchCriteria(query: Record<string, any>): string {
@@ -411,13 +313,4 @@ export default class OktaService {
 
         return `(${array.map(item => `(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${item}")`).join(' or ')})`;
     }
-
-    private static getOktaRequestHeaders(): OktaRequestHeaders {
-        return {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json',
-            'Authorization': `SSWS ${config.get('okta.apiKey')}`,
-        };
-    }
-
 }
