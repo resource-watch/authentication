@@ -40,6 +40,7 @@
     "url": "https://wri.okta.com",
     "apiKey": null,
     "clientId": null,
+    "clientSecret": null,
     "gfw": {
       "facebook": { "idp": null },
       "google": { "idp": null },
