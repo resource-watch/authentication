@@ -5,8 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 import crypto from 'crypto';
 import { isEqual, difference } from 'lodash';
 
-import UserModel, {IUser, UserDocument} from 'models/user.model';
-import UserTempModel, { UserTempDocument} from 'models/user-temp.model';
+import {IUser} from 'models/user.model';
 import RenewModel, {IRenew} from 'models/renew.model';
 import {
     JWTPayload,
@@ -100,26 +99,6 @@ export default class OktaService {
 
         const users: OktaUser[] = await OktaService.searchOktaUsers({ limit: 100, role });
         return users.map(OktaService.convertOktaUserToIUser).map((el) => el.id);
-    }
-
-    static async confirmUser(confirmationToken: string): Promise<UserDocument> {
-        const exist: UserTempDocument = await UserTempModel.findOne({ confirmationToken });
-        if (!exist) {
-            return null;
-        }
-        const user: UserDocument = await new UserModel({
-            email: exist.email,
-            password: exist.password,
-            salt: exist.salt,
-            role: exist.role,
-            extraUserData: exist.extraUserData,
-            provider: 'local',
-        }).save();
-        await exist.remove();
-        delete user.password;
-        delete user.salt;
-
-        return user;
     }
 
     static async getRenewModel(token: string): Promise<IRenew> {
