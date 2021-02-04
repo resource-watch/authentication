@@ -274,10 +274,11 @@ export default class OktaService {
                     email: payload.email,
                     login: payload.email,
                     legacyId: uuidv4(),
-                    provider: 'local',
                     role: payload.role || 'USER',
                     apps: payload.apps || [],
                     photo: payload.photo || null,
+                    provider: payload.provider || 'local',
+                    providerId: payload.providerId || null,
                 }
             },
             { headers: OktaService.getOktaRequestHeaders() }
