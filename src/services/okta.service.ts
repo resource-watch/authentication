@@ -221,15 +221,14 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(user);
     }
 
-    static getOAuthRedirect(state: string, provider: OktaOAuthProvider): string {
+    static getOAuthRedirect(provider: OktaOAuthProvider, application: string, state: string): string {
         const oktaOAuthURL: URL = new URL(`${config.get('okta.url')}/oauth2/default/v1/authorize`);
         oktaOAuthURL.searchParams.append('client_id', config.get('okta.clientId'));
         oktaOAuthURL.searchParams.append('response_type', 'code');
         oktaOAuthURL.searchParams.append('response_mode', 'query');
         oktaOAuthURL.searchParams.append('scope', 'openid profile email');
         oktaOAuthURL.searchParams.append('redirect_uri', 'http://localhost:9050/auth/authorization-code/callback');
-        // TODO: fix application here
-        oktaOAuthURL.searchParams.append('idp', config.get(`okta.gfw.${provider}.idp`));
+        oktaOAuthURL.searchParams.append('idp', config.get(`okta.${application}.${provider}.idp`));
         oktaOAuthURL.searchParams.append('state', state);
         return oktaOAuthURL.href;
     }

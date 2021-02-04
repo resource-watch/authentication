@@ -36,13 +36,46 @@ describe('[OKTA] Google auth endpoint tests', () => {
 
     beforeEach(async () => {
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
+        stubConfigValue(sandbox, {
+            'authProvider': 'OKTA',
+            'okta.gfw.google.idp': 'GFW_GOOGLE_IDP',
+            'okta.rw.google.idp': 'RW_GOOGLE_IDP',
+            'okta.prep.google.idp': 'PREP_GOOGLE_IDP',
+        });
 
         requester = await getTestAgent(true);
     });
 
     it('Visiting /auth/google while not being logged in should redirect to Okta\'s OAuth URL', async () => {
         const response: request.Response = await requester.get(`/auth/google`).redirects(0);
+        response.should.redirect;
+        response.header.location.should.contain(config.get('okta.url'));
+        response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
+        response.header.location.should.contain(`client_id=${config.get('okta.clientId')}`);
+        response.header.location.should.contain(`response_type=code`);
+        response.header.location.should.contain(`response_mode=query`);
+        response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
+        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
+        response.header.location.should.contain(`idp=${config.get('okta.rw.google.idp')}`);
+        response.header.location.should.match(/state=\w/);
+    });
+
+    it('Visiting /auth/google with query parameter indicating PREP should redirect to Okta\'s OAuth URL with the correct IDP for PREP', async () => {
+        const response: request.Response = await requester.get(`/auth/google?origin=prep`).redirects(0);
+        response.should.redirect;
+        response.header.location.should.contain(config.get('okta.url'));
+        response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
+        response.header.location.should.contain(`client_id=${config.get('okta.clientId')}`);
+        response.header.location.should.contain(`response_type=code`);
+        response.header.location.should.contain(`response_mode=query`);
+        response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
+        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
+        response.header.location.should.contain(`idp=${config.get('okta.prep.google.idp')}`);
+        response.header.location.should.match(/state=\w/);
+    });
+
+    it('Visiting /auth/google with query parameter indicating GFW should redirect to Okta\'s OAuth URL with the correct IDP for GFW', async () => {
+        const response: request.Response = await requester.get(`/auth/google?origin=gfw`).redirects(0);
         response.should.redirect;
         response.header.location.should.contain(config.get('okta.url'));
         response.header.location.should.match(/oauth2\/default\/v1\/authorize/);
