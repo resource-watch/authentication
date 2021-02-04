@@ -1,6 +1,5 @@
 import config from 'config';
 import { Context, DefaultState, Next } from 'koa';
-import passport from 'koa-passport';
 import Router from 'koa-router';
 import { cloneDeep } from 'lodash';
 import logger from 'logger';
@@ -14,6 +13,7 @@ import LocalProvider from 'providers/local.provider';
 import OktaProvider from 'providers/okta.provider';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
+import OktaAppleProvider from 'providers/okta.apple.provider';
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     logger.info('Setting callbackUrl');
@@ -75,6 +75,7 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     let UserProvider: Record<string, any>;
     let FBProvider: Record<string, any>;
     let GProvider: Record<string, any>;
+    let AProvider: Record<string, any>;
 
     switch (authProvider) {
 
@@ -82,11 +83,13 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
             UserProvider = LocalProvider;
             FBProvider = FacebookProvider;
             GProvider = GoogleProvider;
+            AProvider = AppleProvider;
             break;
         case 'OKTA':
             UserProvider = OktaProvider;
             FBProvider = OktaFacebookProvider;
             GProvider = OktaGoogleProvider;
+            AProvider = OktaAppleProvider;
             break;
         default:
             throw new Error(`Unknown Auth provider ${authProvider}`);
@@ -99,13 +102,13 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     router.get('/google/callback', GProvider.googleCallback, GProvider.updateApplications);
     router.get('/google/token', GProvider.googleToken, UserProvider.generateJWT);
 
-    router.get('/facebook/token', FBProvider.facebookToken, UserProvider.generateJWT);
     router.get('/facebook', setCallbackUrl, FBProvider.facebook);
     router.get('/facebook/callback', FBProvider.facebookCallback, FBProvider.updateApplications);
+    router.get('/facebook/token', FBProvider.facebookToken, UserProvider.generateJWT);
 
-    router.get('/apple', setCallbackUrl, AppleProvider.apple);
-    router.post('/apple/callback', AppleProvider.appleCallback, AppleProvider.updateApplications);
-    router.get('/apple/token', AppleProvider.appleToken, AppleProvider.generateJWT);
+    router.get('/apple', setCallbackUrl, AProvider.apple);
+    router.post('/apple/callback', AProvider.appleCallback, AProvider.updateApplications);
+    router.get('/apple/token', AProvider.appleToken, UserProvider.generateJWT);
 
     router.get('/', setCallbackUrl, UserProvider.redirectLogin);
 // @ts-ignore

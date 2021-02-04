@@ -16,6 +16,7 @@ import TwitterProvider from 'providers/twitter.provider';
 import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
+import OktaAppleProvider from 'providers/okta.apple.provider';
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
@@ -23,13 +24,13 @@ export async function loadRoutes(app: Application): Promise<void> {
     if (config.get('authProvider') === 'CT') {
         FacebookProvider.registerStrategies();
         GoogleProvider.registerStrategies();
+        AppleProvider.registerStrategies();
     } else {
         OktaFacebookProvider.registerStrategies();
         OktaGoogleProvider.registerStrategies();
     }
 
     TwitterProvider.registerStrategies();
-    AppleProvider.registerStrategies();
     LocalProvider.registerStrategies();
 
     app.use(passport.initialize());

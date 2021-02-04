@@ -76,7 +76,6 @@ export class AppleProvider extends BaseProvider {
         }
         logger.info('[AppleProvider] Returning user');
         verified(null, {
-            // eslint-disable-next-line no-underscore-dangle
             id: user._id,
             provider: user.provider,
             providerId: user.providerId,
@@ -98,8 +97,6 @@ export class AppleProvider extends BaseProvider {
         const appName: string = Utils.getOriginApp(ctx);
         const app: IThirdPartyAuth = Settings.getSettings().thirdParty[appName];
 
-
-        // eslint-disable-next-line camelcase
         const { access_token } = ctx.request.query;
 
         const jwtToken: Record<string, any> = await Verifier.verify(access_token);
