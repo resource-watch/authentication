@@ -350,6 +350,7 @@ export default class OktaService {
     }
 
     static async getUserForAuthorizationCode(code: string): Promise<OktaUser> {
+        // TODO: fix this
         const basicAuth: string = Buffer.from('0oa3ynlf5ODYGyYeo5d6:MJG3p-Rb9Kt_A5lFB34M879Etap3GpbJ02txMBCG').toString('base64');
         const { data } = await axios.post(
             `${config.get('okta.url')}/oauth2/default/v1/token?grant_type=authorization_code&code=${code}&redirect_uri=http://localhost:9050/auth/authorization-code/callback`,

@@ -45,8 +45,6 @@ spec:
           value: prod
         - name: NODE_PATH
           value: app/src
-        - name: BASICAUTH_USERNAME
-          value: vizzuality
         - name: CONFIRM_URL_REDIRECT
           value: http://www.globalforestwatch.org
         - name: PUBLIC_URL
