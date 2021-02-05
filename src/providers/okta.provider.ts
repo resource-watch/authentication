@@ -6,8 +6,7 @@ import Utils from 'utils';
 import {omit} from 'lodash';
 import {v4 as uuidv4} from 'uuid';
 
-import Settings, {IApplication, IThirdPartyAuth} from 'services/settings.service';
-import {IRenew} from 'models/renew.model';
+import Settings, {IThirdPartyAuth} from 'services/settings.service';
 import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
