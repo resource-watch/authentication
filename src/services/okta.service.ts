@@ -1,10 +1,10 @@
 import config from 'config';
 import logger from 'logger';
 import crypto from 'crypto';
-import { isEqual, difference } from 'lodash';
+import { difference, isEqual } from 'lodash';
 
-import {IUser} from 'models/user.model';
-import RenewModel, {IRenew} from 'models/renew.model';
+import { IUser } from 'models/user.model';
+import RenewModel, { IRenew } from 'models/renew.model';
 import {
     JWTPayload,
     OktaCreateUserPayload,
@@ -14,12 +14,12 @@ import {
     OktaUpdateUserProtectedFieldsPayload,
     OktaUser,
 } from 'services/okta.interfaces';
-import JWT, {SignOptions} from 'jsonwebtoken';
+import JWT, { SignOptions } from 'jsonwebtoken';
 import Settings from 'services/settings.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserNotFoundError from 'errors/userNotFound.error';
-import {Context} from 'koa';
-import {URL} from 'url';
+import { Context } from 'koa';
+import { URL } from 'url';
 import OktaApiService from 'services/okta.api.service';
 
 export default class OktaService {
@@ -87,60 +87,47 @@ export default class OktaService {
         return users.map(OktaService.convertOktaUserToIUser).map((el) => el.id);
     }
 
-    static async getRenewModel(token: string): Promise<IRenew> {
-        logger.info('[OktaService]obtaining renew model of token', token);
-        return RenewModel.findOne({ token });
-    }
-
-    static async updatePassword(token: string, newPassword: string): Promise<IUser> {
-        logger.info('[OktaServices] Updating password');
-
-        const renew: IRenew = await RenewModel.findOne({ token });
-        if (!renew) {
-            logger.info('[OktaService] Token not found');
-            return null;
-        }
-
-        return OktaService.updatePasswordForUser(renew.userId, newPassword);
-    }
-
     static async checkRevokedToken(ctx: Context, payload: JWTPayload): Promise<boolean> {
         logger.info('Checking if token is revoked');
 
         let isRevoked: boolean = false;
-        if (payload.id !== 'microservice') {
-            try {
-                const user: IUser = await OktaService.getOktaUserByEmail(payload.email);
 
-                if (!isEqual(user.id, payload.id)) {
-                    logger.info(`[AuthService] "id" in token does not match expected value`);
-                    isRevoked = true;
-                }
-
-                if (!isEqual(user.role, payload.role)) {
-                    logger.info(`[AuthService] "role" in token does not match expected value`);
-                    isRevoked = true;
-                }
-
-                if (!isEqual(user.extraUserData, payload.extraUserData)) {
-                    logger.info(`[AuthService] "extraUserData" in token does not match expected value`);
-                    isRevoked = true;
-                }
-
-                if (!isEqual(user.email, payload.email)) {
-                    logger.info(`[AuthService] "email" in token does not match expected value`);
-                    isRevoked = true;
-                }
-
-                return isRevoked;
-            } catch (err) {
-                logger.error(err);
-                logger.info('[OktaService] User ID in token does not match an existing user');
-                return true;
-            }
+        if (payload.id === 'microservice') {
+            return isRevoked;
         }
 
-        return isRevoked;
+
+        // TODO: maybe add a validation on the token age, and only go out to OKTA if the token is older than X
+
+        try {
+            const user: IUser = await OktaService.getOktaUserByEmail(payload.email);
+
+            if (!isEqual(user.id, payload.id)) {
+                logger.info(`[AuthService] "id" in token does not match expected value`);
+                isRevoked = true;
+            }
+
+            if (!isEqual(user.role, payload.role)) {
+                logger.info(`[AuthService] "role" in token does not match expected value`);
+                isRevoked = true;
+            }
+
+            if (!isEqual(user.extraUserData, payload.extraUserData)) {
+                logger.info(`[AuthService] "extraUserData" in token does not match expected value`);
+                isRevoked = true;
+            }
+
+            if (!isEqual(user.email, payload.email)) {
+                logger.info(`[AuthService] "email" in token does not match expected value`);
+                isRevoked = true;
+            }
+
+            return isRevoked;
+        } catch (err) {
+            logger.error(err);
+            logger.info('[OktaService] User ID in token does not match an existing user');
+            return true;
+        }
     }
 
     static async updateApplicationsForUser(id: string, newApps: string[]): Promise<IUser> {
@@ -175,20 +162,6 @@ export default class OktaService {
 
     static async sendPasswordRecoveryEmail(email: string): Promise<void> {
         await OktaApiService.postPasswordRecoveryEmail(email);
-
-        const user: IUser = await OktaService.getOktaUserByEmail(email);
-
-        // Store renew token in the DB - TODO is this still needed?
-        await new RenewModel({
-            userId: user.id,
-            token: crypto.randomBytes(20).toString('hex'),
-        }).save();
-    }
-
-    static async updatePasswordForUser(userId: string, password: string): Promise<IUser> {
-        const oktaUser: OktaUser = await OktaService.getOktaUserById(userId);
-        const updatedUser: OktaUser = await OktaApiService.putPasswordByOktaUserId(oktaUser.id, password);
-        return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
     static async login(username: string, password: string): Promise<IUser> {
@@ -222,6 +195,9 @@ export default class OktaService {
     }
 
     static getOAuthRedirect(provider: OktaOAuthProvider, application: string, state: string): string {
+
+        // TODO: Remove hardcoded localhost
+
         const oktaOAuthURL: URL = new URL(`${config.get('okta.url')}/oauth2/default/v1/authorize`);
         oktaOAuthURL.searchParams.append('client_id', config.get('okta.clientId'));
         oktaOAuthURL.searchParams.append('response_type', 'code');
