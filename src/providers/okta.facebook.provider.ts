@@ -25,14 +25,14 @@ export class OktaFacebookProvider extends BaseProvider {
 
         // third party oauth
         if (Settings.getSettings().thirdParty) {
-            logger.info('[FacebookProvider] Loading Facebook auth');
+            logger.info('[OktaFacebookProvider] Loading Facebook auth');
             const apps: string[] = Object.keys(Settings.getSettings().thirdParty);
             for (let i: number = 0, { length } = apps; i < length; i += 1) {
-                logger.info(`[FacebookProvider] Loading Facebook auth settings for: ${apps[i]}`);
+                logger.info(`[OktaFacebookProvider] Loading Facebook auth settings for: ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
 
                 if (app.facebook && app.facebook.active) {
-                    logger.info(`[FacebookProvider] Loading Facebook token auth passport provider for ${apps[i]}`);
+                    logger.info(`[OktaFacebookProvider] Loading Facebook token auth passport provider for ${apps[i]}`);
 
                     const configFacebookToken: FacebookTokenStrategy.StrategyOptions = {
                         clientID: app.facebook.clientID,
@@ -99,7 +99,7 @@ export class OktaFacebookProvider extends BaseProvider {
                 email: user.email
             });
         } catch (err) {
-            logger.error('Error during Facebook Token auth, ', err);
+            logger.error('[OktaFacebookProvider] Error during Facebook Token auth, ', err);
             done(err);
         }
     }
