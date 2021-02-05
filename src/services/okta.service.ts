@@ -1,10 +1,8 @@
 import config from 'config';
 import logger from 'logger';
-import crypto from 'crypto';
 import { difference, isEqual } from 'lodash';
 
 import { IUser } from 'models/user.model';
-import RenewModel, { IRenew } from 'models/renew.model';
 import {
     JWTPayload,
     OktaCreateUserPayload,
