@@ -16,8 +16,6 @@ import TwitterProvider from 'providers/twitter.provider';
 import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
-import OktaAppleProvider from 'providers/okta.apple.provider';
-import { deprecate } from 'util';
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');

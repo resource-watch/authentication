@@ -86,7 +86,7 @@ export default class OktaService {
     }
 
     static async checkRevokedToken(ctx: Context, payload: JWTPayload): Promise<boolean> {
-        logger.info('Checking if token is revoked');
+        logger.info('[OktaService] Checking if token is revoked');
 
         let isRevoked: boolean = false;
 
@@ -101,29 +101,28 @@ export default class OktaService {
             const user: IUser = await OktaService.getOktaUserByEmail(payload.email);
 
             if (!isEqual(user.id, payload.id)) {
-                logger.info(`[AuthService] "id" in token does not match expected value`);
+                logger.info(`[OktaService] "id" in token does not match expected value`);
                 isRevoked = true;
             }
 
             if (!isEqual(user.role, payload.role)) {
-                logger.info(`[AuthService] "role" in token does not match expected value`);
+                logger.info(`[OktaService] "role" in token does not match expected value`);
                 isRevoked = true;
             }
 
             if (!isEqual(user.extraUserData, payload.extraUserData)) {
-                logger.info(`[AuthService] "extraUserData" in token does not match expected value`);
+                logger.info(`[OktaService] "extraUserData" in token does not match expected value`);
                 isRevoked = true;
             }
 
             if (!isEqual(user.email, payload.email)) {
-                logger.info(`[AuthService] "email" in token does not match expected value`);
+                logger.info(`[OktaService] "email" in token does not match expected value`);
                 isRevoked = true;
             }
 
             return isRevoked;
         } catch (err) {
             logger.error(err);
-            logger.info('[OktaService] User ID in token does not match an existing user');
             return true;
         }
     }
