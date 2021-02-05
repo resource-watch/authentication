@@ -67,7 +67,7 @@ export class OktaGoogleProvider extends BaseProvider {
                 email: user.email
             });
         } catch (err) {
-            logger.error('Error during Google Token auth, ', err);
+            logger.error('[OktaGoogleProvider] Error during Google Token auth, ', err);
             done(err);
         }
     }
@@ -83,13 +83,13 @@ export class OktaGoogleProvider extends BaseProvider {
 
         // third party oauth
         if (Settings.getSettings().thirdParty) {
-            logger.info('[GoogleProvider] Loading Google auth');
+            logger.info('[OktaGoogleProvider] Loading Google auth');
             const apps: string[] = Object.keys(Settings.getSettings().thirdParty);
             for (let i: number = 0, { length } = apps; i < length; i += 1) {
-                logger.info(`[GoogleProvider] Loading Google auth settings for ${apps[i]}`);
+                logger.info(`[OktaGoogleProvider] Loading Google auth settings for ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
                 if (app.google?.active) {
-                    logger.info(`[GoogleProvider] Loading Google token auth passport provider for ${apps[i]}`);
+                    logger.info(`[OktaGoogleProvider] Loading Google token auth passport provider for ${apps[i]}`);
                     const configGoogleToken: Record<string, any> = {
                         clientID: app.google.clientID,
                         clientSecret: app.google.clientSecret,

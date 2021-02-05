@@ -207,7 +207,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async getIdsByRole(ctx: Context): Promise<void> {
-        logger.info(`[getIdsByRole] Get ids by role: ${ctx.params.role}`);
+        logger.info(`[OktaProvider] - Get ids by role: ${ctx.params.role}`);
         const data: string[] = await OktaService.getIdsByRole(ctx.params.role);
         ctx.body = { data };
     }
@@ -238,20 +238,20 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async updateUser(ctx: Context): Promise<void> {
-        logger.info(`Update user with id ${ctx.params.id}`);
+        logger.info(`[OktaProvider] - Update user with id ${ctx.params.id}`);
         ctx.assert(ctx.params.id, 400, 'Id param required');
         return OktaProvider.performUpdateRequest(ctx, ctx.params.id);
     }
 
     static async updateMe(ctx: Context): Promise<void> {
-        logger.info(`Update user me`);
+        logger.info(`[OktaProvider] - Update user me`);
         const user: IUser = Utils.getUser(ctx);
         return OktaProvider.performUpdateRequest(ctx, user.id);
     }
 
     static async deleteUser(ctx: Context): Promise<void> {
         try {
-            logger.info(`Delete user with id ${ctx.params.id}`);
+            logger.info(`[OktaProvider] - Delete user with id ${ctx.params.id}`);
             const deletedUser: IUser = await OktaService.deleteUser(ctx.params.id);
             ctx.body = UserSerializer.serialize(deletedUser);
         } catch (err) {
@@ -266,7 +266,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async createUser(ctx: Context): Promise<void> {
-        logger.info(`Create user with body ${ctx.request.body}`);
+        logger.info(`[OktaProvider] - Create user with body ${ctx.request.body}`);
         const { body } = ctx.request;
         const user: IUser = Utils.getUser(ctx);
         if (!user) {
@@ -513,7 +513,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async resetPasswordView(ctx: Context): Promise<void> {
-        logger.error('[OktaProvider] - foo');
+        logger.error('[OktaProvider] - Trying to go to request password view, which is not supported anymore.');
         ctx.throw(400, 'Method not supported');
     }
 
@@ -618,7 +618,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async resetPassword(ctx: Context): Promise<void> {
-        logger.error('[OktaProvider] - foo');
+        logger.error('[OktaProvider] - Trying to call reset password endpoint, which is not supported anymore.');
         ctx.throw(400, 'Method not supported');
     }
 }

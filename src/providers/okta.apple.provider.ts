@@ -61,7 +61,7 @@ export class OktaAppleProvider extends BaseProvider {
 
             return next();
         } catch (err) {
-            logger.error('Error during Apple Token auth, ', err);
+            logger.error('[OktaAppleProvider] Error during Apple Token auth, ', err);
             ctx.throw(err);
         }
     }
