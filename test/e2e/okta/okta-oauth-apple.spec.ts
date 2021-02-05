@@ -111,6 +111,9 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.gfw.apple.idp')}`);
         response.header.location.should.match(/state=\w/);
+
+        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
     it('Visiting /auth/apple with query parameter indicating RW should redirect to Okta\'s OAuth URL with the correct IDP for RW', async () => {
@@ -122,9 +125,11 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.rw.apple.idp')}`);
         response.header.location.should.match(/state=\w/);
+
+        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
     it('Visiting /auth/apple with query parameter indicating PREP should redirect to Okta\'s OAuth URL with the correct IDP for PREP', async () => {
@@ -136,9 +141,11 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.prep.apple.idp')}`);
         response.header.location.should.match(/state=\w/);
+
+        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
     it('Visiting /auth/apple/token with a valid Apple OAuth token for an NON-existing user should create the user and generate a new token', async () => {

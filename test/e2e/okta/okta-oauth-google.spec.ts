@@ -55,9 +55,11 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.rw.google.idp')}`);
         response.header.location.should.match(/state=\w/);
+
+        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
     it('Visiting /auth/google with query parameter indicating PREP should redirect to Okta\'s OAuth URL with the correct IDP for PREP', async () => {
@@ -69,9 +71,11 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.prep.google.idp')}`);
         response.header.location.should.match(/state=\w/);
+
+        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
     it('Visiting /auth/google with query parameter indicating GFW should redirect to Okta\'s OAuth URL with the correct IDP for GFW', async () => {
@@ -83,9 +87,11 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
         response.header.location.should.contain(`idp=${config.get('okta.gfw.google.idp')}`);
         response.header.location.should.match(/state=\w/);
+
+        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
     it('Visiting /auth/google/token with a valid Google OAuth token for an existing user should generate a new token for the existing user', async () => {
