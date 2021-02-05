@@ -131,7 +131,6 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
 // @ts-ignore
     router.get('/user', Utils.isLogged, Utils.isAdmin, UserProvider.getUsers);
     router.get('/user/me', Utils.isLogged, UserProvider.getCurrentUser);
-    router.get('/user/from-token', Utils.isLogged, UserProvider.getCurrentUser);
 // @ts-ignore
     router.get('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.getUserById);
 // @ts-ignore
