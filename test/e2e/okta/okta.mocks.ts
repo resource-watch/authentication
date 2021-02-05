@@ -201,15 +201,6 @@ export const mockOktaFailedSignUp: (errorSummary: string) => OktaFailedAPIRespon
     return failedLoginResponse;
 };
 
-export const mockOktaUpdatePassword: (user: OktaUser, times?: number) => void = (user, times = 1) => {
-    mockGetUserById(user, times);
-
-    nock(config.get('okta.url'))
-        .put(`/api/v1/users/${user.id}`)
-        .times(times)
-        .reply(200, { ...user });
-};
-
 export const mockOktaUpdateUser: (mockUser: OktaUser, updateData: OktaUpdateUserPayload | OktaUpdateUserProtectedFieldsPayload, times?: number) => void =
     (user, updateData, times = 1) => {
     nock(config.get('okta.url'))
@@ -232,11 +223,6 @@ export const mockOktaSendResetPasswordEmail: (override?: Partial<OktaUserProfile
 
     nock(config.get('okta.url'))
         .post(`/api/v1/authn/recovery/password`, { username: user.profile.email, factorType: 'EMAIL' })
-        .times(times)
-        .reply(200, { ...user });
-
-    nock(config.get('okta.url'))
-        .get(`/api/v1/users/${user.profile.email}`)
         .times(times)
         .reply(200, { ...user });
 

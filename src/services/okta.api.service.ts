@@ -75,16 +75,6 @@ export default class OktaApiService {
         );
     }
 
-    static async putPasswordByOktaUserId(oktaId: string, password: string): Promise<OktaUser> {
-        const { data }: { data: OktaUser } = await axios.put(
-            `${config.get('okta.url')}/api/v1/users/${oktaId}`,
-            { credentials: { password: { value: password } } },
-            { headers: OktaApiService.oktaRequestHeaders() }
-        );
-
-        return data;
-    }
-
     static async postLogin(username: string, password: string): Promise<OktaSuccessfulLoginResponse> {
         const { data }: { data: OktaSuccessfulLoginResponse } = await axios.post(
             `${config.get('okta.url')}/api/v1/authn`,
