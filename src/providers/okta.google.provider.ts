@@ -5,9 +5,7 @@ import logger from 'logger';
 import Utils from 'utils';
 import Settings, { IThirdPartyAuth } from 'services/settings.service';
 import {IUser} from 'models/user.model';
-import { Strategy } from 'passport';
 import BaseProvider from 'providers/base.provider';
-import { Strategy as GoogleStrategy, StrategyOptions } from 'passport-google-oauth20';
 // @ts-ignore
 import { Strategy as GoogleTokenStrategy } from 'passport-google-token';
 import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
@@ -91,17 +89,7 @@ export class OktaGoogleProvider extends BaseProvider {
                 logger.info(`[GoogleProvider] Loading Google auth settings for ${apps[i]}`);
                 const app: IThirdPartyAuth = Settings.getSettings().thirdParty[apps[i]];
                 if (app.google?.active) {
-                    logger.info(`[GoogleProvider] Loading Google auth passport provider for ${apps[i]}`);
-                    const configGoogle: StrategyOptions = {
-                        clientID: app.google.clientID,
-                        clientSecret: app.google.clientSecret,
-                        callbackURL: `${Settings.getSettings().publicUrl}/auth/google/callback`,
-                        userProfileURL: 'https://www.googleapis.com/oauth2/v3/userinfo'
-                    };
-                    const googleStrategy: Strategy = new GoogleStrategy(configGoogle, OktaGoogleProvider.registerUser);
-                    googleStrategy.name += `:${apps[i]}`;
-                    passport.use(googleStrategy);
-
+                    logger.info(`[GoogleProvider] Loading Google token auth passport provider for ${apps[i]}`);
                     const configGoogleToken: Record<string, any> = {
                         clientID: app.google.clientID,
                         clientSecret: app.google.clientSecret,
