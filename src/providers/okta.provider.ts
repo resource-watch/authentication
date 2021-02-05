@@ -35,17 +35,17 @@ export class OktaProvider extends BaseProvider {
             const { code, error, state } = ctx.query;
 
             if (error) {
-                logger.error('Error returned from OAuth authorize call to Okta, ', error);
+                logger.error('[OktaProvider] - Error returned from OAuth authorize call to Okta, ', error);
                 return ctx.redirect('/auth/fail?error=true');
             }
 
             if (!code) {
-                logger.error('No code provided by Okta\'s OAuth authorize call, ', error);
+                logger.error('[OktaProvider] - No code provided by Okta\'s OAuth authorize call, ', error);
                 return ctx.redirect('/auth/fail?error=true');
             }
 
             if (state !== ctx.session.oAuthState) {
-                logger.error('OAuth state does not match the state stored in session.');
+                logger.error('[OktaProvider] - OAuth state does not match the state stored in session.');
                 return ctx.redirect('/auth/fail?error=true');
             }
 
@@ -73,7 +73,7 @@ export class OktaProvider extends BaseProvider {
             await ctx.login(newUser);
             return next();
         } catch (err) {
-            logger.error('Error requesting OAuth token to Okta, ', err);
+            logger.error('[OktaProvider] - Error requesting OAuth token to Okta, ', err);
             return ctx.redirect('/auth/fail?error=true');
         }
     }
@@ -85,7 +85,7 @@ export class OktaProvider extends BaseProvider {
             if (ctx.request.type === 'application/json') {
                 ctx.status = 200;
                 ctx.body = UserSerializer.serialize(user);
-                logger.info('Generating token');
+                logger.info('[OktaProvider] - Generating token');
                 ctx.body.data.token = OktaService.createToken(user);
             } else {
                 await ctx.logIn(user)
@@ -112,7 +112,7 @@ export class OktaProvider extends BaseProvider {
             }
 
             // Unknown error, log and report 500 Internal Server Error
-            logger.error('Failed login request: ', err);
+            logger.error('[OktaProvider] - Failed login request: ', err);
             ctx.throw(500, 'Internal server error');
         }
     }
@@ -141,7 +141,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async getUsers(ctx: Context): Promise<void> {
-        logger.info('Get Users');
+        logger.info('[OktaProvider] - Get Users');
         const user: IUser = Utils.getUser(ctx);
         if (!user.extraUserData || !user.extraUserData.apps) {
             ctx.throw(403, 'Not authorized');
@@ -172,7 +172,7 @@ export class OktaProvider extends BaseProvider {
 
     static async getCurrentUser(ctx: Context): Promise<void> {
         const requestUser: IUser = Utils.getUser(ctx);
-        logger.info('Get current user: ', requestUser.id);
+        logger.info('[OktaProvider] - Get current user: ', requestUser.id);
 
         if (requestUser.id && requestUser.id.toLowerCase() === 'microservice') {
             ctx.body = requestUser;
@@ -188,7 +188,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async getUserById(ctx: Context): Promise<void> {
-        logger.info('Get User by id: ', ctx.params.id);
+        logger.info('[OktaProvider] - Get User by id: ', ctx.params.id);
 
         const user: IUser = await OktaService.getUserById(ctx.params.id);
 
@@ -201,7 +201,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async findByIds(ctx: Context): Promise<void> {
-        logger.info('Find by ids');
+        logger.info('[OktaProvider] - Find by ids');
         ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
         const data: IUser[] = await OktaService.getUsersByIds(ctx.request.body.ids);
         ctx.body = { data };
@@ -228,11 +228,12 @@ export class OktaProvider extends BaseProvider {
             const updatedUser: IUser = await OktaService.updateUser(id, updateData);
             ctx.body = UserSerializer.serialize(updatedUser);
         } catch (err) {
-            logger.error('Error updating my user, ', err);
             if (err instanceof UserNotFoundError) {
                 ctx.throw(404, 'User not found');
+                return;
             }
 
+            logger.error('[OktaProvider] - Error updating my user, ', err);
             ctx.throw(500, 'Internal server error');
         }
     }
@@ -255,11 +256,12 @@ export class OktaProvider extends BaseProvider {
             const deletedUser: IUser = await OktaService.deleteUser(ctx.params.id);
             ctx.body = UserSerializer.serialize(deletedUser);
         } catch (err) {
-            logger.error('Error updating my user, ', err);
             if (err instanceof UserNotFoundError) {
                 ctx.throw(404, 'User not found');
+                return;
             }
 
+            logger.error('[OktaProvider] - Error updating my user, ', err);
             ctx.throw(500, 'Internal server error');
         }
     }
@@ -274,18 +276,18 @@ export class OktaProvider extends BaseProvider {
         }
 
         if (user.role === 'MANAGER' && body.role === 'ADMIN') {
-            logger.info('User is manager but the new user is admin');
+            logger.info('[OktaProvider] - User is manager but the new user is admin');
             ctx.throw(403, 'Forbidden');
             return;
         }
 
         if (!body.extraUserData || !body.extraUserData.apps) {
-            logger.info('Not send apps');
+            logger.info('[OktaProvider] - Not send apps');
             ctx.throw(400, 'Apps required');
             return;
         }
         if (!user.extraUserData || !user.extraUserData.apps) {
-            logger.info('logged user does not contain apps');
+            logger.info('[OktaProvider] - logged user does not contain apps');
             ctx.throw(403, 'Forbidden');
             return;
         }
@@ -307,7 +309,7 @@ export class OktaProvider extends BaseProvider {
                 photo: body.photo,
             });
         } catch (err) {
-            logger.error('Error creating user, ', err);
+            logger.error('[OktaProvider] - Error creating user, ', err);
             if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {
                 ctx.throw(400, 'Email exists');
             }
@@ -318,7 +320,7 @@ export class OktaProvider extends BaseProvider {
 
     static async success(ctx: Context): Promise<void> {
         if (ctx.session.callbackUrl) {
-            logger.info('Url redirect', ctx.session.callbackUrl);
+            logger.info('[OktaProvider] - Url redirect', ctx.session.callbackUrl);
 
             // Removing "#_=_", added by FB to the return callbacks to the frontend :scream:
             ctx.session.callbackUrl = ctx.session.callbackUrl.replace('#_=_', '');
@@ -351,7 +353,7 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async failAuth(ctx: Context): Promise<void> {
-        logger.info('Not authenticated');
+        logger.info('[OktaProvider] - Not authenticated');
         const originApp: string = Utils.getOriginApp(ctx);
         const appConfig: IThirdPartyAuth = Settings.getSettings().thirdParty[originApp];
 
@@ -365,16 +367,16 @@ export class OktaProvider extends BaseProvider {
             thirdParty.twitter = appConfig.twitter.active;
         }
 
-        if (appConfig.google?.active) {
-            thirdParty.google = appConfig.google.active;
+        if (config.get(`okta.${originApp}.google.idp`)) {
+            thirdParty.google = true;
         }
 
-        if (appConfig.facebook?.active) {
-            thirdParty.facebook = appConfig.facebook.active;
+        if (config.get(`okta.${originApp}.facebook.idp`)) {
+            thirdParty.facebook = true;
         }
 
-        if (appConfig.apple?.active) {
-            thirdParty.apple = appConfig.apple.active;
+        if (config.get(`okta.${originApp}.apple.idp`)) {
+            thirdParty.apple = true;
         }
 
         if (ctx.query.error) {
@@ -395,7 +397,7 @@ export class OktaProvider extends BaseProvider {
 
     static async signUp(ctx: Context): Promise<void> {
         try {
-            logger.info('Creating user');
+            logger.info('[OktaProvider] - Creating user');
             const newUser: IUser = await OktaService.createUserWithoutPassword({
                 email: ctx.request.body.email,
                 name: ctx.request.body.name,
@@ -421,7 +423,7 @@ export class OktaProvider extends BaseProvider {
                 error = 'Email exists';
             }
 
-            logger.error('Error creating user: ', err);
+            logger.error('[OktaProvider] - Error creating user: ', err);
 
             if (ctx.request.type === 'application/json') {
                 throw new UnprocessableEntityError(error);
@@ -444,14 +446,14 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async confirmUser(ctx: Context): Promise<void> {
-        ctx.throw('Method not supported');
+        ctx.throw(400, 'Method not supported');
     }
 
     static async loginView(ctx: Context): Promise<void> {
         // check if the user has session
         const user: IUser = Utils.getUser(ctx);
         if (user) {
-            logger.info('User has session');
+            logger.info('[OktaProvider] - User has session');
 
             if (ctx.request.type === 'application/json') {
                 ctx.status = 200;
@@ -466,6 +468,7 @@ export class OktaProvider extends BaseProvider {
         }
 
         const originApp: string = Utils.getOriginApp(ctx);
+        const appConfig: IThirdPartyAuth = Settings.getSettings().thirdParty[originApp];
         const thirdParty: Record<string, any> = {
             twitter: false,
             google: false,
@@ -483,6 +486,10 @@ export class OktaProvider extends BaseProvider {
 
         if (config.get(`okta.${originApp}.apple.idp`)) {
             thirdParty.apple = true;
+        }
+
+        if (appConfig.twitter?.active) {
+            thirdParty.twitter = appConfig.twitter.active;
         }
 
         await ctx.render('login', {
@@ -507,22 +514,12 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async resetPasswordView(ctx: Context): Promise<void> {
-        const renew: IRenew = await OktaService.getRenewModel(ctx.params.token);
-        let error: string = null;
-        if (!renew) {
-            error = 'Token expired';
-        }
-
-        await ctx.render('reset-password', {
-            error,
-            app: Utils.getOriginApp(ctx),
-            token: renew ? renew.token : null,
-            generalConfig: ctx.state.generalConfig,
-        });
+        logger.error('[OktaProvider] - foo');
+        ctx.throw(400, 'Method not supported');
     }
 
     static async sendResetMail(ctx: Context): Promise<void> {
-        logger.info('Send reset mail');
+        logger.info('[OktaProvider] - Send reset mail');
 
         if (!ctx.request.body.email) {
             if (ctx.request.type === 'application/json') {
@@ -604,12 +601,15 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async createToken(ctx: Context): Promise<string> {
-        logger.info('Generating token');
+        logger.info('[OktaProvider] - Generating token');
         return OktaService.createToken(Utils.getUser(ctx));
     }
 
     static async generateJWT(ctx: Context): Promise<void> {
-        logger.info('Generating token');
+        logger.info('[OktaProvider] - Generating token');
+
+        // TODO: validate that the required fields actually exist, and if not, set them on Okta
+
         try {
             const token: string = await OktaProvider.createToken(ctx);
             ctx.body = { token };
@@ -619,62 +619,8 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async resetPassword(ctx: Context): Promise<void> {
-        logger.info('Resetting password');
-
-        let error: string = null;
-        if (!ctx.request.body.password || !ctx.request.body.repeatPassword) {
-            error = 'Password and Repeat password are required';
-        }
-        if (ctx.request.body.password !== ctx.request.body.repeatPassword) {
-            error = 'Password and Repeat password not equal';
-        }
-        const exist: IRenew = await OktaService.getRenewModel(ctx.params.token);
-        if (!exist) {
-            error = 'Token expired';
-        }
-        if (error) {
-            if (ctx.request.type === 'application/json') {
-                throw new UnprocessableEntityError(error);
-            } else {
-                await ctx.render('reset-password', {
-                    error,
-                    app: Utils.getOriginApp(ctx),
-                    token: ctx.params.token,
-                    generalConfig: ctx.state.generalConfig,
-                });
-            }
-
-            return;
-        }
-
-        const user: IUser = await OktaService.updatePassword(ctx.params.token, ctx.request.body.password);
-        if (user) {
-            if (ctx.request.type === 'application/json') {
-                ctx.response.type = 'application/json';
-                ctx.body = UserSerializer.serialize(user);
-            } else {
-                const app: string = Utils.getOriginApp(ctx);
-                const applicationConfig: IApplication = Settings.getSettings().applications && Settings.getSettings().applications[app];
-
-                if (applicationConfig && applicationConfig.confirmUrlRedirect) {
-                    ctx.redirect(applicationConfig.confirmUrlRedirect);
-                    return;
-                }
-                if (Settings.getSettings().local.confirmUrlRedirect) {
-                    ctx.redirect(Settings.getSettings().local.confirmUrlRedirect);
-                    return;
-                }
-                ctx.body = user;
-            }
-        } else {
-            await ctx.render('reset-password', {
-                app: Utils.getOriginApp(ctx),
-                error: 'Error updating user',
-                token: ctx.params.token,
-                generalConfig: ctx.state.generalConfig,
-            });
-        }
-
+        logger.error('[OktaProvider] - foo');
+        ctx.throw(400, 'Method not supported');
     }
 }
 
