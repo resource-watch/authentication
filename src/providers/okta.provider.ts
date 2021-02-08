@@ -4,7 +4,6 @@ import {URL} from 'url';
 import logger from 'logger';
 import Utils from 'utils';
 import {omit} from 'lodash';
-import {v4 as uuidv4} from 'uuid';
 
 import Settings, {IThirdPartyAuth} from 'services/settings.service';
 import UserTempSerializer from 'serializers/user-temp.serializer';
@@ -14,7 +13,7 @@ import UnauthorizedError from 'errors/unauthorized.error';
 import {IUser} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
-import { OktaUpdateUserPayload, OktaUpdateUserProtectedFieldsPayload, OktaUser } from 'services/okta.interfaces';
+import { OktaUpdateUserPayload, OktaUser } from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 
@@ -48,27 +47,9 @@ export class OktaProvider extends BaseProvider {
                 return ctx.redirect('/auth/fail?error=true');
             }
 
-            let user: OktaUser = await OktaService.getUserForAuthorizationCode(code);
-            const updateData: OktaUpdateUserProtectedFieldsPayload = {};
-
-            if (!user.profile.legacyId) {
-                updateData.legacyId = uuidv4();
-            }
-
-            if (!user.profile.role) {
-                updateData.role = 'USER';
-            }
-
-            if (!user.profile.apps) {
-                updateData.apps = [];
-            }
-
-            // If updateData is not empty, trigger user update
-            if (Object.keys(updateData).length > 0) {
-                user = await OktaService.updateUserProtectedFields(user.id, updateData);
-            }
-
-            const newUser: IUser = await OktaService.convertOktaUserToIUser(user);
+            const user: OktaUser = await OktaService.getUserForAuthorizationCode(code);
+            const updatedUser: OktaUser = await OktaService.setAndUpdateRequiredFields(user);
+            const newUser: IUser = await OktaService.convertOktaUserToIUser(updatedUser);
             await ctx.login(newUser);
             return next();
         } catch (err) {
@@ -606,8 +587,6 @@ export class OktaProvider extends BaseProvider {
 
     static async generateJWT(ctx: Context): Promise<void> {
         logger.info('[OktaProvider] - Generating token');
-
-        // TODO: validate that the required fields actually exist, and if not, set them on Okta
 
         try {
             const token: string = await OktaProvider.createToken(ctx);
