@@ -19,6 +19,7 @@ import UserNotFoundError from 'errors/userNotFound.error';
 import { Context } from 'koa';
 import { URL } from 'url';
 import OktaApiService from 'services/okta.api.service';
+import {v4 as uuidv4} from 'uuid';
 
 export default class OktaService {
 
@@ -94,28 +95,28 @@ export default class OktaService {
             return isRevoked;
         }
 
-
-        // TODO: maybe add a validation on the token age, and only go out to OKTA if the token is older than X
-
         try {
-            const user: IUser = await OktaService.getOktaUserByEmail(payload.email);
+            // TODO: maybe add a validation on the token age, and only go out to OKTA if the token is older than X
+            const user: OktaUser = await OktaService.getOktaUserByEmail(payload.email);
+            const updatedUser: OktaUser = await OktaService.setAndUpdateRequiredFields(user);
+            const userToCheck: IUser = OktaService.convertOktaUserToIUser(updatedUser);
 
-            if (!isEqual(user.id, payload.id)) {
+            if (!isEqual(userToCheck.id, payload.id)) {
                 logger.info(`[OktaService] "id" in token does not match expected value`);
                 isRevoked = true;
             }
 
-            if (!isEqual(user.role, payload.role)) {
+            if (!isEqual(userToCheck.role, payload.role)) {
                 logger.info(`[OktaService] "role" in token does not match expected value`);
                 isRevoked = true;
             }
 
-            if (!isEqual(user.extraUserData, payload.extraUserData)) {
+            if (!isEqual(userToCheck.extraUserData, payload.extraUserData)) {
                 logger.info(`[OktaService] "extraUserData" in token does not match expected value`);
                 isRevoked = true;
             }
 
-            if (!isEqual(user.email, payload.email)) {
+            if (!isEqual(userToCheck.email, payload.email)) {
                 logger.info(`[OktaService] "email" in token does not match expected value`);
                 isRevoked = true;
             }
@@ -125,6 +126,32 @@ export default class OktaService {
             logger.error(err);
             return true;
         }
+    }
+
+    static async setAndUpdateRequiredFields(user: OktaUser): Promise<OktaUser> {
+        logger.info('[OktaService] Setting required fields for user with Okta ID: ', user.id);
+
+        // Check if user has required fields set - if not set, set them
+        const updateData: OktaUpdateUserProtectedFieldsPayload = {};
+
+        if (!user.profile.legacyId) {
+            updateData.legacyId = uuidv4();
+        }
+
+        if (!user.profile.role) {
+            updateData.role = 'USER';
+        }
+
+        if (!user.profile.apps) {
+            updateData.apps = [];
+        }
+
+        // If updateData is not empty, trigger user update
+        if (Object.keys(updateData).length > 0) {
+            return OktaService.updateUserProtectedFields(user.id, updateData);
+        }
+
+        return user;
     }
 
     static async updateApplicationsForUser(id: string, newApps: string[]): Promise<IUser> {
@@ -152,9 +179,8 @@ export default class OktaService {
         return user || null;
     }
 
-    static async getOktaUserByEmail(email: string): Promise<IUser> {
-        const user: OktaUser = await OktaApiService.getOktaUserByEmail(email);
-        return OktaService.convertOktaUserToIUser(user);
+    static async getOktaUserByEmail(email: string): Promise<OktaUser> {
+        return OktaApiService.getOktaUserByEmail(email);
     }
 
     static async sendPasswordRecoveryEmail(email: string): Promise<void> {
@@ -163,7 +189,8 @@ export default class OktaService {
 
     static async login(username: string, password: string): Promise<IUser> {
         const response: OktaSuccessfulLoginResponse = await OktaApiService.postLogin(username, password);
-        return OktaService.getOktaUserByEmail(response._embedded.user.profile.login);
+        const user: OktaUser = await OktaService.getOktaUserByEmail(response._embedded.user.profile.login);
+        return OktaService.convertOktaUserToIUser(user);
     }
 
     static async createUserWithoutPassword(payload: OktaCreateUserPayload): Promise<IUser> {
