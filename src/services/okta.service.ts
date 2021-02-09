@@ -2,7 +2,7 @@ import config from 'config';
 import logger from 'logger';
 import { difference, isEqual } from 'lodash';
 
-import { IUser } from 'models/user.model';
+import {IUser, UserDocument} from 'models/user.model';
 import {
     JWTPayload,
     OktaCreateUserPayload,
@@ -256,6 +256,44 @@ export default class OktaService {
             });
 
         return searchCriteria.filter(el => el !== '').join(' and ');
+    }
+
+    static async createUserWithExistingPassword(user: UserDocument): Promise<boolean> {
+        try {
+            // User does not exist, create it in Okta
+            await OktaApiService.postUserWithEncryptedPassword({
+                profile: {
+                    firstName: 'RW API',
+                    lastName: 'User',
+                    email: user.email,
+                    login: user.email,
+                    displayName: user.name,
+                    legacyId: user.id,
+                    role: user.role,
+                    apps: user.extraUserData.apps,
+                    photo: user.photo,
+                    provider: user.provider,
+                    providerId: user.providerId,
+                },
+                credentials: {
+                    password : {
+                        hash: {
+                            algorithm: 'BCRYPT',
+                            workFactor: 10,
+                            salt: user.salt,
+                            value: user.password,
+                        }
+                    }
+                },
+            });
+
+            // User imported to Okta, log it and move on
+            logger.info(`User with id ${user.id} imported successfully to Okta`);
+            return true;
+        } catch (err) {
+            logger.error(`Error creating user with id ${user.id} in Okta`, err);
+            return false;
+        }
     }
 
     static convertOktaUserToIUser(user: OktaUser): IUser {
