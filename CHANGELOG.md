@@ -1,3 +1,8 @@
+## 09/02/2021
+
+- Prefer `authorization` header over `authentication`.
+- `authentication` header support deprecated
+
 ## 25/01/2021
 
 - Add redirection to `config.publicUrl` to account for `passport-twitter` only supporting a single source host. 

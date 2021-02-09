@@ -164,7 +164,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
 
         mockOktaSendActivationEmail(user);
 
-        const token: string = await mockAppleKeys(providerId, 3);
+        const token: string = await mockAppleKeys(providerId, 2);
         const response: request.Response = await requester
             .get(`/auth/apple/token`)
             .query({ access_token: token });

@@ -17,6 +17,7 @@ import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
 import OktaAppleProvider from 'providers/okta.apple.provider';
+import { deprecate } from 'util';
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
@@ -44,7 +45,10 @@ export async function loadRoutes(app: Application): Promise<void> {
             return;
         }
 
-        if (ctx.headers.authentication) {
+        if (ctx.headers.authentication && !ctx.headers.authorization) {
+            /**
+             * @deprecate Use the `authorization` header instead.
+             */
             return ctx.headers.authentication;
         }
 
