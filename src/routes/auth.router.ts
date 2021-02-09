@@ -149,6 +149,9 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
         router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
     }
 
+    // @ts-ignore
+    router.get('/import-users-to-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.importUsersFromMongo);
+
     return router;
 };
 

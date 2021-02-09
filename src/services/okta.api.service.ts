@@ -4,7 +4,7 @@ import JWT from 'jsonwebtoken';
 import {v4 as uuidv4} from 'uuid';
 
 import {
-    OktaCreateUserPayload,
+    OktaCreateUserPayload, OktaImportUserPayload,
     OktaOAuthTokenPayload,
     OktaSuccessfulLoginResponse,
     OktaUpdateUserPayload,
@@ -129,6 +129,16 @@ export default class OktaApiService {
                     providerId: payload.providerId || null,
                 }
             },
+            { headers: OktaApiService.oktaRequestHeaders() }
+        );
+
+        return data;
+    }
+
+    static async postUserWithEncryptedPassword(payload: OktaImportUserPayload): Promise<OktaUser> {
+        const { data }: { data: OktaUser } = await axios.post(
+            `${config.get('okta.url')}/api/v1/users?activate=false`,
+            payload,
             { headers: OktaApiService.oktaRequestHeaders() }
         );
 
