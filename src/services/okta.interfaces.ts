@@ -54,6 +54,33 @@ export interface OktaCreateUserPayload {
     providerId?: string;
 }
 
+export interface OktaImportUserPayload {
+    profile: {
+        firstName: string;
+        lastName: string;
+        email: string;
+        login: string;
+        displayName: string;
+        legacyId: string;
+        role: string;
+        apps: string[];
+        photo: string;
+        provider: string;
+        providerId: string;
+    };
+
+    credentials: {
+        password : {
+            hash: {
+                algorithm: string;
+                workFactor: number;
+                salt: string;
+                value: string;
+            }
+        }
+    };
+}
+
 export interface OktaUpdateUserPayload {
     displayName?: string;
     photo?: string;

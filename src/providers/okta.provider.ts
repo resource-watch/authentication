@@ -10,8 +10,9 @@ import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
-import {IUser} from 'models/user.model';
+import UserModel, {IUser, UserDocument} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
+import OktaApiService from 'services/okta.api.service';
 import OktaService from 'services/okta.service';
 import { OktaUpdateUserPayload, OktaUser } from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
@@ -599,6 +600,68 @@ export class OktaProvider extends BaseProvider {
     static async resetPassword(ctx: Context): Promise<void> {
         logger.error('[OktaProvider] - Trying to call reset password endpoint, which is not supported anymore.');
         ctx.throw(400, 'Method not supported');
+    }
+
+    /**
+     * Imports users from MongoDB to Okta, preserving the existing passwords for MongoDB users.
+     *
+     * NOTE: Ensure READ ONLY mode is activated before running this endpoint!
+     *
+     * This endpoint must be used before switching the auth provider flag to Okta, and it can be
+     * removed once the migration is completed.
+     */
+    static async importUsersFromMongo(ctx: Context): Promise<void> {
+        let imported: number = 0;
+
+        const users: UserDocument[] = await UserModel.find();
+        for (const user of users) {
+            try {
+                // Check if user exists in Okta
+                await OktaService.getOktaUserById(user.id);
+
+                // User exists in Okta, log it and move on
+                logger.info(`User with id ${user.id} already exists in Okta`);
+            } catch (err) {
+                if (err instanceof UserNotFoundError) {
+                    // User does not exist, create it in Okta
+                    await OktaApiService.postUserWithEncryptedPassword({
+                        profile: {
+                            firstName: 'RW API',
+                            lastName: 'User',
+                            email: user.email,
+                            login: user.email,
+                            displayName: user.name,
+                            legacyId: user.id,
+                            role: user.role,
+                            apps: user.extraUserData.apps,
+                            photo: user.photo,
+                            provider: user.provider,
+                            providerId: user.providerId,
+                        },
+                        credentials: {
+                            password : {
+                                hash: {
+                                    algorithm: 'BCRYPT',
+                                    workFactor: 10,
+                                    salt: user.salt,
+                                    value: user.password,
+                                }
+                            }
+                        },
+                    });
+
+                    // User imported to Okta, log it and move on
+                    logger.info(`User with id ${user.id} imported successfully to Okta`);
+                    imported++;
+                } else {
+                    // Some error occurred, log it and move on
+                    logger.error(`Error importing user with id ${user.id} to Okta`, err);
+                }
+            }
+        }
+
+        ctx.status = 200;
+        ctx.body = { imported };
     }
 }
 
