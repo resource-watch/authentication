@@ -150,6 +150,27 @@ describe('[OKTA] User import test suite', () => {
         response.body.should.have.property('imported').and.eql(5);
     });
 
+    it('Importing users when one user does not exist in Okta and import fails returns 200 OK and no users imported (error case)', async () => {
+        // Create ADMIN user in MongoDB
+        const { token, user } = await createUserAndToken({ role: 'ADMIN' });
+
+        // Mock failed request to find user in Okta
+        mockGetUserByIdNotFound(user.id);
+
+        // Mock failed request to create user in Okta
+        nock(config.get('okta.url'))
+            .post('/api/v1/users?activate=false')
+            .reply(400, {});
+
+        const response: request.Response = await requester
+            .get(`/auth/import-users-to-okta`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('imported').and.eql(0);
+    });
+
     after(async () => {
         await closeTestAgent();
     });
