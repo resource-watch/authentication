@@ -291,7 +291,7 @@ export default class OktaService {
             logger.info(`User with id ${user.id} imported successfully to Okta`);
             return true;
         } catch (err) {
-            logger.error(`Error creating user with id ${user.id} in Okta`, err);
+            logger.error(`Error creating user with id ${user.id} in Okta`, err.response?.data);
             return false;
         }
     }
