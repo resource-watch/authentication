@@ -44,15 +44,17 @@ const mockImportProcess: (user: UserDocument) => void = (user) => {
                 hash: {
                     algorithm: 'BCRYPT',
                     workFactor: 10,
-                    salt: user.salt,
-                    value: user.password,
+                    salt: user.salt.replace('$2b$10$', ''),
+                    value: user.password
+                        .replace('$2b$10$', '')
+                        .replace(user.salt, ''),
                 }
             }
         },
     };
 
     nock(config.get('okta.url'))
-        .post('/api/v1/users?activate=false', (body) => isEqual(body, mockBody))
+        .post('/api/v1/users?activate=true', (body) => isEqual(body, mockBody))
         .reply(200, user);
 };
 
@@ -159,7 +161,7 @@ describe('[OKTA] User import test suite', () => {
 
         // Mock failed request to create user in Okta
         nock(config.get('okta.url'))
-            .post('/api/v1/users?activate=false')
+            .post('/api/v1/users?activate=true')
             .reply(400, {});
 
         const response: request.Response = await requester

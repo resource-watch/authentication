@@ -137,7 +137,7 @@ export default class OktaApiService {
 
     static async postUserWithEncryptedPassword(payload: OktaImportUserPayload): Promise<OktaUser> {
         const { data }: { data: OktaUser } = await axios.post(
-            `${config.get('okta.url')}/api/v1/users?activate=false`,
+            `${config.get('okta.url')}/api/v1/users?activate=true`,
             payload,
             { headers: OktaApiService.oktaRequestHeaders() }
         );
