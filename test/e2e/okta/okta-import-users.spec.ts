@@ -45,9 +45,7 @@ const mockImportProcess: (user: UserDocument) => void = (user) => {
                     algorithm: 'BCRYPT',
                     workFactor: 10,
                     salt: user.salt.replace('$2b$10$', ''),
-                    value: user.password
-                        .replace('$2b$10$', '')
-                        .replace(user.salt, ''),
+                    value: user.password.replace(user.salt, ''),
                 }
             }
         },

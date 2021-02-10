@@ -282,9 +282,7 @@ export default class OktaService {
                             workFactor: 10,
                             // Need to tweak the salt and password sent so that Okta knows how to deal with it :shrug:
                             salt: user.salt.replace('$2b$10$', ''),
-                            value: user.password
-                                .replace('$2b$10$', '')
-                                .replace(user.salt, ''),
+                            value: user.password.replace(user.salt, ''),
                         }
                     }
                 },
