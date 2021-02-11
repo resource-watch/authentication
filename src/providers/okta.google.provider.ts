@@ -1,13 +1,13 @@
-import { Context, Next } from 'koa';
-import { RouterContext } from 'koa-router';
+import {Context, Next} from 'koa';
+import {RouterContext} from 'koa-router';
 import passport from 'koa-passport';
 import logger from 'logger';
 import Utils from 'utils';
-import Settings, { IThirdPartyAuth } from 'services/settings.service';
+import Settings, {IThirdPartyAuth} from 'services/settings.service';
 import {IUser} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 // @ts-ignore
-import { Strategy as GoogleTokenStrategy } from 'passport-google-token';
+import {Strategy as GoogleTokenStrategy} from 'passport-google-token';
 import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 import OktaService from 'services/okta.service';
 import {v4 as uuidv4} from 'uuid';
@@ -32,11 +32,16 @@ export class OktaGoogleProvider extends BaseProvider {
                 }
 
                 user = await OktaService.createUserWithoutPassword({
+                    ...OktaService.findUserName({
+                        firstName: profile?.firstName,
+                        lastName: profile?.lastName,
+                        name: profile?.displayName,
+                    }),
                     email,
-                    name: profile?.displayName,
                     photo: profile.photos?.length > 0 ? profile.photos[0].value : null,
                     role: 'USER',
                     apps: [],
+                    provider: OktaOAuthProvider.GOOGLE,
                 });
             } else {
                 let email: string = null;

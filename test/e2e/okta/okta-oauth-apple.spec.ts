@@ -1,13 +1,13 @@
 import chai from 'chai';
 import nock from 'nock';
-import crypto, { KeyPairSyncResult } from 'crypto';
+import crypto, {KeyPairSyncResult} from 'crypto';
 import JWT from 'jsonwebtoken';
 import jwt from 'jsonwebtoken';
-import { pem2jwk, RSA_JWK } from 'pem-jwk';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import {pem2jwk, RSA_JWK} from 'pem-jwk';
+import {closeTestAgent, getTestAgent} from '../utils/test-server';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from 'sinon';
-import { stubConfigValue } from '../utils/helpers';
+import sinon, {SinonSandbox} from 'sinon';
+import {stubConfigValue} from '../utils/helpers';
 import config from 'config';
 import {JWTPayload, OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 import {
@@ -17,7 +17,7 @@ import {
     mockOktaSendActivationEmail,
     mockOktaUpdateUser
 } from './okta.mocks';
-import axios, { AxiosResponse } from 'axios';
+import axios, {AxiosResponse} from 'axios';
 
 chai.should();
 
@@ -162,8 +162,11 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         }, []);
 
         mockOktaCreateUser(user, {
+            firstName: 'RW API',
+            lastName: 'USER',
+            name: 'RW API USER',
             email: 'dj8e99g34n@privaterelay.appleid.com',
-            name: '',
+            provider: OktaOAuthProvider.APPLE,
             photo: null,
             role: 'USER',
             apps: [],

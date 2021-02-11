@@ -239,6 +239,34 @@ export default class OktaService {
         return OktaService.getOktaUserByOktaId(oktaId);
     }
 
+    /**
+     * Weird logic to find user name...
+     * TODO: in the future, deprecate "name" in favour of "firstName" + "lastName" and remove this
+     */
+    static findUserName(body: Record<string, any>): { firstName: string, lastName: string, name: string } {
+        let name: string;
+        let firstName: string;
+        let lastName: string;
+
+        if (body?.firstName && body?.lastName) {
+            firstName = body.firstName;
+            lastName = body.lastName;
+            name = `${firstName} ${lastName}`;
+        } else if (body?.name && body?.name.split(' ').length > 1) {
+            const splitName: string[] = body.name.split(' ');
+            firstName = splitName[0];
+            splitName.shift();
+            lastName = splitName.join(' ');
+            name = body.name;
+        } else {
+            firstName = 'RW API';
+            lastName = 'USER';
+            name = 'RW API USER';
+        }
+
+        return { firstName, lastName, name };
+    }
+
     private static getOktaSearchCriteria(query: Record<string, any>): string {
         logger.debug('[OktaService] getOktaSearchCriteria Object.keys(query)', Object.keys(query));
 

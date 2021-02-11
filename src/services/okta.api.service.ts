@@ -116,16 +116,16 @@ export default class OktaApiService {
             `${config.get('okta.url')}/api/v1/users?activate=false`,
             {
                 profile: {
-                    firstName: 'RW API',
-                    lastName: 'User',
-                    legacyId: uuidv4(),
-                    displayName: payload.name || '',
                     email: payload.email,
                     login: payload.email,
+                    firstName: payload.firstName,
+                    lastName: payload.lastName,
+                    displayName: payload.name,
+                    provider: payload.provider,
+                    legacyId: uuidv4(),
                     role: payload.role || 'USER',
                     apps: payload.apps || [],
                     photo: payload.photo || null,
-                    provider: payload.provider || 'local',
                     providerId: payload.providerId || null,
                 }
             },
