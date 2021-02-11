@@ -2,23 +2,22 @@ import nock from 'nock';
 import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
-
+import type request from 'superagent';
 import UserModel from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { createUserInDB } from '../utils/helpers';
-import request from 'superagent';
 
 chai.should();
 chai.use(ChaiString);
 chai.use(ChaiHttp);
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Twitter migrate endpoint tests - Finish page', () => {
+describe('[CT] Twitter migrate endpoint tests - Migration form loading', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
@@ -26,7 +25,6 @@ describe('Twitter migrate endpoint tests - Finish page', () => {
         }
 
         requester = await getTestAgent(true);
-
         await UserModel.deleteMany({}).exec();
 
         nock.cleanAll();
@@ -36,16 +34,36 @@ describe('Twitter migrate endpoint tests - Finish page', () => {
         requester = await getTestAgent(true);
     });
 
-    it('Visiting /auth/twitter/finished while not being logged in should redirect to the start page', async () => {
+    it('Visiting /auth/twitter/migrate while not being logged in (no session) should redirect to the start page', async () => {
         const response: request.Response = await requester
-            .get(`/auth/twitter/finished`)
+            .get(`/auth/twitter/migrate`)
             .redirects(0);
 
         response.status.should.equal(302);
         response.should.redirectTo('/auth/twitter/start');
     });
 
-    it('Visiting /auth/twitter/finished after a successful migration should display the finished page (happy case)', async () => {
+    it('Visiting /auth/twitter/migrate without a user account should redirect to the start page', async () => {
+        nock('https://api.twitter.com')
+            .get('/oauth/authenticate?oauth_token=OAUTH_TOKEN')
+            .reply(200, 'hello world');
+
+        nock('https://api.twitter.com', { encodedQueryParams: true })
+            .post('/oauth/request_token')
+            .reply(200, 'oauth_token=OAUTH_TOKEN&oauth_token_secret=OAUTH_TOKEN_SECRET&oauth_callback_confirmed=true');
+
+        await requester
+            .get(`/auth/twitter/auth`);
+
+        const response: request.Response = await requester
+            .get(`/auth/twitter/migrate`)
+            .redirects(0);
+
+        response.status.should.equal(302);
+        response.should.redirectTo('/auth/twitter/start');
+    });
+
+    it('Visiting /auth/twitter/migrate with the correct oauth data for a user that does exists locally should display the migrate page (happy case)', async () => {
         await createUserInDB({
             email: 'john.doe@vizzuality.com',
             provider: 'twitter',
@@ -122,20 +140,12 @@ describe('Twitter migrate endpoint tests - Finish page', () => {
         await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
-        // migrate the user
-        await requester
-            .post(`/auth/twitter/migrate`)
-            .send({
-                email: 'john.doe@vizzuality.com',
-                password: 'bar',
-                repeatPassword: 'bar'
-            });
-
         const response: request.Response = await requester
-            .get(`/auth/twitter/finished`);
+            .get(`/auth/twitter/migrate`)
+            .redirects(0);
 
-        response.text.should.include(`Migration finished`);
-        response.text.should.include(`Your account has been migrated`);
+        response.text.should.include(`Migrate account`);
+        response.text.should.include(`Now that you are logged in using your Twitter-based account`);
     });
 
     afterEach(() => {

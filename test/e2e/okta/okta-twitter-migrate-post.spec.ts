@@ -17,7 +17,7 @@ let requester:ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-describe('Twitter migrate endpoint tests - Migration form submission', () => {
+describe('[OKTA] Twitter migrate endpoint tests - Migration form submission', () => {
 
     before(async () => {
         if (process.env.NODE_ENV !== 'test') {
