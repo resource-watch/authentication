@@ -25,18 +25,18 @@ const mockImportProcess: (user: UserDocument) => void = (user) => {
     const mockBody: OktaImportUserPayload = {
         profile: {
             // Fields expected to always be present
-            firstName: 'RW API',
-            lastName: 'User',
+            firstName: user.name.split(' ')[0],
+            lastName: user.name.split(' ').slice(1).join(' '),
             email: user.email,
             login: user.email,
             displayName: user.name,
             legacyId: user.id,
             role: user.role,
             apps: user.extraUserData.apps,
+            provider: user.provider,
 
             // Optional fields
             ...(user.photo && { photo: user.photo }),
-            ...(user.provider && { provider: user.provider }),
             ...(user.providerId && { providerId: user.providerId }),
         },
         credentials: {
