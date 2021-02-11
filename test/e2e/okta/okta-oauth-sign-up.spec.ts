@@ -1,17 +1,12 @@
 import nock from 'nock';
 import chai from 'chai';
-import sinon, { SinonSandbox } from 'sinon';
+import sinon, {SinonSandbox} from 'sinon';
 import type request from 'superagent';
 
-import { OktaUser } from 'services/okta.interfaces';
-import { stubConfigValue } from '../utils/helpers';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import {
-    getMockOktaUser,
-    mockOktaFailedSignUp,
-    mockOktaSendActivationEmail,
-    mockOktaCreateUser
-} from './okta.mocks';
+import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {stubConfigValue} from '../utils/helpers';
+import {closeTestAgent, getTestAgent} from '../utils/test-server';
+import {getMockOktaUser, mockOktaCreateUser, mockOktaFailedSignUp, mockOktaSendActivationEmail} from './okta.mocks';
 
 chai.should();
 
@@ -60,7 +55,10 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         const user: OktaUser = getMockOktaUser();
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            name: '',
+            firstName: 'RW API',
+            lastName: 'USER',
+            name: 'RW API USER',
+            provider: OktaOAuthProvider.LOCAL,
         });
         mockOktaSendActivationEmail(user);
 
@@ -91,8 +89,11 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         const user: OktaUser = getMockOktaUser({ apps: ['rw'] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            name: '',
             apps: ['rw'],
+            firstName: 'RW API',
+            lastName: 'USER',
+            name: 'RW API USER',
+            provider: OktaOAuthProvider.LOCAL,
         });
         mockOktaSendActivationEmail(user);
 

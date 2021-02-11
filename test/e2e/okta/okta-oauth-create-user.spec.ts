@@ -2,16 +2,16 @@ import nock from 'nock';
 import chai from 'chai';
 import chaiDateTime from 'chai-datetime';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from 'sinon';
+import sinon, {SinonSandbox} from 'sinon';
 
-import {OktaUser} from 'services/okta.interfaces';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { stubConfigValue } from '../utils/helpers';
+import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {closeTestAgent, getTestAgent} from '../utils/test-server';
+import {stubConfigValue} from '../utils/helpers';
 import {
     getMockOktaUser,
+    mockOktaCreateUser,
     mockOktaFailedSignUp,
     mockOktaSendActivationEmail,
-    mockOktaCreateUser,
     mockValidJWT
 } from './okta.mocks';
 
@@ -89,6 +89,42 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         response.body.errors[0].detail.should.equal('Apps required');
     });
 
+    it('Creating a user with firstName not providing lastName should return 400 Bad Request', async () => {
+        const token: string = mockValidJWT({ role: 'MANAGER' });
+        const response: request.Response = await requester
+            .post(`/auth/user`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                role: 'USER',
+                extraUserData: { apps: ['rw'] },
+                firstName: 'Test',
+            });
+
+        response.status.should.equal(400);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].status.should.equal(400);
+        response.body.errors[0].detail.should.equal('lastName required.');
+    });
+
+    it('Creating a user with lastName not providing firstName should return 400 Bad Request', async () => {
+        const token: string = mockValidJWT({ role: 'MANAGER' });
+        const response: request.Response = await requester
+            .post(`/auth/user`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                role: 'USER',
+                extraUserData: { apps: ['rw'] },
+                lastName: 'Test',
+            });
+
+        response.status.should.equal(400);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].status.should.equal(400);
+        response.body.errors[0].detail.should.equal('firstName required.');
+    });
+
     it('Creating an user with an email that already exists in the DB should return 400 Bad Request', async () => {
         const email: string = 'test@example.com';
         const token: string = mockValidJWT({
@@ -105,7 +141,7 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
             .send({
                 role: 'USER',
                 extraUserData: { apps: ['rw'] },
-                email
+                email,
             });
 
         response.status.should.equal(400);
@@ -132,17 +168,20 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         response.body.errors[0].detail.should.equal('Forbidden');
     });
 
-    it('Creating an user with valid data should return 200 OK and the created user data', async () => {
+    it('Creating an user with valid data ("name") should return 200 OK and the created user data', async () => {
         const apps: string[] = ['rw'];
         const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
         const user: OktaUser = getMockOktaUser({ apps });
 
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            name: '',
+            firstName: 'Test',
+            lastName: 'User',
+            name: 'Test User',
             role: user.profile.role,
             photo: user.profile.photo,
             apps,
+            provider: OktaOAuthProvider.LOCAL,
         });
         mockOktaSendActivationEmail(user);
 
@@ -155,6 +194,47 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 extraUserData: { apps },
                 email: user.profile.email,
                 photo: user.profile.photo,
+                name: 'Test User',
+            });
+
+        response.status.should.equal(200);
+        response.body.should.be.an('object');
+        response.body.should.have.property('id').and.eql(user.profile.legacyId);
+        response.body.should.have.property('email').and.eql(user.profile.email);
+        response.body.should.have.property('name').and.eql(user.profile.displayName);
+        response.body.should.have.property('role').and.eql(user.profile.role);
+        response.body.should.have.property('extraUserData').and.eql({ apps });
+        response.body.should.have.property('photo').and.eql(user.profile.photo);
+    });
+
+    it('Creating an user with valid data ("firstName" + "lastName") should return 200 OK and the created user data', async () => {
+        const apps: string[] = ['rw'];
+        const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
+        const user: OktaUser = getMockOktaUser({ apps });
+
+        mockOktaCreateUser(user, {
+            email: user.profile.email,
+            firstName: 'Test',
+            lastName: 'User',
+            name: 'Test User',
+            role: user.profile.role,
+            photo: user.profile.photo,
+            apps,
+            provider: OktaOAuthProvider.LOCAL,
+        });
+        mockOktaSendActivationEmail(user);
+
+        const response: request.Response = await requester
+            .post(`/auth/user`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                role: user.profile.role,
+                extraUserData: { apps },
+                email: user.profile.email,
+                photo: user.profile.photo,
+                firstName: 'Test',
+                lastName: 'User',
             });
 
         response.status.should.equal(200);

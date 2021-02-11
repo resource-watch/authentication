@@ -4,7 +4,7 @@ import nock from 'nock';
 import crypto from 'crypto';
 import JWT from 'jsonwebtoken';
 
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
+import {closeTestAgent, getTestAgent} from '../utils/test-server';
 import type request from 'superagent';
 import sinon, {SinonSandbox} from 'sinon';
 import {stubConfigValue} from '../utils/helpers';
@@ -159,10 +159,13 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
 
         mockOktaCreateUser(user, {
             email: 'john.doe@vizzuality.com',
+            firstName: 'John',
+            lastName: 'Doe',
             name: 'John Doe',
             photo: null,
             role: 'USER',
             apps: [],
+            provider: OktaOAuthProvider.FACEBOOK,
         });
 
         mockOktaSendActivationEmail(user);

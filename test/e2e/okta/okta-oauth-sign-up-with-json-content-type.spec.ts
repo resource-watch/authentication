@@ -1,17 +1,12 @@
 import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from 'sinon';
+import sinon, {SinonSandbox} from 'sinon';
 
-import { OktaUser } from 'services/okta.interfaces';
-import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { stubConfigValue } from '../utils/helpers';
-import {
-    getMockOktaUser,
-    mockOktaFailedSignUp,
-    mockOktaSendActivationEmail,
-    mockOktaCreateUser
-} from './okta.mocks';
+import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {closeTestAgent, getTestAgent} from '../utils/test-server';
+import {stubConfigValue} from '../utils/helpers';
+import {getMockOktaUser, mockOktaCreateUser, mockOktaFailedSignUp, mockOktaSendActivationEmail} from './okta.mocks';
 
 chai.should();
 
@@ -52,7 +47,10 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         const user: OktaUser = getMockOktaUser({ apps: [] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            name: '',
+            firstName: 'RW API',
+            lastName: 'USER',
+            name: 'RW API USER',
+            provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
         });
         mockOktaSendActivationEmail(user);
@@ -90,7 +88,10 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            name: '',
+            firstName: 'RW API',
+            lastName: 'USER',
+            name: 'RW API USER',
+            provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             apps: ['gfw'],
         });
@@ -117,7 +118,10 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            name: '',
+            firstName: 'RW API',
+            lastName: 'USER',
+            name: 'RW API USER',
+            provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             apps: ['gfw'],
         });

@@ -13,7 +13,7 @@ import UnauthorizedError from 'errors/unauthorized.error';
 import UserModel, {IUser, UserDocument} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
-import { OktaUpdateUserPayload, OktaUser } from 'services/okta.interfaces';
+import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 
@@ -237,12 +237,11 @@ export class OktaProvider extends BaseProvider {
             ctx.body = UserSerializer.serialize(deletedUser);
         } catch (err) {
             if (err instanceof UserNotFoundError) {
-                ctx.throw(404, 'User not found');
-                return;
+                return ctx.throw(404, 'User not found');
             }
 
             logger.error('[OktaProvider] - Error updating my user, ', err);
-            ctx.throw(500, 'Internal server error');
+            return ctx.throw(500, 'Internal server error');
         }
     }
 
@@ -251,50 +250,55 @@ export class OktaProvider extends BaseProvider {
         const { body } = ctx.request;
         const user: IUser = Utils.getUser(ctx);
         if (!user) {
-            ctx.throw(401, 'Not logged');
-            return;
+            return ctx.throw(401, 'Not logged');
         }
 
         if (user.role === 'MANAGER' && body.role === 'ADMIN') {
             logger.info('[OktaProvider] - User is manager but the new user is admin');
-            ctx.throw(403, 'Forbidden');
-            return;
+            return ctx.throw(403, 'Forbidden');
         }
 
         if (!body.extraUserData || !body.extraUserData.apps) {
             logger.info('[OktaProvider] - Not send apps');
-            ctx.throw(400, 'Apps required');
-            return;
+            return ctx.throw(400, 'Apps required');
         }
+
         if (!user.extraUserData || !user.extraUserData.apps) {
             logger.info('[OktaProvider] - logged user does not contain apps');
-            ctx.throw(403, 'Forbidden');
-            return;
+            return ctx.throw(403, 'Forbidden');
         }
 
         // Check apps
         for (let i: number = 0, { length } = body.extraUserData.apps; i < length; i += 1) {
             if (user.extraUserData.apps.indexOf(body.extraUserData.apps[i]) < 0) {
-                ctx.throw(403, 'Forbidden');
-                return;
+                return ctx.throw(403, 'Forbidden');
             }
+        }
+
+        if (ctx.request.body.firstName && !ctx.request.body.lastName) {
+            return ctx.throw(400, 'lastName required.');
+        }
+
+        if (ctx.request.body.lastName && !ctx.request.body.firstName) {
+            return ctx.throw(400, 'firstName required.');
         }
 
         try {
             ctx.body = await OktaService.createUserWithoutPassword({
+                ...OktaService.findUserName(ctx.request.body),
                 email: body.email,
-                name: body.name,
                 role: body.role,
                 apps: body.extraUserData.apps,
                 photo: body.photo,
+                provider: OktaOAuthProvider.LOCAL,
             });
         } catch (err) {
             logger.error('[OktaProvider] - Error creating user, ', err);
             if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {
-                ctx.throw(400, 'Email exists');
+                return ctx.throw(400, 'Email exists');
             }
 
-            ctx.throw(500, 'Internal server error');
+            return ctx.throw(500, 'Internal server error');
         }
     }
 
@@ -378,9 +382,19 @@ export class OktaProvider extends BaseProvider {
     static async signUp(ctx: Context): Promise<void> {
         try {
             logger.info('[OktaProvider] - Creating user');
+
+            if (ctx.request.body.firstName && !ctx.request.body.lastName) {
+                return ctx.throw(400, 'lastName required.');
+            }
+
+            if (ctx.request.body.lastName && !ctx.request.body.firstName) {
+                return ctx.throw(400, 'firstName required.');
+            }
+
             const newUser: IUser = await OktaService.createUserWithoutPassword({
+                ...OktaService.findUserName(ctx.request.body),
                 email: ctx.request.body.email,
-                name: ctx.request.body.name,
+                provider: OktaOAuthProvider.LOCAL,
                 role: 'USER',
             });
 

@@ -46,11 +46,13 @@ export interface OktaUser {
 
 export interface OktaCreateUserPayload {
     email: string;
-    name?: string;
+    provider: OktaOAuthProvider;
+    firstName: string;
+    lastName: string;
+    name: string;
     role?: string;
     apps?: string[];
     photo?: string;
-    provider?: OktaOAuthProvider;
     providerId?: string;
 }
 
@@ -136,6 +138,7 @@ export interface OktaSuccessfulOAuthTokenResponse {
 }
 
 export enum OktaOAuthProvider {
+    LOCAL = 'local',
     FACEBOOK = 'facebook',
     GOOGLE = 'google',
     APPLE = 'apple',

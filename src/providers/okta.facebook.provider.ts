@@ -1,8 +1,8 @@
-import { Context, Next } from 'koa';
-import { RouterContext } from 'koa-router';
+import {Context, Next} from 'koa';
+import {RouterContext} from 'koa-router';
 import logger from 'logger';
 import Utils from 'utils';
-import Settings, { IThirdPartyAuth } from 'services/settings.service';
+import Settings, {IThirdPartyAuth} from 'services/settings.service';
 import {IUser} from 'models/user.model';
 import passport from 'koa-passport';
 import FacebookTokenStrategy from 'passport-facebook-token';
@@ -63,10 +63,15 @@ export class OktaFacebookProvider extends BaseProvider {
                 }
 
                 user = await OktaService.createUserWithoutPassword({
+                    ...OktaService.findUserName({
+                        firstName: profile?.firstName,
+                        lastName: profile?.lastName,
+                        name: profile?.displayName,
+                    }),
                     email,
-                    name: profile?.displayName,
                     photo: profile.photos?.length > 0 ? profile.photos[0].value : null,
                     role: 'USER',
+                    provider: OktaOAuthProvider.FACEBOOK,
                     apps: [],
                 });
             } else {
