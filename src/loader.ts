@@ -16,6 +16,7 @@ import TwitterProvider from 'providers/twitter.provider';
 import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
+import OktaTwitterProvider, { registerOktaTwitterStrategies } from 'providers/okta.twitter.provider';
 
 export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading OAuth middleware...');
@@ -24,12 +25,13 @@ export async function loadRoutes(app: Application): Promise<void> {
         FacebookProvider.registerStrategies();
         GoogleProvider.registerStrategies();
         AppleProvider.registerStrategies();
+        TwitterProvider.registerStrategies();
     } else {
         OktaFacebookProvider.registerStrategies();
         OktaGoogleProvider.registerStrategies();
+        registerOktaTwitterStrategies();
     }
 
-    TwitterProvider.registerStrategies();
     LocalProvider.registerStrategies();
 
     app.use(passport.initialize());
@@ -69,7 +71,7 @@ export async function loadRoutes(app: Application): Promise<void> {
     app.use(jwt({
         secret: Settings.getSettings().jwt.secret,
         passthrough: Settings.getSettings().jwt.passthrough,
-        isRevoked: config.get('authProvider') === 'CT' ? UserService.checkRevokedToken : OktaService.checkRevokedToken,
+        isRevoked: config.get('authProvider') === 'OKTA' ? OktaService.checkRevokedToken : UserService.checkRevokedToken,
         getToken
     }));
 
@@ -88,7 +90,12 @@ export async function loadRoutes(app: Application): Promise<void> {
     // Load routes
     logger.debug('Loading routes...');
     app.use(authRouterGenerator(config.get('authProvider')).routes());
-    app.use(TwitterRouter.routes());
+
+    if (config.get('authProvider') === 'OKTA') {
+        app.use(OktaTwitterProvider.routes());
+    } else {
+        app.use(TwitterRouter.routes());
+    }
 
     logger.debug('Loaded routes correctly!');
 }

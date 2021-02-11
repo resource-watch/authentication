@@ -158,6 +158,23 @@ export default class OktaApiService {
         return data;
     }
 
+    static async postUserProtectedFieldsByOktaId(oktaId: string, payload: OktaUpdateUserProtectedFieldsPayload): Promise<OktaUser> {
+        const postRequestBody: Record<string, any> = { profile: payload };
+
+        if (payload.password) {
+            postRequestBody.credentials = { password: { value: payload.password } };
+            delete postRequestBody.profile.password;
+        }
+
+        const { data }: { data: OktaUser } = await axios.post(
+            `${config.get('okta.url')}/api/v1/users/${oktaId}`,
+            postRequestBody,
+            { headers: OktaApiService.oktaRequestHeaders() }
+        );
+
+        return data;
+    }
+
     static async deleteUserByOktaId(oktaId: string): Promise<void> {
         return axios.delete(
             `${config.get('okta.url')}/api/v1/users/${oktaId}`,
