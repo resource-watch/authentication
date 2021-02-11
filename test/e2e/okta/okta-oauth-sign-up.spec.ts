@@ -37,6 +37,14 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         requester = await getTestAgent();
     });
 
+    it('Sign up HTML page includes firstName, lastName and email as required form input fields', async () => {
+        const response: request.Response = await requester.get(`/auth/sign-up`);
+        response.status.should.equal(200);
+        response.text.should.include('<input type="text" name="firstName" placeholder="First Name" required />');
+        response.text.should.include('<input type="text" name="lastName" placeholder="Last Name" required />');
+        response.text.should.include('<input type="email" name="email" placeholder="Email" value="" required />');
+    });
+
     it('Registering a user without the actual data returns a 200 error (TODO: this should return a 422)', async () => {
         mockOktaFailedSignUp('login: The field cannot be left blank');
 
