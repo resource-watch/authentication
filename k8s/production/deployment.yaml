@@ -66,7 +66,7 @@ spec:
               key: CT_TOKEN
               name: authorization
         - name: LOCAL_URL
-          value: 'http://authorization.core.svc.cluster.local:9000'
+          value: 'http://authorization.core.svc.cluster.local'
         - name: CT_URL
           valueFrom:
             secretKeyRef:
