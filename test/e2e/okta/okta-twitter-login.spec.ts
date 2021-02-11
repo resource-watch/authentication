@@ -4,17 +4,20 @@ import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
 
 import Settings from 'services/settings.service';
-import UserModel, { UserDocument } from 'models/user.model';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserInDB } from '../utils/helpers';
+import {stubConfigValue} from '../utils/helpers';
 import request from 'superagent';
+import sinon, {SinonSandbox} from 'sinon';
+import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {getMockOktaUser, mockOktaListUsers} from './okta.mocks';
 
-const should: Chai.Should = chai.should();
+chai.should();
 chai.use(ChaiString);
 chai.use(ChaiHttp);
 
 let requester:ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -25,15 +28,12 @@ describe('[OKTA] Twitter migrate endpoint tests - Login and migration start', ()
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        requester = await getTestAgent(true);
-
-        await UserModel.deleteMany({}).exec();
-
-        nock.cleanAll();
     });
 
     beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
+
         requester = await getTestAgent(true);
     });
 
@@ -57,10 +57,6 @@ describe('[OKTA] Twitter migrate endpoint tests - Login and migration start', ()
     });
 
     it('Visiting /auth/twitter/callback with the correct oauth data for a user that does not exist locally should return an error message', async () => {
-        const missingUser: UserDocument = await UserModel.findOne({ email: 'john.doe@vizzuality.com' })
-            .exec();
-        should.not.exist(missingUser);
-
         nock('https://api.twitter.com')
             .get('/oauth/authenticate?oauth_token=OAUTH_TOKEN')
             .reply(200, 'hello world');
@@ -123,8 +119,13 @@ describe('[OKTA] Twitter migrate endpoint tests - Login and migration start', ()
                 email: 'john.doe@vizzuality.com'
             });
 
-        await requester
-            .get(`/auth/twitter/auth`);
+        // Mock non-existing user
+        mockOktaListUsers({
+            limit: 1,
+            search: `(profile.provider eq "${OktaOAuthProvider.TWITTER}") and (profile.providerId eq "113994825016233013735")`
+        }, []);
+
+        await requester.get(`/auth/twitter/auth`);
 
         const response: request.Response = await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`)
@@ -135,12 +136,6 @@ describe('[OKTA] Twitter migrate endpoint tests - Login and migration start', ()
     });
 
     it('Visiting /auth/twitter/callback with the correct oauth data for a user that does exists locally should redirect to the migrate page', async () => {
-        await createUserInDB({
-            email: 'john.doe@vizzuality.com',
-            provider: 'twitter',
-            providerId: '113994825016233013735'
-        });
-
         nock('https://api.twitter.com')
             .get('/oauth/authenticate?oauth_token=OAUTH_TOKEN')
             .reply(200, 'hello world');
@@ -203,25 +198,35 @@ describe('[OKTA] Twitter migrate endpoint tests - Login and migration start', ()
                 email: 'john.doe@vizzuality.com'
             });
 
-        await requester
-            .get(`/auth/twitter/auth`);
+        const providerId: string = '113994825016233013735';
+        const user: OktaUser = getMockOktaUser({
+            email: 'john.doe@vizzuality.com',
+            displayName: 'John Doe',
+            provider: OktaOAuthProvider.TWITTER,
+            providerId,
+        });
+
+        mockOktaListUsers({
+            limit: 1,
+            search: `(profile.provider eq "${OktaOAuthProvider.TWITTER}") and (profile.providerId eq "${providerId}")`
+        }, [user]);
+
+        await requester.get(`/auth/twitter/auth`);
 
         const response: request.Response = await requester
             .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`)
             .redirects(0);
 
-response.should.redirect;
+        response.should.redirect;
         response.should.redirectTo(/\/auth\/twitter\/migrate$/);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        UserModel.deleteMany({})
-            .exec();
-
-        closeTestAgent();
+        sandbox.restore();
+        await closeTestAgent();
     });
 });
