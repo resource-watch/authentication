@@ -239,6 +239,21 @@ export default class OktaService {
         return OktaService.getOktaUserByOktaId(oktaId);
     }
 
+    static async migrateToUsernameAndPassword(user: OktaUser, email: string, password: string): Promise<IUser> {
+        if (!user) {
+            return null;
+        }
+
+        const updatedUser: OktaUser = await OktaApiService.postUserProtectedFieldsByOktaId(user.id, {
+            provider: OktaOAuthProvider.LOCAL,
+            providerId: null,
+            email,
+            password,
+        });
+
+        return OktaService.convertOktaUserToIUser(updatedUser);
+    }
+
     /**
      * Weird logic to find user name...
      * TODO: in the future, deprecate "name" in favour of "firstName" + "lastName" and remove this

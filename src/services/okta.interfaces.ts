@@ -94,6 +94,9 @@ export interface OktaUpdateUserProtectedFieldsPayload {
     legacyId?: string;
     email?: string;
     displayName?: string;
+    provider?: string;
+    providerId?: string;
+    password?: string;
     role?: string;
     apps?: string[];
 }
@@ -142,4 +145,5 @@ export enum OktaOAuthProvider {
     FACEBOOK = 'facebook',
     GOOGLE = 'google',
     APPLE = 'apple',
+    TWITTER = 'twitter',
 }
