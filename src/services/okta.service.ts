@@ -244,27 +244,15 @@ export default class OktaService {
      * TODO: in the future, deprecate "name" in favour of "firstName" + "lastName" and remove this
      */
     static findUserName(body: Record<string, any>): { firstName: string, lastName: string, name: string } {
-        let name: string;
-        let firstName: string;
-        let lastName: string;
-
         if (body?.firstName && body?.lastName) {
-            firstName = body.firstName;
-            lastName = body.lastName;
-            name = `${firstName} ${lastName}`;
-        } else if (body?.name && body?.name.split(' ').length > 1) {
-            const splitName: string[] = body.name.split(' ');
-            firstName = splitName[0];
-            splitName.shift();
-            lastName = splitName.join(' ');
-            name = body.name;
-        } else {
-            firstName = 'RW API';
-            lastName = 'USER';
-            name = 'RW API USER';
+            return { firstName: body.firstName, lastName: body.lastName, name: `${body.firstName} ${body.lastName}` };
         }
 
-        return { firstName, lastName, name };
+        if (body?.name && body?.name.split(' ').length > 1) {
+            return { firstName: body.name.split(' ')[0], lastName: body.name.split(' ').slice(1).join(' '), name: body.name };
+        }
+
+        return { firstName: 'RW API', lastName: 'USER', name: 'RW API USER' };
     }
 
     private static getOktaSearchCriteria(query: Record<string, any>): string {
@@ -288,14 +276,16 @@ export default class OktaService {
 
     static async createUserWithExistingPassword(user: UserDocument): Promise<boolean> {
         try {
+            const userNameInfo: { lastName: string; firstName: string; name: string; } = OktaService.findUserName({ name: user.name });
+
             // User does not exist, create it in Okta
             await OktaApiService.postUserWithEncryptedPassword({
                 profile: {
-                    firstName: 'RW API',
-                    lastName: 'User',
+                    firstName: userNameInfo.firstName,
+                    lastName: userNameInfo.lastName,
+                    displayName: userNameInfo.name,
                     email: user.email,
                     login: user.email,
-                    displayName: user.name,
                     legacyId: user.id,
                     role: user.role,
                     apps: user.extraUserData.apps,
