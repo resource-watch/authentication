@@ -3,17 +3,21 @@ import chai from 'chai';
 import ChaiHttp from 'chai-http';
 import ChaiString from 'chai-string';
 
-import UserModel from 'models/user.model';
-
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { createUserInDB } from '../utils/helpers';
+import {stubConfigValue} from '../utils/helpers';
 import request from 'superagent';
+import sinon, {SinonSandbox} from 'sinon';
+import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {getMockOktaUser, mockGetUserById, mockOktaListUsers} from './okta.mocks';
+import config from 'config';
+import {isEqual} from 'lodash';
 
 chai.should();
 chai.use(ChaiString);
 chai.use(ChaiHttp);
 
-let requester:ChaiHttp.Agent;
+let requester: ChaiHttp.Agent;
+let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -24,15 +28,12 @@ describe('[OKTA] Twitter migrate endpoint tests - Finish page', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        requester = await getTestAgent(true);
-
-        await UserModel.deleteMany({}).exec();
-
-        nock.cleanAll();
     });
 
     beforeEach(async () => {
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
+
         requester = await getTestAgent(true);
     });
 
@@ -46,11 +47,33 @@ describe('[OKTA] Twitter migrate endpoint tests - Finish page', () => {
     });
 
     it('Visiting /auth/twitter/finished after a successful migration should display the finished page (happy case)', async () => {
-        await createUserInDB({
+        const providerId: string = '113994825016233013735';
+        const user: OktaUser = getMockOktaUser({
             email: 'john.doe@vizzuality.com',
-            provider: 'twitter',
-            providerId: '113994825016233013735'
+            displayName: 'John Doe',
+            provider: OktaOAuthProvider.TWITTER,
+            providerId,
         });
+
+        mockOktaListUsers({
+            limit: 1,
+            search: `(profile.provider eq "${OktaOAuthProvider.TWITTER}") and (profile.providerId eq "${providerId}")`
+        }, [user]);
+
+        mockGetUserById(user);
+
+        // Mock update password request
+        const updateData: Record<string, any> = {
+            profile: {
+                email: 'john.doe@vizzuality.com',
+                provider: OktaOAuthProvider.LOCAL,
+                providerId: null,
+            },
+            credentials: { password: { value: 'bar' } },
+        };
+        nock(config.get('okta.url'))
+            .post(`/api/v1/users/${user.id}`, (body) => isEqual(body, updateData))
+            .reply(200, { ...user, profile: { ...user.profile, ...updateData } });
 
         nock('https://api.twitter.com')
             .get('/oauth/authenticate?oauth_token=OAUTH_TOKEN')
@@ -115,12 +138,10 @@ describe('[OKTA] Twitter migrate endpoint tests - Finish page', () => {
             });
 
         // start session, with oauth data
-        await requester
-            .get(`/auth/twitter/auth`);
+        await requester.get(`/auth/twitter/auth`);
 
         // twitter callback, which sets the user data to sessions
-        await requester
-            .get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
+        await requester.get(`/auth/twitter/callback?oauth_token=OAUTH_TOKEN&oauth_verifier=OAUTH_TOKEN_VERIFIER`);
 
         // migrate the user
         await requester
@@ -131,21 +152,17 @@ describe('[OKTA] Twitter migrate endpoint tests - Finish page', () => {
                 repeatPassword: 'bar'
             });
 
-        const response: request.Response = await requester
-            .get(`/auth/twitter/finished`);
-
+        const response: request.Response = await requester.get(`/auth/twitter/finished`);
         response.text.should.include(`Migration finished`);
         response.text.should.include(`Your account has been migrated`);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        UserModel.deleteMany({})
-            .exec();
-
-        closeTestAgent();
+        sandbox.restore();
+        await closeTestAgent();
     });
 });

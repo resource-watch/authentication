@@ -24,15 +24,16 @@ async function registerUserBasicTwitter(
 
         if (!user) {
             done(null, false, { message: 'No RW API user found for this Twitter account' });
-        } else {
-            let email: string = null;
-            if (profile?.emails?.length > 0) {
-                email = profile.emails[0].value;
-            }
-            if (email && email !== user.profile.email) {
-                logger.info('[TwitterProvider] Updating email');
-                user = await OktaService.updateUserProtectedFields(user.id, { email });
-            }
+            return;
+        }
+
+        let email: string = null;
+        if (profile?.emails?.length > 0) {
+            email = profile.emails[0].value;
+        }
+        if (email && email !== user.profile.email) {
+            logger.info('[TwitterProvider] Updating email');
+            user = await OktaService.updateUserProtectedFields(user.id, { email });
         }
 
         const convertedUser: IUser = OktaService.convertOktaUserToIUser(user);
