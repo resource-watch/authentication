@@ -171,10 +171,15 @@ export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload
     nock(config.get('okta.url'))
         .post('/api/v1/users?activate=false', (body) => [
             body.profile.email === payload.email,
+            body.profile.login === payload.email,
+            body.profile.firstName === payload.firstName,
+            body.profile.lastName === payload.lastName,
             body.profile.displayName === payload.name,
+            body.profile.provider === payload.provider,
             body.profile.role === payload.role || body.profile.role === 'USER',
             isEqual(body.profile.apps, payload.apps) || isEqual(body.profile.apps, []),
             !payload.photo || body.profile.photo === payload.photo,
+            !payload.providerId || body.profile.providerId === payload.providerId,
         ].every(el => !!el))
         .reply(200, user);
 };
