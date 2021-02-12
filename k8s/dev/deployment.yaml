@@ -62,6 +62,31 @@ spec:
             secretKeyRef:
               key: OKTA_API_KEY
               name: authorization
+        - name: OKTA_CLIENT_ID
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_CLIENT_ID
+              name: authorization
+        - name: OKTA_CLIENT_SECRET
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_CLIENT_SECRET
+              name: authorization
+        - name: OKTA_GFW_FACEBOOK_IDP
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_GFW_FACEBOOK_IDP
+              name: authorization
+        - name: OKTA_GFW_GOOGLE_IDP
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_GFW_GOOGLE_IDP
+              name: authorization
+        - name: OKTA_GFW_APPLE_IDP
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_GFW_APPLE_IDP
+              name: authorization
         - name: CT_REGISTER_MODE
           valueFrom:
             secretKeyRef:
