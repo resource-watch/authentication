@@ -31,10 +31,10 @@ let jwkKey: RSA_JWK;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const mockAppleKeys: (id: string, times: number) => Promise<string> = async (id, times) => {
+const mockAppleKeys: (id: string) => Promise<string> = async (id) => {
     nock('https://appleid.apple.com')
+        .persist()
         .get('/auth/keys')
-        .times(times)
         .reply(200, {
             keys: appleKeys.data.keys.map((elem: Record<string, any>) => ({ ...elem, n: jwkKey.n, e: jwkKey.e }))
         });
@@ -174,7 +174,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
 
         mockOktaSendActivationEmail(user);
 
-        const token: string = await mockAppleKeys(providerId, 3);
+        const token: string = await mockAppleKeys(providerId);
         const response: request.Response = await requester
             .get(`/auth/apple/token`)
             .query({ access_token: token });
@@ -207,7 +207,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
 
         mockOktaUpdateUser(user, { email: 'dj8e99g34n@privaterelay.appleid.com' });
 
-        const token: string = await mockAppleKeys(providerId, 1);
+        const token: string = await mockAppleKeys(providerId);
         const response: request.Response = await requester
             .get(`/auth/apple/token`)
             .query({ access_token: token });
