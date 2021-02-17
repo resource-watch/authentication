@@ -92,10 +92,10 @@ export default class OktaApiService {
             .toString('base64');
 
         const { data } = await axios.post(
-            `${config.get('okta.url')}/oauth2/default/v1/token?grant_type=authorization_code&code=${code}&redirect_uri=http://localhost:9050/auth/authorization-code/callback`,
+            `${config.get('okta.url')}/oauth2/default/v1/token?grant_type=authorization_code&code=${code}&redirect_uri=${config.get('server.publicUrl')}/auth/authorization-code/callback`,
             {
                 grant_type: 'authorization_code',
-                redirect_uri: `http://localhost:9050/auth/authorization-code/callback`,
+                redirect_uri: `${config.get('server.publicUrl')}/auth/authorization-code/callback`,
                 code,
             },
             {
