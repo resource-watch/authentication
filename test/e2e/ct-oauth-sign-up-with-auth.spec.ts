@@ -9,6 +9,7 @@ import UserTempModel, { IUserTemp } from 'models/user-temp.model';
 import { createTempUser, createUserAndToken, stubConfigValue } from './utils/helpers';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
 import type request from 'superagent';
+import { GFW_LOGO } from './utils/test.constants';
 
 const should: Chai.Should = chai.should();
 
@@ -275,8 +276,8 @@ describe('OAuth endpoints tests - Sign up with HTML UI', () => {
                     substitution_data: {
                         fromEmail: 'noreply@globalforestwatch.org',
                         fromName: 'GFW',
-                        appName: 'GFW',
-                        logo: 'https://www.globalforestwatch.org/packs/gfw-9c5fe396ee5b15cb5f5b639a7ef771bd.png'
+                        appName: 'Global Forest Watch',
+                        logo: GFW_LOGO
                     }
                 };
 

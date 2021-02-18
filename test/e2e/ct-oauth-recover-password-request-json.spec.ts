@@ -6,6 +6,7 @@ import UserTempModel from 'models/user-temp.model';
 import RenewModel from 'models/renew.model';
 import type request from 'superagent';
 import { closeTestAgent, getTestAgent } from './utils/test-server';
+import { GFW_LOGO } from './utils/test.constants';
 import config from 'config';
 
 chai.should();
@@ -135,8 +136,8 @@ describe('OAuth endpoints tests - Recover password request - JSON version', () =
                     substitution_data: {
                         fromEmail: 'noreply@globalforestwatch.org',
                         fromName: 'GFW',
-                        appName: 'GFW',
-                        logo: 'https://www.globalforestwatch.org/packs/gfw-9c5fe396ee5b15cb5f5b639a7ef771bd.png'
+                        appName: 'Global Forest Watch',
+                        logo: GFW_LOGO
                     }
                 };
 
