@@ -3,7 +3,7 @@ services:
   develop:
     build: .
     ports:
-      - "9000:9000"
+      - "9001:9001"
     container_name: authorization
     env_file:
       - dev.env
@@ -17,7 +17,7 @@ services:
     image: mongo:3.6.13
     container_name: authorization-mongo
     ports:
-      - "27017"
+      - "27018:27017"
     volumes:
       - $HOME/docker/authorization/mongodb:/data/db
     restart: always
@@ -25,5 +25,5 @@ services:
     image: redis
     container_name: authorization-redis
     ports:
-      - "16379:6379"
+      - "6379:6380"
     restart: always

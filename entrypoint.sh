@@ -2,6 +2,10 @@
 set -e
 
 case "$1" in
+    develop)
+        echo "Running Develop"
+        exec yarn watch
+        ;;
     test)
         echo "Running Test"
         exec yarn test
