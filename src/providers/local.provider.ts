@@ -122,7 +122,7 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async localCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
-        return passport.authenticate('local', async (user: UserDocument) => {
+        return passport.authenticate('local', async (stub:void, user: UserDocument) => {
             if (!user) {
                 if (ctx.request.type === 'application/json') {
                     ctx.status = 401;
@@ -148,7 +148,7 @@ export class LocalProvider extends BaseProvider {
             } else {
                 await ctx.logIn(user)
                     .then(() => ctx.redirect('/auth/success'))
-                    .catch(() => ctx.redirect('/auth/fail?error=true'));
+                    .catch((err) => ctx.redirect('/auth/fail?error=true'));
             }
         })(ctx, next);
     }
