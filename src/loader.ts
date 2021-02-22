@@ -70,7 +70,7 @@ export async function loadRoutes(app: Application): Promise<void> {
     logger.debug('Loading JWT middleware...');
     app.use(jwt({
         secret: Settings.getSettings().jwt.secret,
-        passthrough: Settings.getSettings().jwt.passthrough,
+        passthrough: true,
         isRevoked: config.get('authProvider') === 'OKTA' ? OktaService.checkRevokedToken : UserService.checkRevokedToken,
         getToken
     }));

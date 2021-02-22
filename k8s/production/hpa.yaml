@@ -8,6 +8,6 @@ spec:
     apiVersion: apps/v1beta1
     kind: Deployment
     name: authorization
-  minReplicas: 10
-  maxReplicas: 100
+  minReplicas: 2
+  maxReplicas: 5
   targetCPUUtilizationPercentage: 80

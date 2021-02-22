@@ -83,9 +83,15 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
             }));
             app.use(koaSimpleHealthCheck());
 
-            app.keys = ['twitter'];
-            // @ts-ignore
-            app.use(session({ store: redisStore({ url: config.get('redis.url') }) }));
+            app.keys = [config.get('server.sessionKey')];
+
+            app.use(session({
+                // @ts-ignore
+                store: redisStore({
+                    url: config.get('redis.url'),
+                    db: 1
+                })
+            }));
 
             app.use(flash());
 
@@ -126,7 +132,7 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                 url: process.env.LOCAL_URL,
                 token: process.env.CT_TOKEN,
                 skipGetLoggedUser: true,
-                fastlyEnabled: process.env.FASTLY_ENABLED as boolean|'true'|'false',
+                fastlyEnabled: process.env.FASTLY_ENABLED as boolean | 'true' | 'false',
                 fastlyServiceId: process.env.FASTLY_SERVICEID,
                 fastlyAPIKey: process.env.FASTLY_APIKEY
 
