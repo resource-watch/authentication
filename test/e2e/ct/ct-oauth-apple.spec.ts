@@ -10,17 +10,45 @@ import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
 import { stubConfigValue } from '../utils/helpers';
 import config from 'config';
+import axios, { AxiosResponse } from 'axios';
 
 const should: Chai.Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 let sandbox: SinonSandbox;
 let b64string:string;
+let appleKeys: AxiosResponse;
+let keys: KeyPairSyncResult<string, string>;
+let jwkKey: RSA_JWK;
 
 const { expect } = chai;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
+
+const mockAppleKeys: (id: string, times: number) => Promise<string> = async (id, times) => {
+    nock('https://appleid.apple.com')
+        .persist()
+        .get('/auth/keys')
+        .reply(200, {
+            keys: appleKeys.data.keys.map((elem: Record<string, any>) => ({ ...elem, n: jwkKey.n, e: jwkKey.e }))
+        });
+
+    return jwt.sign({
+        iss: 'https://appleid.apple.com',
+        aud: 'org.resourcewatch.api.dev.auth',
+        exp: Math.floor(Date.now() / 1000) + 100,
+        iat: Math.floor(Date.now() / 1000) - 100,
+        sub: id,
+        at_hash: 'f0M-78UN58lEDlwW9ZnXdQ',
+        email: 'dj8e99g34n@privaterelay.appleid.com',
+        email_verified: 'true',
+        is_private_email: 'true',
+        auth_time: Math.floor(Date.now() / 1000),
+        nonce_supported: true
+    }, keys.privateKey, { algorithm: 'RS256' });
+};
+
 
 describe('[CT] Apple auth endpoint tests', () => {
 
@@ -30,6 +58,9 @@ describe('[CT] Apple auth endpoint tests', () => {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
 
+        // CT and OKTA apple tests dont seem to like running in the same test execution.
+        // Because of this, we have an opposite condition to this on the OKTA apple tests.
+        // This will be removed soon enough anyways, so #yolo
         if (
             !config.get('settings.thirdParty.gfw.apple.teamId') ||
             !config.get('settings.thirdParty.gfw.apple.keyId') ||
@@ -39,18 +70,42 @@ describe('[CT] Apple auth endpoint tests', () => {
             this.skip();
         }
 
-        b64string = config.get('settings.thirdParty.gfw.apple.privateKeyString');
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw', 'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString() });
 
-        requester = await getTestAgent(true);
+        nock.cleanAll();
+        nock.enableNetConnect();
+        appleKeys = await axios.get('https://appleid.apple.com/auth/keys');
+        nock.cleanAll();
+        nock.disableNetConnect();
+        nock.enableNetConnect(process.env.HOST_IP);
 
-        return UserModel.deleteMany({}).exec();
+        keys = crypto.generateKeyPairSync('rsa', {
+            modulusLength: 4096,
+            publicKeyEncoding: {
+                type: 'spki',
+                format: 'pem'
+            },
+            privateKeyEncoding: {
+                type: 'pkcs8',
+                format: 'pem'
+            }
+        });
+
+        jwkKey = pem2jwk(keys.publicKey);
     });
 
     beforeEach(async () => {
+        b64string = config.get('settings.thirdParty.gfw.apple.privateKeyString');
+
+        sandbox = sinon.createSandbox();
+        stubConfigValue(sandbox, {
+            'settings.defaultApp': 'gfw',
+            'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString(),
+            'authProvider': 'CT',
+        });
+
         requester = await getTestAgent(true);
     });
+
 
     it('Visiting /auth/apple while not being logged in should redirect to the login page', async () => {
         const response: request.Response = await requester.get(`/auth/apple`).redirects(0);
@@ -211,50 +266,8 @@ describe('[CT] Apple auth endpoint tests', () => {
         const existingUser: UserDocument = await UserModel.findOne({ providerId: '000958.a4550a8804284886a5b5116a1c0351af.1425' }).exec();
         should.not.exist(existingUser);
 
-        const keys: KeyPairSyncResult<string, string> = crypto.generateKeyPairSync('rsa', {
-            modulusLength: 4096,
-            publicKeyEncoding: {
-                type: 'spki',
-                format: 'pem'
-            },
-            privateKeyEncoding: {
-                type: 'pkcs8',
-                format: 'pem'
-            }
-        });
-
-        const jwkKey: RSA_JWK = pem2jwk(keys.publicKey);
-
-        nock('https://appleid.apple.com')
-            .get('/auth/keys')
-            .times(2)
-            .reply(200, {
-                keys: [
-                    {
-                        kty: 'RSA',
-                        kid: '77D88Kf',
-                        use: 'sig',
-                        alg: 'RS256',
-                        n: jwkKey.n,
-                        e: jwkKey.e
-                    }
-                ]
-            });
-
-        const tokenContent: Record<string, any> = {
-            iss: 'https://appleid.apple.com',
-            aud: 'org.resourcewatch.api.dev.auth',
-            exp: Math.floor(Date.now() / 1000) + 100,
-            iat: 1603962083,
-            sub: '000958.a4550a8804284886a5b5116a1c0351af.1425',
-            at_hash: 'f0M-78UN58lEDlwW9ZnXdQ',
-            email: 'dj8e99g34n@privaterelay.appleid.com',
-            email_verified: 'true',
-            is_private_email: 'true',
-            auth_time: 1603962070,
-            nonce_supported: true
-        };
-        const token: string = jwt.sign(tokenContent, keys.privateKey, { algorithm: 'RS256' });
+        const providerId: string = '000958.a4550a8804284886a5b5116a1c0351af.1425';
+        const token: string = await mockAppleKeys(providerId, 3);
 
         const response: request.Response = await requester
             .get(`/auth/apple/token`)
@@ -298,50 +311,8 @@ describe('[CT] Apple auth endpoint tests', () => {
         existingUser.should.have.property('providerId').and.equal('000958.a4550a8804284886a5b5116a1c0351af.1425');
         existingUser.should.have.property('userToken').and.equal(undefined);
 
-        const keys: KeyPairSyncResult<string, string> = crypto.generateKeyPairSync('rsa', {
-            modulusLength: 4096,
-            publicKeyEncoding: {
-                type: 'spki',
-                format: 'pem'
-            },
-            privateKeyEncoding: {
-                type: 'pkcs8',
-                format: 'pem'
-            }
-        });
-
-        const jwkKey: RSA_JWK = pem2jwk(keys.publicKey);
-
-        nock('https://appleid.apple.com')
-            .get('/auth/keys')
-            .times(2)
-            .reply(200, {
-                keys: [
-                    {
-                        kty: 'RSA',
-                        kid: '86D88Kf',
-                        use: 'sig',
-                        alg: 'RS256',
-                        n: jwkKey.n,
-                        e: jwkKey.e
-                    }
-                ]
-            });
-
-        const tokenContent: Record<string, any> = {
-            iss: 'https://appleid.apple.com',
-            aud: 'org.resourcewatch.api.dev.auth',
-            exp: Math.floor(Date.now() / 1000) + 100,
-            iat: 1603962083,
-            sub: '000958.a4550a8804284886a5b5116a1c0351af.1425',
-            at_hash: 'f0M-78UN58lEDlwW9ZnXdQ',
-            email: 'dj8e99g34n@privaterelay.appleid.com',
-            email_verified: 'true',
-            is_private_email: 'true',
-            auth_time: 1603962070,
-            nonce_supported: true
-        };
-        const token: string = jwt.sign(tokenContent, keys.privateKey, { algorithm: 'RS256' });
+        const providerId: string = '000958.a4550a8804284886a5b5116a1c0351af.1425';
+        const token: string = await mockAppleKeys(providerId, 1);
 
         const response: request.Response = await requester
             .get(`/auth/apple/token`)
@@ -365,19 +336,20 @@ describe('[CT] Apple auth endpoint tests', () => {
         userWithToken.should.have.property('userToken').and.equal(response.body.token);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
-            throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
+            // Apple key validation seems to require a varying number of calls, so we specify the max, and trim down here.
+            const pendingMocks: string[] = nock.pendingMocks();
+            if (pendingMocks.length > 1 && pendingMocks[0] !== 'GET https://appleid.apple.com:443/auth/keys') {
+                throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
+            }
+            nock.cleanAll();
         }
 
-        UserModel.deleteMany({}).exec();
+        await UserModel.deleteMany({}).exec();
 
-        closeTestAgent();
+        sandbox.restore();
+        await closeTestAgent();
     });
 
-    after(() => {
-        if (sandbox) {
-            sandbox.restore();
-        }
-    });
 });
