@@ -11,6 +11,14 @@
         "method": "GET",
         "path": "/auth/user/me"
       }
+    },
+    {
+      "path": "/auth/user/ids/:roles",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/user/ids/:roles"
+      }
     }
   ]
 }
