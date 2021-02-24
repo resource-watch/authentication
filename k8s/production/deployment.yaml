@@ -39,6 +39,8 @@ spec:
           value: "9000"
         - name: LOGGER_TYPE
           value: console
+        - name: LOGGER_LEVEL
+          value: warn
         - name: NODE_ENV
           value: prod
         - name: NODE_PATH
@@ -230,7 +232,7 @@ spec:
             path: /healthcheck
             port: 9000
             scheme: HTTP
-          initialDelaySeconds: 30
+          initialDelaySeconds: 15
           periodSeconds: 15
           successThreshold: 1
           timeoutSeconds: 5
@@ -244,7 +246,7 @@ spec:
             path: /healthcheck
             port: 9000
             scheme: HTTP
-          initialDelaySeconds: 30
+          initialDelaySeconds: 15
           periodSeconds: 15
           successThreshold: 1
           timeoutSeconds: 5
