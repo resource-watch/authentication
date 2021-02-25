@@ -628,7 +628,7 @@ export class OktaProvider extends BaseProvider {
 
         const users: UserDocument[] = await UserModel.find();
         for (const user of users) {
-            if (user.email) {
+            if (user.email && user.password) {
                 try {
                     // Check if user exists in Okta
                     await OktaService.getOktaUserById(user.id);
