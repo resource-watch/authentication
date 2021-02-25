@@ -628,20 +628,22 @@ export class OktaProvider extends BaseProvider {
 
         const users: UserDocument[] = await UserModel.find();
         for (const user of users) {
-            try {
-                // Check if user exists in Okta
-                await OktaService.getOktaUserById(user.id);
+            if (user.email) {
+                try {
+                    // Check if user exists in Okta
+                    await OktaService.getOktaUserById(user.id);
 
-                // User exists in Okta, log it and move on
-                logger.info(`User with id ${user.id} already exists in Okta`);
-            } catch (err) {
-                if (err instanceof UserNotFoundError) {
-                    if (await OktaService.createUserWithExistingPassword(user)) {
-                        imported++;
+                    // User exists in Okta, log it and move on
+                    logger.info(`User with id ${user.id} already exists in Okta`);
+                } catch (err) {
+                    if (err instanceof UserNotFoundError) {
+                        if (await OktaService.createUserWithExistingPassword(user)) {
+                            imported++;
+                        }
+                    } else {
+                        // Some error occurred, log it and move on
+                        logger.error(`Error importing user with id ${user.id} to Okta`, err);
                     }
-                } else {
-                    // Some error occurred, log it and move on
-                    logger.error(`Error importing user with id ${user.id} to Okta`, err);
                 }
             }
         }
