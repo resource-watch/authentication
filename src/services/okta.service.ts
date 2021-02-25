@@ -314,7 +314,9 @@ export default class OktaService {
                             algorithm: 'BCRYPT',
                             workFactor: 10,
                             // Need to tweak the salt and password sent so that Okta knows how to deal with it :shrug:
-                            salt: user.salt.replace('$2b$10$', ''),
+                            salt: user.salt
+                                .replace('$2b$10$', '')
+                                .replace('$2a$10$', ''),
                             value: user.password.replace(user.salt, ''),
                         }
                     }
