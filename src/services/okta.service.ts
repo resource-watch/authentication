@@ -111,8 +111,10 @@ export default class OktaService {
                 isRevoked = true;
             }
 
-            if (!isEqual(userToCheck.extraUserData, payload.extraUserData)) {
-                logger.info(`[OktaService] "extraUserData" in token does not match expected value`);
+            const tokenApps: string[] = payload.extraUserData?.apps?.sort();
+            const userApps: string[] = userToCheck.extraUserData?.apps?.sort();
+            if (!isEqual(tokenApps, userApps)) {
+                logger.info(`[OktaService] "apps" in token does not match expected value`);
                 isRevoked = true;
             }
 
