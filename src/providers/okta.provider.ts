@@ -30,7 +30,7 @@ export class OktaProvider extends BaseProvider {
      */
     static async authCodeCallback(ctx: Context, next: Next): Promise<void> {
         try {
-            const { code, error, state } = ctx.query;
+            const { code, error } = ctx.query;
 
             if (error) {
                 logger.error('[OktaProvider] - Error returned from OAuth authorize call to Okta, ', error);
@@ -39,11 +39,6 @@ export class OktaProvider extends BaseProvider {
 
             if (!code) {
                 logger.error('[OktaProvider] - No code provided by Okta\'s OAuth authorize call, ', error);
-                return ctx.redirect('/auth/fail?error=true');
-            }
-
-            if (state !== ctx.session.oAuthState) {
-                logger.error('[OktaProvider] - OAuth state does not match the state stored in session.');
                 return ctx.redirect('/auth/fail?error=true');
             }
 

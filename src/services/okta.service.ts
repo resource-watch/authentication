@@ -220,7 +220,8 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(user);
     }
 
-    static getOAuthRedirect(provider: OktaOAuthProvider, application: string, state: string): string {
+    static getOAuthRedirect(provider: OktaOAuthProvider, application: string): string {
+        const state: string = uuidv4();
         const oktaOAuthURL: URL = new URL(`${config.get('okta.url')}/oauth2/default/v1/authorize`);
         oktaOAuthURL.searchParams.append('client_id', config.get('okta.clientId'));
         oktaOAuthURL.searchParams.append('response_type', 'code');

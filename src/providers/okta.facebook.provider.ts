@@ -7,7 +7,6 @@ import {IUser} from 'models/user.model';
 import passport from 'koa-passport';
 import FacebookTokenStrategy from 'passport-facebook-token';
 import BaseProvider from 'providers/base.provider';
-import {v4 as uuidv4} from 'uuid';
 import OktaService from 'services/okta.service';
 import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 import OktaProvider from 'providers/okta.provider';
@@ -110,10 +109,7 @@ export class OktaFacebookProvider extends BaseProvider {
     }
 
     static async facebook(ctx: Context & RouterContext): Promise<void> {
-        const state: string = uuidv4();
-        ctx.session.oAuthState = state;
-
-        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.FACEBOOK, Utils.getOriginApp(ctx), state);
+        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.FACEBOOK, Utils.getOriginApp(ctx));
         return ctx.redirect(url);
     }
 

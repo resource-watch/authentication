@@ -10,7 +10,6 @@ import BaseProvider from 'providers/base.provider';
 import {Strategy as GoogleTokenStrategy} from 'passport-google-token';
 import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 import OktaService from 'services/okta.service';
-import {v4 as uuidv4} from 'uuid';
 import OktaProvider from 'providers/okta.provider';
 
 export class OktaGoogleProvider extends BaseProvider {
@@ -109,10 +108,7 @@ export class OktaGoogleProvider extends BaseProvider {
     }
 
     static async google(ctx: Context): Promise<void> {
-        const state: string = uuidv4();
-        ctx.session.oAuthState = state;
-
-        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.GOOGLE, Utils.getOriginApp(ctx), state);
+        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.GOOGLE, Utils.getOriginApp(ctx));
         return ctx.redirect(url);
     }
 
