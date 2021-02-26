@@ -27,6 +27,14 @@
         "method": "GET",
         "path": "/auth/user/ids/:roles"
       }
+    },
+    {
+      "path": "/auth/authorization-code/callback",
+      "method": "GET",
+      "redirect": {
+        "method": "GET",
+        "path": "/auth/authorization-code/callback"
+      }
     }
   ]
 }
