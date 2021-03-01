@@ -111,9 +111,9 @@ export default class OktaApiService {
         return uid;
     }
 
-    static async postUser(payload: OktaCreateUserPayload): Promise<OktaUser> {
+    static async postUser(payload: OktaCreateUserPayload, activate: boolean): Promise<OktaUser> {
         const { data }: { data: OktaUser } = await axios.post(
-            `${config.get('okta.url')}/api/v1/users?activate=false`,
+            `${config.get('okta.url')}/api/v1/users?activate=${activate}`,
             {
                 profile: {
                     email: payload.email,
@@ -122,7 +122,7 @@ export default class OktaApiService {
                     lastName: payload.lastName,
                     displayName: payload.name,
                     provider: payload.provider,
-                    legacyId: uuidv4(),
+                    legacyId: payload.legacyId || uuidv4(),
                     role: payload.role || 'USER',
                     apps: payload.apps || [],
                     photo: payload.photo || null,

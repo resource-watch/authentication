@@ -54,6 +54,7 @@ export interface OktaCreateUserPayload {
     apps?: string[];
     photo?: string;
     providerId?: string;
+    legacyId?: string;
 }
 
 export interface OktaImportUserPayload {

@@ -171,6 +171,114 @@ describe('[OKTA] User import test suite', () => {
         response.body.should.have.property('imported').and.eql(0);
     });
 
+    it('Users with email and NO password are imported to Okta, returning 200 OK and 1 user imported', async () => {
+        // Create ADMIN user in MongoDB
+        const { token, user } = await createUserAndToken({ role: 'ADMIN' });
+
+        // Create mock OktaUser data
+        const mockOktaUser: OktaUser = getMockOktaUser({
+            legacyId: user.id,
+            login: user.email,
+            email: user.email,
+            role: user.role,
+            provider: user.provider,
+            apps: user.extraUserData.apps,
+        });
+
+        // Mock successful request to find user in Okta
+        mockGetUserById(mockOktaUser);
+
+        // Create user without password that does not exist in Okta
+        const userTwoData: Partial<UserDocument> = createUser();
+        delete userTwoData.password;
+        const userTwo: UserDocument = await new UserModel(userTwoData).save();
+
+        // Mock failed request to find user in Okta
+        mockGetUserByIdNotFound(userTwo.id);
+
+        // Mock request to create user without password
+        nock(config.get('okta.url'))
+            .post('/api/v1/users?activate=true', (body) => isEqual(body, {
+                profile: {
+                    firstName: userTwo.name.split(' ')[0],
+                    lastName: userTwo.name.split(' ').slice(1).join(' '),
+                    email: userTwo.email,
+                    login: userTwo.email,
+                    displayName: userTwo.name,
+                    legacyId: userTwo.id,
+                    role: userTwo.role,
+                    apps: userTwo.extraUserData.apps,
+                    provider: userTwo.provider,
+                    photo: userTwo.photo,
+                    providerId: null,
+                }
+            }))
+            .reply(200, userTwo);
+
+        const response: request.Response = await requester
+            .get(`/auth/import-users-to-okta`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('imported').and.eql(1);
+    });
+
+    it('Users without email OR password are imported to Okta with a fake email, returning 200 OK and 1 user imported', async () => {
+        // Create ADMIN user in MongoDB
+        const { token, user } = await createUserAndToken({ role: 'ADMIN' });
+
+        // Create mock OktaUser data
+        const mockOktaUser: OktaUser = getMockOktaUser({
+            legacyId: user.id,
+            login: user.email,
+            email: user.email,
+            role: user.role,
+            provider: user.provider,
+            apps: user.extraUserData.apps,
+        });
+
+        // Mock successful request to find user in Okta
+        mockGetUserById(mockOktaUser);
+
+        // Create user without password that does not exist in Okta
+        const userTwoData: Partial<UserDocument> = createUser();
+        delete userTwoData.email;
+        delete userTwoData.password;
+        userTwoData.providerId = '123';
+        const userTwo: UserDocument = await new UserModel(userTwoData).save();
+
+        // Mock failed request to find user in Okta
+        mockGetUserByIdNotFound(userTwo.id);
+
+        // Mock request to create user without password
+        nock(config.get('okta.url'))
+            .post('/api/v1/users?activate=true', (body) => isEqual(body, {
+                profile: {
+                    firstName: userTwo.name.split(' ')[0],
+                    lastName: userTwo.name.split(' ').slice(1).join(' '),
+                    email: `${userTwo.providerId}@${userTwo.provider}.com`,
+                    login: `${userTwo.providerId}@${userTwo.provider}.com`,
+                    displayName: userTwo.name,
+                    legacyId: userTwo.id,
+                    role: userTwo.role,
+                    apps: userTwo.extraUserData.apps,
+                    provider: userTwo.provider,
+                    ...(userTwo.photo && { photo: userTwo.photo }),
+                    ...(userTwo.providerId && { providerId: userTwo.providerId }),
+                }
+            }))
+            .reply(200, userTwo);
+
+        const response: request.Response = await requester
+            .get(`/auth/import-users-to-okta`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('imported').and.eql(1);
+    });
+
     after(async () => {
         await closeTestAgent();
     });
