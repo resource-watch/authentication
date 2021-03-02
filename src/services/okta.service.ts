@@ -195,14 +195,10 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(user);
     }
 
-    static async createUserWithoutPassword(payload: OktaCreateUserPayload): Promise<IUser> {
-        const newUser: OktaUser = await OktaApiService.postUser(payload, false);
-        await OktaApiService.postUserActivationEmail(newUser.id);
+    static async createUserWithoutPassword(payload: OktaCreateUserPayload, sendEmail: boolean = true): Promise<IUser> {
+        const newUser: OktaUser = await OktaApiService.postUser(payload);
+        await OktaApiService.postUserActivate(newUser.id, sendEmail);
         return OktaService.convertOktaUserToIUser(newUser);
-    }
-
-    static async createActiveUserWithoutPassword(payload: OktaCreateUserPayload): Promise<OktaUser> {
-        return await OktaApiService.postUser(payload, true);
     }
 
     static async updateUser(id: string, payload: OktaUpdateUserPayload): Promise<IUser> {

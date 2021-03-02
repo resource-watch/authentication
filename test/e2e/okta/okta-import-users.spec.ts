@@ -8,7 +8,7 @@ import UserModel, {UserDocument} from 'models/user.model';
 import {OktaImportUserPayload, OktaUser} from 'services/okta.interfaces';
 import {createUser, createUserAndToken} from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import {getMockOktaUser, mockGetUserById, mockGetUserByIdNotFound} from './okta.mocks';
+import {getMockOktaUser, mockGetUserById, mockGetUserByIdNotFound, mockOktaSendActivationEmail} from './okta.mocks';
 
 chai.should();
 
@@ -195,10 +195,19 @@ describe('[OKTA] User import test suite', () => {
 
         // Mock failed request to find user in Okta
         mockGetUserByIdNotFound(userTwo.id);
+        const oktaUser: OktaUser = getMockOktaUser({
+            legacyId: userTwo.id,
+            login: userTwo.email,
+            email: userTwo.email,
+            role: userTwo.role,
+            provider: userTwo.provider,
+            providerId: userTwo.providerId,
+            apps: userTwo.extraUserData.apps,
+        });
 
         // Mock request to create user without password
         nock(config.get('okta.url'))
-            .post('/api/v1/users?activate=true', (body) => isEqual(body, {
+            .post('/api/v1/users?activate=false', (body) => isEqual(body, {
                 profile: {
                     firstName: userTwo.name.split(' ')[0],
                     lastName: userTwo.name.split(' ').slice(1).join(' '),
@@ -213,7 +222,9 @@ describe('[OKTA] User import test suite', () => {
                     providerId: null,
                 }
             }))
-            .reply(200, userTwo);
+            .reply(200, oktaUser);
+
+        mockOktaSendActivationEmail(oktaUser, false);
 
         const response: request.Response = await requester
             .get(`/auth/import-users-to-okta`)
@@ -250,10 +261,19 @@ describe('[OKTA] User import test suite', () => {
 
         // Mock failed request to find user in Okta
         mockGetUserByIdNotFound(userTwo.id);
+        const oktaUser: OktaUser = getMockOktaUser({
+            legacyId: userTwo.id,
+            login: userTwo.email,
+            email: userTwo.email,
+            role: userTwo.role,
+            provider: userTwo.provider,
+            providerId: userTwo.providerId,
+            apps: userTwo.extraUserData.apps,
+        });
 
         // Mock request to create user without password
         nock(config.get('okta.url'))
-            .post('/api/v1/users?activate=true', (body) => isEqual(body, {
+            .post('/api/v1/users?activate=false', (body) => isEqual(body, {
                 profile: {
                     firstName: userTwo.name.split(' ')[0],
                     lastName: userTwo.name.split(' ').slice(1).join(' '),
@@ -268,7 +288,9 @@ describe('[OKTA] User import test suite', () => {
                     ...(userTwo.providerId && { providerId: userTwo.providerId }),
                 }
             }))
-            .reply(200, userTwo);
+            .reply(200, oktaUser);
+
+        mockOktaSendActivationEmail(oktaUser, false);
 
         const response: request.Response = await requester
             .get(`/auth/import-users-to-okta`)

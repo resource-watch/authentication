@@ -635,7 +635,7 @@ export class OktaProvider extends BaseProvider {
                         }
                     } else if (user.email && !user.password) {
                         // Import user without password
-                        if (await OktaService.createActiveUserWithoutPassword({
+                        await OktaService.createUserWithoutPassword({
                             email: user.email,
                             role: user.role,
                             apps: user.extraUserData.apps,
@@ -644,13 +644,13 @@ export class OktaProvider extends BaseProvider {
                             providerId: user.providerId,
                             legacyId: user.id,
                             ...OktaService.findUserName({ name: user.name }),
-                        })) {
-                            logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                            imported++;
-                        }
+                        }, false);
+
+                        logger.info(`Imported user with id ${user.id} to Okta successfully.`);
+                        imported++;
                     } else if (!user.email && !user.password && user.provider && user.providerId) {
                         // Import with fake email
-                        if (await OktaService.createActiveUserWithoutPassword({
+                        await OktaService.createUserWithoutPassword({
                             email: `${user.providerId}@${user.provider}.com`,
                             role: user.role,
                             apps: user.extraUserData.apps,
@@ -659,10 +659,10 @@ export class OktaProvider extends BaseProvider {
                             providerId: user.providerId,
                             legacyId: user.id,
                             ...OktaService.findUserName({ name: user.name }),
-                        })) {
-                            logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                            imported++;
-                        }
+                        }, false);
+
+                        logger.info(`Imported user with id ${user.id} to Okta successfully.`);
+                        imported++;
                     } else {
                         // Unsupported case
                         logger.error(`Error importing user with id ${user.id} to Okta`);

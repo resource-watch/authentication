@@ -67,9 +67,9 @@ export default class OktaApiService {
         );
     }
 
-    static async postUserActivationEmail(oktaId: string): Promise<void> {
+    static async postUserActivate(oktaId: string, sendEmail: boolean = true): Promise<void> {
         return axios.post(
-            `${config.get('okta.url')}/api/v1/users/${oktaId}/lifecycle/activate?sendEmail=true`,
+            `${config.get('okta.url')}/api/v1/users/${oktaId}/lifecycle/activate?sendEmail=${sendEmail}`,
             {},
             { headers: OktaApiService.oktaRequestHeaders() }
         );
@@ -111,9 +111,9 @@ export default class OktaApiService {
         return uid;
     }
 
-    static async postUser(payload: OktaCreateUserPayload, activate: boolean): Promise<OktaUser> {
+    static async postUser(payload: OktaCreateUserPayload): Promise<OktaUser> {
         const { data }: { data: OktaUser } = await axios.post(
-            `${config.get('okta.url')}/api/v1/users?activate=${activate}`,
+            `${config.get('okta.url')}/api/v1/users?activate=false`,
             {
                 profile: {
                     email: payload.email,
