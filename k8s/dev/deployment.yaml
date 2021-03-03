@@ -59,6 +59,11 @@ spec:
           value: '#f1b319'
         - name: AUTHORIZATION_PROVIDER
           value: 'OKTA'
+        - name: OKTA_API_URL
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_API_URL
+              name: authorization
         - name: OKTA_API_KEY
           valueFrom:
             secretKeyRef:
@@ -88,6 +93,26 @@ spec:
           valueFrom:
             secretKeyRef:
               key: OKTA_GFW_APPLE_IDP
+              name: authorization
+        - name: OKTA_RW_FACEBOOK_IDP
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_RW_FACEBOOK_IDP
+              name: authorization
+        - name: OKTA_RW_GOOGLE_IDP
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_RW_GOOGLE_IDP
+              name: authorization
+        - name: OKTA_PREP_FACEBOOK_IDP
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_PREP_FACEBOOK_IDP
+              name: authorization
+        - name: OKTA_PREP_GOOGLE_IDP
+          valueFrom:
+            secretKeyRef:
+              key: OKTA_PREP_GOOGLE_IDP
               name: authorization
         - name: CT_REGISTER_MODE
           valueFrom:
