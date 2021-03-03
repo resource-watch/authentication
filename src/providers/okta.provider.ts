@@ -638,7 +638,7 @@ export class OktaProvider extends BaseProvider {
                         await OktaService.createUserWithoutPassword({
                             email: user.email,
                             role: user.role,
-                            apps: user.extraUserData.apps,
+                            apps: user.extraUserData?.apps || [],
                             photo: user.photo,
                             provider: user.provider as OktaOAuthProvider,
                             providerId: user.providerId,
@@ -653,7 +653,7 @@ export class OktaProvider extends BaseProvider {
                         await OktaService.createUserWithoutPassword({
                             email: `${user.providerId}@${user.provider}.com`,
                             role: user.role,
-                            apps: user.extraUserData.apps,
+                            apps: user.extraUserData?.apps || [],
                             photo: user.photo,
                             provider: user.provider as OktaOAuthProvider,
                             providerId: user.providerId,
