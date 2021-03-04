@@ -102,24 +102,24 @@ export default class OktaService {
             const userToCheck: IUser = OktaService.convertOktaUserToIUser(updatedUser);
 
             if (!isEqual(userToCheck.id, payload.id)) {
-                logger.info(`[OktaService] "id" in token does not match expected value`);
+                logger.info(`[OktaService] "id" in token ("${payload.id}") does not match value obtained from Okta ("${userToCheck.id}")`);
                 isRevoked = true;
             }
 
             if (!isEqual(userToCheck.role, payload.role)) {
-                logger.info(`[OktaService] "role" in token does not match expected value`);
+                logger.info(`[OktaService] "role" in token ("${payload.role}") does not match value obtained from Okta ("${userToCheck.role}")`);
                 isRevoked = true;
             }
 
             const tokenApps: string[] = payload.extraUserData?.apps?.sort();
             const userApps: string[] = userToCheck.extraUserData?.apps?.sort();
             if (!isEqual(tokenApps, userApps)) {
-                logger.info(`[OktaService] "apps" in token does not match expected value`);
+                logger.info(`[OktaService] "apps" in token ("${tokenApps}") does not match value obtained from Okta ("${userApps}")`);
                 isRevoked = true;
             }
 
             if (!isEqual(userToCheck.email, payload.email)) {
-                logger.info(`[OktaService] "email" in token does not match expected value`);
+                logger.info(`[OktaService] "email" in token ("${payload.email}") does not match value obtained from Okta ("${userToCheck.email}")`);
                 isRevoked = true;
             }
 
@@ -131,8 +131,6 @@ export default class OktaService {
     }
 
     static async setAndUpdateRequiredFields(user: OktaUser): Promise<OktaUser> {
-        logger.info('[OktaService] Setting required fields for user with Okta ID: ', user.id);
-
         // Check if user has required fields set - if not set, set them
         const updateData: OktaUpdateUserProtectedFieldsPayload = {};
 
@@ -150,6 +148,7 @@ export default class OktaService {
 
         // If updateData is not empty, trigger user update
         if (Object.keys(updateData).length > 0) {
+            logger.info('[OktaService] Setting required fields for user with Okta ID: ', user.id);
             return OktaService.updateUserProtectedFields(user.id, updateData);
         }
 
