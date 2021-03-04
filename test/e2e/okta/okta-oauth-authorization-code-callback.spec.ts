@@ -10,6 +10,7 @@ import {
     getMockOktaUser,
     mockGetUserById,
     mockGetUserByOktaId,
+    mockOktaGetUserByEmail,
     mockOktaOAuthToken,
     mockOktaUpdateUser
 } from './okta.mocks';
@@ -29,7 +30,7 @@ const validateTokenRequestAndaPayload: (user: OktaUser) => Promise<void> = async
     tokenResponse.body.should.have.property('token').and.be.a.string;
     const tokenPayload: JWTPayload = JWT.decode(tokenResponse.body.token) as JWTPayload;
     tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
-    tokenPayload.should.have.property('role').and.eql('USER');
+    tokenPayload.should.have.property('role').and.eql(user.profile.role);
     tokenPayload.should.have.property('email').and.eql(user.profile.email);
     tokenPayload.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
     tokenPayload.should.have.property('photo').and.eql(user.profile.photo);
@@ -209,6 +210,52 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
         responseOne.should.redirectTo(new RegExp(`/auth/success$`));
 
         await validateTokenRequestAndaPayload({ ...user, profile: { ...user.profile, apps: ['rw', 'gfw' ]} });
+    });
+
+    it('OAuth login with user that matches an existing fake account updates the user with the fake account data, redirecting to the login successful page', async () => {
+        const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
+        const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
+
+        // Build user for this scenario (no legacyId, but provider and providerId set)
+        const user: OktaUser = getMockOktaUser();
+        delete user.profile.legacyId;
+        user.profile.providerId = '123';
+        user.profile.provider = 'google';
+
+        mockGetUserByOktaId(tokenData.uid, user);
+
+        // Mock request that finds valid fake user with 123@google.com email
+        const fakeUser: OktaUser = mockOktaGetUserByEmail({
+            email: '123@google.com',
+            login: '123@google.com',
+            provider: 'google',
+            providerId: '123',
+            legacyId: 'legacyId',
+            apps: ['prep'],
+            role: 'MANAGER',
+        });
+
+        // Mock update of protected fields
+        mockOktaUpdateUser(user, { legacyId: 'legacyId', apps: ['prep'], role: 'MANAGER' });
+
+        // Mock delete of fake user twice
+        nock(config.get('okta.url'))
+            .delete(`/api/v1/users/${fakeUser.id}`)
+            .times(2)
+            .reply(204);
+
+        const response: request.Response = await requester
+            .get(`/auth/authorization-code/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
+            .redirects(0);
+
+        response.should.redirect;
+        response.should.redirectTo(new RegExp(`/auth/success$`));
+
+        user.profile.legacyId = 'legacyId';
+        user.profile.apps = ['prep'];
+        user.profile.role = 'MANAGER';
+
+        await validateTokenRequestAndaPayload(user);
     });
 
     afterEach(async () => {

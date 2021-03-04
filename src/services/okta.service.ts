@@ -219,6 +219,40 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(user);
     }
 
+    static async deleteUserByOktaId(id: string): Promise<void> {
+        return await OktaApiService.deleteUserByOktaId(id);
+    }
+
+    static async updateUserWithFakeEmailDataIfExisting(user: OktaUser): Promise<OktaUser> {
+        // Logic for matching users without email
+        if (!user.profile.legacyId && user.profile.provider && user.profile.providerId) {
+            try {
+                // Try to find existing user in Okta with fake email
+                const fakeUser: OktaUser = await OktaService.getOktaUserByEmail(`${user.profile.providerId}@${user.profile.provider}.com`);
+
+                // If fake user exists, update current user with the profile attrs from the fake user
+                if (fakeUser) {
+                    const updatedUser: OktaUser = await OktaService.updateUserProtectedFields(user.id, {
+                        legacyId: fakeUser.profile.legacyId,
+                        apps: fakeUser.profile.apps,
+                        role: fakeUser.profile.role,
+                    });
+
+                    // Delete the fake user account (deleting twice since first time it only deactivates the user)
+                    await OktaService.deleteUserByOktaId(fakeUser.id);
+                    await OktaService.deleteUserByOktaId(fakeUser.id);
+
+                    return updatedUser;
+                }
+            } catch (err) {
+                logger.info(`Fake user ${user.profile.providerId}@${user.profile.provider}.com not found, moving on...`);
+                return user;
+            }
+        }
+
+        return user;
+    }
+
     static getOAuthRedirect(provider: OktaOAuthProvider, application: string): string {
         const state: string = uuidv4();
         const oktaOAuthURL: URL = new URL(`${config.get('okta.url')}/oauth2/default/v1/authorize`);

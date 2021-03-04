@@ -42,10 +42,11 @@ export class OktaProvider extends BaseProvider {
                 return ctx.redirect('/auth/fail?error=true');
             }
 
-            const user: OktaUser = await OktaService.getUserForAuthorizationCode(code);
-            const updatedUser: OktaUser = await OktaService.setAndUpdateRequiredFields(user);
-            const newUser: IUser = await OktaService.convertOktaUserToIUser(updatedUser);
-            await ctx.login(newUser);
+            let user: OktaUser = await OktaService.getUserForAuthorizationCode(code);
+            user = await OktaService.updateUserWithFakeEmailDataIfExisting(user);
+            user = await OktaService.setAndUpdateRequiredFields(user);
+
+            await ctx.login(OktaService.convertOktaUserToIUser(user));
             return next();
         } catch (err) {
             logger.error('[OktaProvider] - Error requesting OAuth token to Okta, ', err);
