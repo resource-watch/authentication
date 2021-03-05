@@ -224,33 +224,37 @@ export default class OktaService {
     }
 
     static async updateUserWithFakeEmailDataIfExisting(user: OktaUser): Promise<OktaUser> {
+        // Logic does not apply in this case
+        if (user.profile.legacyId || !user.profile.provider || !user.profile.providerId) {
+            return user;
+        }
+
         // Logic for matching users without email
-        if (!user.profile.legacyId && user.profile.provider && user.profile.providerId) {
-            try {
-                // Try to find existing user in Okta with fake email
-                const fakeUser: OktaUser = await OktaService.getOktaUserByEmail(`${user.profile.providerId}@${user.profile.provider}.com`);
+        try {
+            // Try to find existing user in Okta with fake email
+            const fakeUser: OktaUser = await OktaService.getOktaUserByEmail(`${user.profile.providerId}@${user.profile.provider}.com`);
 
-                // If fake user exists, update current user with the profile attrs from the fake user
-                if (fakeUser) {
-                    const updatedUser: OktaUser = await OktaService.updateUserProtectedFields(user.id, {
-                        legacyId: fakeUser.profile.legacyId,
-                        apps: fakeUser.profile.apps,
-                        role: fakeUser.profile.role,
-                    });
+            // Fake user exists, update current user with the profile attrs from the fake user
+            const updatedUser: OktaUser = await OktaService.updateUserProtectedFields(user.id, {
+                legacyId: fakeUser.profile.legacyId,
+                apps: fakeUser.profile.apps,
+                role: fakeUser.profile.role,
+            });
 
-                    // Delete the fake user account (deleting twice since first time it only deactivates the user)
-                    await OktaService.deleteUserByOktaId(fakeUser.id);
-                    await OktaService.deleteUserByOktaId(fakeUser.id);
+            // Delete the fake user account (deleting twice since first time it only deactivates the user)
+            await OktaService.deleteUserByOktaId(fakeUser.id);
+            await OktaService.deleteUserByOktaId(fakeUser.id);
 
-                    return updatedUser;
-                }
-            } catch (err) {
+            return updatedUser;
+        } catch (err) {
+            if (err.message === 'Request failed with status code 404') {
                 logger.info(`Fake user ${user.profile.providerId}@${user.profile.provider}.com not found, moving on...`);
                 return user;
             }
-        }
 
-        return user;
+            logger.error('Error occurred while matching user with fake email account: ', err);
+            throw err;
+        }
     }
 
     static getOAuthRedirect(provider: OktaOAuthProvider, application: string): string {
