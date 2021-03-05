@@ -258,6 +258,114 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
         await validateTokenRequestAndaPayload(user);
     });
 
+    it('OAuth login with user that doesnt match an existing fake account keeps follows through normally, redirecting to the login successful page', async () => {
+        const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
+        const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
+
+        // Build user for this scenario (no legacyId, but provider and providerId set)
+        const user: OktaUser = getMockOktaUser();
+        delete user.profile.legacyId;
+        user.profile.providerId = '123';
+        user.profile.provider = 'google';
+
+        mockGetUserByOktaId(tokenData.uid, user);
+
+        // Mock 404 Not Found request that for fake user with 123@google.com email
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/123@google.com`)
+            .reply(404, {});
+
+        // User still gets updated to set legacyId
+        nock(config.get('okta.url'))
+            .post(`/api/v1/users/${user.id}`, (body) => !!body.profile.legacyId)
+            .reply(200, { ...user, profile: { ...user.profile, legacyId: 'legacyId' } });
+
+        const response: request.Response = await requester
+            .get(`/auth/authorization-code/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
+            .redirects(0);
+
+        response.should.redirect;
+        response.should.redirectTo(new RegExp(`/auth/success$`));
+
+        user.profile.legacyId = 'legacyId';
+        await validateTokenRequestAndaPayload(user);
+    });
+
+    it('Error updating user in OAuth login with user that matches an existing fake account redirects to auth failure page', async () => {
+        const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
+        const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
+
+        // Build user for this scenario (no legacyId, but provider and providerId set)
+        const user: OktaUser = getMockOktaUser();
+        delete user.profile.legacyId;
+        user.profile.providerId = '123';
+        user.profile.provider = 'google';
+
+        mockGetUserByOktaId(tokenData.uid, user);
+
+        // Mock request that finds valid fake user with 123@google.com email
+        mockOktaGetUserByEmail({
+            email: '123@google.com',
+            login: '123@google.com',
+            provider: 'google',
+            providerId: '123',
+            legacyId: 'legacyId',
+            apps: ['prep'],
+            role: 'MANAGER',
+        });
+
+        // Mock failed update
+        nock(config.get('okta.url'))
+            .post(`/api/v1/users/${user.id}`)
+            .reply(400, {});
+
+        const response: request.Response = await requester
+            .get(`/auth/authorization-code/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
+            .redirects(0);
+
+        response.should.redirect;
+        response.should.redirectTo(new RegExp(`/auth/fail`));
+    });
+
+    it('Error deleting fake user in OAuth login with user that matches an existing fake account redirects to auth failure page', async () => {
+        const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
+        const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
+
+        // Build user for this scenario (no legacyId, but provider and providerId set)
+        const user: OktaUser = getMockOktaUser();
+        delete user.profile.legacyId;
+        user.profile.providerId = '123';
+        user.profile.provider = 'google';
+
+        mockGetUserByOktaId(tokenData.uid, user);
+
+        // Mock request that finds valid fake user with 123@google.com email
+        const fakeUser: OktaUser = mockOktaGetUserByEmail({
+            email: '123@google.com',
+            login: '123@google.com',
+            provider: 'google',
+            providerId: '123',
+            legacyId: 'legacyId',
+            apps: ['prep'],
+            role: 'MANAGER',
+        });
+
+        // Mock update of protected fields
+        mockOktaUpdateUser(user, { legacyId: 'legacyId', apps: ['prep'], role: 'MANAGER' });
+
+        // Mock failed delete
+        nock(config.get('okta.url'))
+            .delete(`/api/v1/users/${fakeUser.id}`)
+            .reply(400);
+
+        const response: request.Response = await requester
+            .get(`/auth/authorization-code/callback?code=TEST_FACEBOOK_OAUTH2_CALLBACK_CODE`)
+            .redirects(0);
+
+        response.should.redirect;
+        response.should.redirectTo(new RegExp(`/auth/fail`));
+    });
+
     afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
