@@ -84,7 +84,7 @@ describe('[OKTA] User import test suite', () => {
         response.status.should.equal(403);
     });
 
-    it('Importing users when the user already exists in Okta skips the import for that user, returning 200 OK and 0 users imported (happy case)', async () => {
+    it('Importing users when the user already exists in Okta skips the import for that user, returning 204 No Content (happy case)', async () => {
         // Create user in MongoDB
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
@@ -106,11 +106,10 @@ describe('[OKTA] User import test suite', () => {
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(200);
-        response.body.should.have.property('imported').and.eql(0);
+        response.status.should.equal(204);
     });
 
-    it('Importing users when one user does not exist in Okta imports that user, returning 200 OK and 1 user imported (happy case)', async () => {
+    it('Importing users when one user does not exist in Okta imports that user, returning 204 No Content (happy case)', async () => {
         // Create ADMIN user in MongoDB
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
@@ -121,11 +120,10 @@ describe('[OKTA] User import test suite', () => {
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(200);
-        response.body.should.have.property('imported').and.eql(1);
+        response.status.should.equal(204);
     });
 
-    it('Importing users when many users don\'t exist in Okta imports many users, returning 200 OK and the number of users imported (happy case)', async () => {
+    it('Importing users when many users don\'t exist in Okta imports many users, returning 204 No Content (happy case)', async () => {
         // Create ADMIN user in MongoDB
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
@@ -146,11 +144,10 @@ describe('[OKTA] User import test suite', () => {
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(200);
-        response.body.should.have.property('imported').and.eql(5);
+        response.status.should.equal(204);
     });
 
-    it('Importing users when one user does not exist in Okta and import fails returns 200 OK and no users imported (error case)', async () => {
+    it('Importing users when one user does not exist in Okta and import fails returns 204 No Content (happy case)', async () => {
         // Create ADMIN user in MongoDB
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
@@ -167,11 +164,10 @@ describe('[OKTA] User import test suite', () => {
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(200);
-        response.body.should.have.property('imported').and.eql(0);
+        response.status.should.equal(204);
     });
 
-    it('Users with email and NO password are imported to Okta, returning 200 OK and 1 user imported', async () => {
+    it('Users with email and NO password are imported to Okta, returning 204 No Content', async () => {
         // Create ADMIN user in MongoDB
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
@@ -231,11 +227,10 @@ describe('[OKTA] User import test suite', () => {
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(200);
-        response.body.should.have.property('imported').and.eql(1);
+        response.status.should.equal(204);
     });
 
-    it('Users without email OR password are imported to Okta with a fake email, returning 200 OK and 1 user imported', async () => {
+    it('Users without email OR password are imported to Okta with a fake email, returning 204 No Content', async () => {
         // Create ADMIN user in MongoDB
         const { token, user } = await createUserAndToken({ role: 'ADMIN' });
 
@@ -297,8 +292,7 @@ describe('[OKTA] User import test suite', () => {
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(200);
-        response.body.should.have.property('imported').and.eql(1);
+        response.status.should.equal(204);
     });
 
     after(async () => {

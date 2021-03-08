@@ -620,66 +620,12 @@ export class OktaProvider extends BaseProvider {
      * removed once the migration is completed.
      */
     static async importUsersFromMongo(ctx: Context): Promise<void> {
-        let imported: number = 0;
-
         const users: UserDocument[] = await UserModel.find();
         for (const user of users) {
-            try {
-                // Check if user exists in Okta
-                const [oktaUser] = await OktaService.searchOktaUsers({ limit: 1, id: user.id });
-
-                if (!oktaUser) {
-                    if (user.email && user.password) {
-                        if (await OktaService.createUserWithExistingPassword(user)) {
-                            logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                            imported++;
-                        }
-                    } else if (user.email && !user.password) {
-                        // Import user without password
-                        await OktaService.createUserWithoutPassword({
-                            email: user.email,
-                            role: user.role,
-                            apps: user.extraUserData?.apps || [],
-                            photo: user.photo,
-                            provider: user.provider as OktaOAuthProvider,
-                            providerId: user.providerId,
-                            legacyId: user.id,
-                            ...OktaService.findUserName({ name: user.name }),
-                        }, false);
-
-                        logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                        imported++;
-                    } else if (!user.email && !user.password && user.provider && user.providerId) {
-                        // Import with fake email
-                        await OktaService.createUserWithoutPassword({
-                            email: `${user.providerId}@${user.provider}.com`,
-                            role: user.role,
-                            apps: user.extraUserData?.apps || [],
-                            photo: user.photo,
-                            provider: user.provider as OktaOAuthProvider,
-                            providerId: user.providerId,
-                            legacyId: user.id,
-                            ...OktaService.findUserName({ name: user.name }),
-                        }, false);
-
-                        logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                        imported++;
-                    } else {
-                        // Unsupported case
-                        logger.error(`Error importing user with id ${user.id} to Okta`);
-                    }
-                } else {
-                    // User exists in Okta, log it and move on
-                    logger.info(`User with id ${user.id} already exists in Okta`);
-                }
-            } catch (err) {
-                // Some error occurred, log it and move on
-                logger.error(`Error importing user with id ${user.id} to Okta`, err);
-            }
+            await OktaService.pushUserToOkta(user);
         }
 
-        ctx.status = 200;
-        ctx.body = { imported };
+        ctx.status = 204;
     }
 }
 

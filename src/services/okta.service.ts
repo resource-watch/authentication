@@ -372,6 +372,55 @@ export default class OktaService {
         }
     }
 
+    static async pushUserToOkta(user: UserDocument): Promise<void> {
+        try {
+            // Check if user exists in Okta
+            const [oktaUser] = await OktaService.searchOktaUsers({ limit: 1, id: user.id });
+
+            if (!oktaUser) {
+                if (user.email && user.password) {
+                    logger.info(`Imported user with id ${user.id} to Okta successfully.`);
+                    await OktaService.createUserWithExistingPassword(user);
+                } else if (user.email && !user.password) {
+                    // Import user without password
+                    logger.info(`Imported user with id ${user.id} to Okta successfully.`);
+                    await OktaService.createUserWithoutPassword({
+                        email: user.email,
+                        role: user.role,
+                        apps: user.extraUserData?.apps || [],
+                        photo: user.photo,
+                        provider: user.provider as OktaOAuthProvider,
+                        providerId: user.providerId,
+                        legacyId: user.id,
+                        ...OktaService.findUserName({ name: user.name }),
+                    }, false);
+                } else if (!user.email && !user.password && user.provider && user.providerId) {
+                    // Import with fake email
+                    logger.info(`Imported user with id ${user.id} to Okta successfully.`);
+                    await OktaService.createUserWithoutPassword({
+                        email: `${user.providerId}@${user.provider}.com`,
+                        role: user.role,
+                        apps: user.extraUserData?.apps || [],
+                        photo: user.photo,
+                        provider: user.provider as OktaOAuthProvider,
+                        providerId: user.providerId,
+                        legacyId: user.id,
+                        ...OktaService.findUserName({ name: user.name }),
+                    }, false);
+                } else {
+                    // Unsupported case
+                    logger.error(`Error importing user with id ${user.id} to Okta`);
+                }
+            } else {
+                // User exists in Okta, log it and move on
+                logger.info(`User with id ${user.id} already exists in Okta`);
+            }
+        } catch (err) {
+            // Some error occurred, log it and move on
+            logger.error(`Error importing user with id ${user.id} to Okta`, err);
+        }
+    }
+
     static convertOktaUserToIUser(user: OktaUser): IUser {
         return {
             id: user.profile.legacyId,
