@@ -69,7 +69,8 @@ describe('[OKTA] User import test suite', () => {
     });
 
     it('Importing users is restricted to ADMIN users, returning 401 Unauthorized if no valid token is provided', async () => {
-        const response: request.Response = await requester.get(`/auth/import-users-to-okta`);
+        const response: request.Response = await requester
+            .get(`/auth/import-users-to-okta?wait=true`);
         response.status.should.equal(401);
     });
 
@@ -77,7 +78,7 @@ describe('[OKTA] User import test suite', () => {
         const { token } = await createUserAndToken();
 
         const response: request.Response = await requester
-            .get(`/auth/import-users-to-okta`)
+            .get(`/auth/import-users-to-okta?wait=true`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -102,7 +103,7 @@ describe('[OKTA] User import test suite', () => {
         mockGetUserById(mockOktaUser);
 
         const response: request.Response = await requester
-            .get(`/auth/import-users-to-okta`)
+            .get(`/auth/import-users-to-okta?wait=true`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -116,7 +117,7 @@ describe('[OKTA] User import test suite', () => {
         mockImportProcess(await UserModel.findById(user.id));
 
         const response: request.Response = await requester
-            .get(`/auth/import-users-to-okta`)
+            .get(`/auth/import-users-to-okta?wait=true`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -140,7 +141,7 @@ describe('[OKTA] User import test suite', () => {
         mockImportProcess(await UserModel.findById(userFive.id));
 
         const response: request.Response = await requester
-            .get(`/auth/import-users-to-okta`)
+            .get(`/auth/import-users-to-okta?wait=true`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -160,7 +161,7 @@ describe('[OKTA] User import test suite', () => {
             .reply(400, {});
 
         const response: request.Response = await requester
-            .get(`/auth/import-users-to-okta`)
+            .get(`/auth/import-users-to-okta?wait=true`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -223,7 +224,7 @@ describe('[OKTA] User import test suite', () => {
         mockOktaSendActivationEmail(oktaUser, false);
 
         const response: request.Response = await requester
-            .get(`/auth/import-users-to-okta`)
+            .get(`/auth/import-users-to-okta?wait=true`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
@@ -288,7 +289,7 @@ describe('[OKTA] User import test suite', () => {
         mockOktaSendActivationEmail(oktaUser, false);
 
         const response: request.Response = await requester
-            .get(`/auth/import-users-to-okta`)
+            .get(`/auth/import-users-to-okta?wait=true`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 

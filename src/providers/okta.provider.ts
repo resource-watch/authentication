@@ -656,7 +656,12 @@ export class OktaProvider extends BaseProvider {
         const queue: PQueue = new PQueue({ interval: 60000, intervalCap: 800 });
 
         for (const user of users) {
-            queue.add(() => OktaService.pushUserToOkta(user));
+            // TODO: this is just for testing purposes
+            if (ctx.query.wait) {
+                await queue.add(() => OktaService.pushUserToOkta(user));
+            } else {
+                queue.add(() => OktaService.pushUserToOkta(user));
+            }
         }
 
         ctx.status = 204;
