@@ -13,7 +13,7 @@ import UnauthorizedError from 'errors/unauthorized.error';
 import UserModel, {IUser, UserDocument} from 'models/user.model';
 import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
-import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser} from 'services/okta.interfaces';
+import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOption} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 
@@ -126,10 +126,14 @@ export class OktaProvider extends BaseProvider {
 
         const { apps } = user.extraUserData;
         const { query } = ctx;
+        const limit: string = query['page[size]'] || '10';
+        const pageNumber: string = query['page[number]'] || '10';
 
         const clonedQuery: any = { ...query };
         delete clonedQuery['page[size]'];
         delete clonedQuery['page[number]'];
+        delete clonedQuery.after;
+        delete clonedQuery.before;
         delete clonedQuery.ids;
         delete clonedQuery.loggedUser;
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
@@ -142,8 +146,35 @@ export class OktaProvider extends BaseProvider {
             appsToUse = query.app.split(',');
         }
 
-        const users: IUser[] = await OktaService.getUsers(appsToUse, omit(query, ['app']));
-        ctx.body = UserSerializer.serialize(users, link);
+        switch (query.strategy) {
+            case PaginationStrategyOption.CURSOR: {
+                const { data, cursor } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']));
+                ctx.body = UserSerializer.serialize(data, link);
+
+                // Override links
+                ctx.body.links = {
+                    self: `${link}before=${cursor}&page[size]=${limit}`,
+                    first: `${link}page[size]=${limit}`,
+                    next: `${link}after=${cursor}&page[size]=${limit}`,
+                };
+                return;
+            }
+
+            default: {
+                const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']));
+                ctx.body = UserSerializer.serialize(data, link);
+
+                // Override links
+                ctx.body.links = {
+                    self: `${link}page[number]=${pageNumber}&page[size]=${limit}`,
+                    first: `${link}page[number]=1&page[size]=${limit}`,
+                    prev: `${link}page[number]=${parseInt(pageNumber, 10) - 1 > 0 ? parseInt(pageNumber, 10) - 1 : pageNumber}&page[size]=${limit}`,
+                    next: `${link}page[number]=${parseInt(pageNumber, 10) + 1 < parseInt(pageNumber, 10) ? pageNumber + 1 : parseInt(pageNumber, 10)}&page[size]=${limit}`,
+                };
+
+                return;
+            }
+        }
     }
 
     static async getCurrentUser(ctx: Context): Promise<void> {

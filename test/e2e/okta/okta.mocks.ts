@@ -57,15 +57,16 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
     };
 };
 
-export const mockOktaListUsers: (query?: {}, users?: OktaUser[], statusCode?: number) => void = (
+export const mockOktaListUsers: (query?: {}, users?: OktaUser[], statusCode?: number, headers?: {}) => void = (
     query = {},
     users: OktaUser[] = [],
     statusCode = 200,
+    headers: {}
 ) => {
     nock(config.get('okta.url'))
         .get('/api/v1/users')
         .query(query)
-        .reply(statusCode, users);
+        .reply(statusCode, users, headers);
 };
 
 export const mockOktaSuccessfulLogin: () => OktaSuccessfulLoginResponse = () => {
