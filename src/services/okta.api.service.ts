@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, {AxiosResponse} from 'axios';
 import config from 'config';
 import JWT from 'jsonwebtoken';
 import {v4 as uuidv4} from 'uuid';
@@ -24,6 +24,26 @@ export default class OktaApiService {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Authorization': `SSWS ${config.get('okta.apiKey')}`,
+        };
+    }
+
+    static async getOktaUserListPaginatedResult(search: string, limit: string, after: string, before: string): Promise<{ data: OktaUser[], cursor: string }> {
+        const response: AxiosResponse = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
+            headers: OktaApiService.oktaRequestHeaders(),
+            params: {
+                ...(search && { search }),
+                ...(limit && { limit }),
+                ...(after && { after }),
+                ...(before && { before }),
+            }
+        });
+
+        // Find cursor in link header
+        const afterMatches: RegExpExecArray = /after=(\w+)/gm.exec(response.headers.link);
+
+        return {
+            data: response.data,
+            cursor: afterMatches && afterMatches[1],
         };
     }
 

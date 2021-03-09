@@ -67,11 +67,39 @@ export const createTempUser: (userData: Partial<IUserTemp>) => Promise<IUserTemp
 
 export const ensureHasPaginationElements: (response: ChaiHttp.Response) => void = (response: ChaiHttp.Response) => {
     response.body.should.have.property('links').and.be.an('object');
-    response.body.links.should.have.property('self').and.be.a('string');
-    response.body.links.should.have.property('first').and.be.a('string');
-    response.body.links.should.have.property('last').and.be.a('string');
-    response.body.links.should.have.property('prev').and.be.a('string');
-    response.body.links.should.have.property('next').and.be.a('string');
+
+    response.body.links.should.have.property('self').and.be.a('string')
+        .and.match(/page\[number]=\d+/)
+        .and.match(/page\[size]=\d+/);
+
+    response.body.links.should.have.property('first').and.be.a('string')
+        .and.match(/page\[number]=1/)
+        .and.match(/page\[size]=\d+/);
+
+    response.body.links.should.have.property('prev').and.be.a('string')
+        .and.match(/page\[number]=\d+/)
+        .and.match(/page\[size]=\d+/);
+
+    response.body.links.should.have.property('next').and.be.a('string')
+        .and.match(/page\[number]=\d+/)
+        .and.match(/page\[size]=\d+/);
+};
+
+export const ensureHasOktaPaginationElements: (response: ChaiHttp.Response, limit: number, cursor: string) => void = (response, limit, cursor) => {
+    response.body.should.have.property('links').and.be.an('object');
+
+    response.body.links.should.have.property('self').and.be.a('string')
+        .and.contain(`page[size]=${limit}`)
+        .and.contain(`before=${cursor}`);
+
+    response.body.links.should.have.property('first').and.be.a('string')
+        .and.contain(`page[size]=${limit}`)
+        .and.not.contain(`before=${cursor}`)
+        .and.not.contain(`after=${cursor}`);
+
+    response.body.links.should.have.property('next').and.be.a('string')
+        .and.contain(`page[size]=${limit}`)
+        .and.contain(`after=${cursor}`);
 };
 
 export const stubConfigValue: (sandbox: Sinon.SinonSandbox, stubMap: Record<string, any>) => void = (sandbox: SinonSandbox, stubMap: Record<string, any>): void => {

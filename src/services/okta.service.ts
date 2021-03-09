@@ -1,6 +1,6 @@
 import config from 'config';
 import logger from 'logger';
-import { difference, isEqual } from 'lodash';
+import {difference, isEqual} from 'lodash';
 
 import {IUser, UserDocument} from 'models/user.model';
 import {
@@ -12,12 +12,12 @@ import {
     OktaUpdateUserProtectedFieldsPayload,
     OktaUser,
 } from 'services/okta.interfaces';
-import JWT, { SignOptions } from 'jsonwebtoken';
+import JWT, {SignOptions} from 'jsonwebtoken';
 import Settings from 'services/settings.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserNotFoundError from 'errors/userNotFound.error';
-import { Context } from 'koa';
-import { URL } from 'url';
+import {Context} from 'koa';
+import {URL} from 'url';
 import OktaApiService from 'services/okta.api.service';
 import {v4 as uuidv4} from 'uuid';
 
@@ -55,17 +55,53 @@ export default class OktaService {
         );
     }
 
-    static async getUsers(apps: string[], query: Record<string, string>): Promise<IUser[]> {
-        logger.info('[OktaService] Get users with apps', apps);
+    static async getUserListForOffsetPagination(apps: string[], query: Record<string, string>): Promise<{
+        data: IUser[],
+        cursor: string,
+    }> {
+        logger.info('[OktaService] Getting user list using "offset" pagination strategy');
+        let iterator: number = 1;
+        let users: OktaUser[] = [];
+        const pageNumber: string = query['page[number]'] || '1';
+        let pageAfterCursor: string = null;
 
-        const data: OktaUser[] = await OktaApiService.getOktaUserList(
+        while (iterator <= parseInt(pageNumber, 10)) {
+
+            const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
+                OktaService.getOktaSearchCriteria({ ...query, apps }),
+                query['page[size]'] ? query['page[size]'] : '10',
+                pageAfterCursor,
+                undefined,
+            );
+
+            users = data;
+            pageAfterCursor = cursor;
+            iterator++;
+        }
+
+        return {
+            data: users.map(OktaService.convertOktaUserToIUser),
+            cursor: pageAfterCursor,
+        };
+    }
+
+    static async getUserListForCursorPagination(apps: string[], query: Record<string, string>): Promise<{
+        data: IUser[],
+        cursor: string,
+    }> {
+        logger.info('[OktaService] Getting user list using "cursor" pagination strategy');
+
+        const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
             OktaService.getOktaSearchCriteria({ ...query, apps }),
             query['page[size]'] ? query['page[size]'] : '10',
             query['page[after]'],
             query['page[before]'],
         );
 
-        return data.map(OktaService.convertOktaUserToIUser);
+        return {
+            data: data.map(OktaService.convertOktaUserToIUser),
+            cursor,
+        };
     }
 
     static async getUserById(id: string): Promise<IUser> {

@@ -148,3 +148,8 @@ export enum OktaOAuthProvider {
     APPLE = 'apple',
     TWITTER = 'twitter',
 }
+
+export enum PaginationStrategyOption {
+    OFFSET = 'offset',
+    CURSOR = 'cursor',
+}

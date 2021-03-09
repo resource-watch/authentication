@@ -3,7 +3,7 @@ import nock from 'nock';
 import type request from 'superagent';
 import sinon, { SinonSandbox } from 'sinon';
 
-import { IUser, UserDocument } from 'models/user.model';
+import { IUser } from 'models/user.model';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { ensureHasPaginationElements, stubConfigValue } from '../utils/helpers';
@@ -155,7 +155,7 @@ describe('[OKTA] List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(1);
-        response.body.data.map((e: UserDocument) => e.email).should.include(user.profile.email);
+        response.body.data.map((e: IUser) => e.email).should.include(user.profile.email);
 
         ensureHasPaginationElements(response);
     });
@@ -318,7 +318,7 @@ describe('[OKTA] List users', () => {
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(3);
-        response.body.data.map((e: UserDocument) => e.email).should
+        response.body.data.map((e: IUser) => e.email).should
             .include(userOne.profile.email).and.to
             .include(userTwo.profile.email).and.to
             .include(userThree.profile.email);
