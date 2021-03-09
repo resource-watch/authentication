@@ -16,6 +16,7 @@ import OktaService from 'services/okta.service';
 import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
+import PQueue from 'p-queue';
 
 export class OktaProvider extends BaseProvider {
 
@@ -621,8 +622,10 @@ export class OktaProvider extends BaseProvider {
      */
     static async importUsersFromMongo(ctx: Context): Promise<void> {
         const users: UserDocument[] = await UserModel.find();
+        const queue: PQueue = new PQueue({ interval: 60000, intervalCap: 800 });
+
         for (const user of users) {
-            await OktaService.pushUserToOkta(user);
+            queue.add(() => OktaService.pushUserToOkta(user));
         }
 
         ctx.status = 204;
