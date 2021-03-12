@@ -17,6 +17,7 @@ import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOp
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 import PQueue from 'p-queue';
+import OktaApiService from 'services/okta.api.service';
 
 export class OktaProvider extends BaseProvider {
 
@@ -662,6 +663,47 @@ export class OktaProvider extends BaseProvider {
             } else {
                 queue.add(() => OktaService.pushUserToOkta(user));
             }
+        }
+
+        ctx.status = 204;
+    }
+
+    /**
+     * Delete users from Okta
+     */
+    static async deleteUsersFromOkta(ctx: Context): Promise<void> {
+        let users: OktaUser[] = await OktaApiService.getOktaUserList('', '100', undefined, undefined);
+        const queue: PQueue = new PQueue({ interval: 200, intervalCap: 1 });
+        queue.on('idle', () => { logger.info(`Done another batch....`); });
+
+        const whitelist: string[] = [
+            'henrique.pacheco@vizzuality.com',
+            'ethan.roday@wri.org',
+            'tiago.garcia@vizzuality.com',
+            'liza.logounova@wri.org',
+            'thomas.maschler@wri.org',
+        ];
+
+        while (users.length > whitelist.length) {
+            for (const user of users) {
+                if (!whitelist.includes(user.profile.email)) {
+                    queue.add(async () => {
+                        try {
+                            await OktaApiService.deleteUserByOktaId(user.id);
+                            await OktaApiService.deleteUserByOktaId(user.id);
+                        } catch (err) {
+                            if (err.response?.statusCode === 429) {
+                                logger.error(err);
+                            }
+                        }
+                    });
+                }
+            }
+
+            await queue.onEmpty();
+
+            logger.info('Fetching more...');
+            users = await OktaApiService.getOktaUserList('', '100', undefined, undefined);
         }
 
         ctx.status = 204;

@@ -11,6 +11,7 @@ import {
     OktaUpdateUserProtectedFieldsPayload,
     OktaUser,
 } from './okta.interfaces';
+import logger from '../logger';
 
 interface OktaRequestHeaders {
     Accept: string;
@@ -196,6 +197,7 @@ export default class OktaApiService {
     }
 
     static async deleteUserByOktaId(oktaId: string): Promise<void> {
+        logger.info(`[OktaApiService] Deleting user with Okta ID ${oktaId}`);
         return axios.delete(
             `${config.get('okta.url')}/api/v1/users/${oktaId}`,
             { headers: OktaApiService.oktaRequestHeaders() }
