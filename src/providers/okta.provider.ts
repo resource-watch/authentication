@@ -654,7 +654,7 @@ export class OktaProvider extends BaseProvider {
      */
     static async importUsersFromMongo(ctx: Context): Promise<void> {
         const users: UserDocument[] = await UserModel.find();
-        const queue: PQueue = new PQueue({ interval: 1000, intervalCap: 10 });
+        const queue: PQueue = new PQueue({ interval: 1000, intervalCap: 8 });
 
         for (const user of users) {
             // TODO: this is just for testing purposes
