@@ -654,7 +654,7 @@ export class OktaProvider extends BaseProvider {
      */
     static async importUsersFromMongo(ctx: Context): Promise<void> {
         const users: UserDocument[] = await UserModel.find();
-        const queue: PQueue = new PQueue({ interval: 1000, intervalCap: 8 });
+        const queue: PQueue = new PQueue({ interval: 1000, intervalCap: 9 });
 
         for (const user of users) {
             // TODO: this is just for testing purposes
@@ -673,7 +673,7 @@ export class OktaProvider extends BaseProvider {
      */
     static async deleteUsersFromOkta(ctx: Context): Promise<void> {
         let users: OktaUser[] = await OktaApiService.getOktaUserList('', '100', undefined, undefined);
-        const queue: PQueue = new PQueue({ interval: 200, intervalCap: 1 });
+        const queue: PQueue = new PQueue({ interval: 100, intervalCap: 1 });
         queue.on('idle', () => { logger.info(`Done another batch....`); });
 
         const whitelist: string[] = [
