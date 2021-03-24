@@ -244,6 +244,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async updateUser(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         logger.info(`Update user with id ${ctx.params.id}`);
         ctx.assert(ctx.params.id, 400, 'Id param required');
 
@@ -257,6 +259,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async updateMe(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         logger.info(`Update user me`);
 
         const user: UserDocument = Utils.getUser(ctx);
@@ -269,6 +273,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async deleteUser(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         logger.info(`Delete user with id ${ctx.params.id}`);
         ctx.assert(ctx.params.id, 400, 'Id param required');
 
@@ -281,6 +287,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async createUser(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         logger.info(`Create user with body ${ctx.request.body}`);
         const { body } = ctx.request;
         const user: UserDocument = Utils.getUser(ctx);
@@ -403,6 +411,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async signUp(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         logger.info('Creating user');
         let error: string = null;
         if (!ctx.request.body.email || !ctx.request.body.password || !ctx.request.body.repeatPassword) {
@@ -459,6 +469,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async confirmUser(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         logger.info('Confirming user');
         const user: UserDocument = await UserService.confirmUser(ctx.params.token);
         if (!user) {
@@ -625,6 +637,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async updateApplications(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         try {
             if (ctx.session && ctx.session.applications) {
                 let user: UserDocument = Utils.getUser(ctx);
@@ -657,6 +671,8 @@ export class LocalProvider extends BaseProvider {
     }
 
     static async resetPassword(ctx: Context): Promise<void> {
+        return ctx.throw(503, 'API under maintenance.');
+
         logger.info('Resetting password');
 
         let error: string = null;
