@@ -63,7 +63,7 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users with id list containing non-object ids returns an empty list (invalid ids are ignored)', async () => {
-        mockOktaListUsers({ limit: 100, search: `((profile.legacyId eq "123"))` }, []);
+        mockOktaListUsers({ limit: 200, search: `((profile.legacyId eq "123"))` }, []);
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
@@ -75,7 +75,7 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users with id list containing user that does not exist returns an empty list (empty db)', async () => {
-        mockOktaListUsers({ limit: 100, search: `((profile.legacyId eq "58333dcfd9f39b189ca44c75"))` }, []);
+        mockOktaListUsers({ limit: 200, search: `((profile.legacyId eq "58333dcfd9f39b189ca44c75"))` }, []);
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
@@ -88,7 +88,7 @@ describe('[OKTA] Find users by id', () => {
 
     it('Find users with id list containing a user that exists returns only the listed user', async () => {
         const user: OktaUser = getMockOktaUser();
-        mockOktaListUsers({ limit: 100, search: `((profile.legacyId eq "${user.id}"))` }, [user]);
+        mockOktaListUsers({ limit: 200, search: `((profile.legacyId eq "${user.id}"))` }, [user]);
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
@@ -113,7 +113,7 @@ describe('[OKTA] Find users by id', () => {
         const userOne: OktaUser = getMockOktaUser();
         const userTwo: OktaUser = getMockOktaUser();
         mockOktaListUsers(
-            { limit: 100, search: `((profile.legacyId eq "${userOne.id}") or (profile.legacyId eq "${userTwo.id}"))` },
+            { limit: 200, search: `((profile.legacyId eq "${userOne.id}") or (profile.legacyId eq "${userTwo.id}"))` },
             [userOne, userTwo]
         );
 
@@ -148,7 +148,7 @@ describe('[OKTA] Find users by id', () => {
     it('Find users with id list containing users that exist returns the listed users (id query param is useless)', async () => {
         const userOne: OktaUser = getMockOktaUser();
         mockOktaListUsers(
-            { limit: 100, search: `((profile.legacyId eq "${userOne.id}"))` },
+            { limit: 200, search: `((profile.legacyId eq "${userOne.id}"))` },
             [userOne]
         );
 

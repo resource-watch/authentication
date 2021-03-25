@@ -109,8 +109,26 @@ export default class OktaService {
     }
 
     static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
-        const users: OktaUser[] = await OktaService.searchOktaUsers({ limit: 100, id: ids });
-        return users.map(OktaService.convertOktaUserToIUser);
+        const users: IUser[] = [];
+        let shouldFetchMore: boolean = true;
+        let pageAfterCursor: string;
+
+        while (shouldFetchMore) {
+            const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
+                OktaService.getOktaSearchCriteria({ id: ids }),
+                '200',
+                pageAfterCursor || undefined,
+                undefined,
+            );
+
+            pageAfterCursor = cursor;
+
+            data.forEach(user => users.push(OktaService.convertOktaUserToIUser(user)));
+            pageAfterCursor = cursor;
+            shouldFetchMore = !!cursor && data.length === 200;
+        }
+
+        return users;
     }
 
     static async getIdsByRole(role: string): Promise<string[]> {
@@ -118,8 +136,26 @@ export default class OktaService {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
         }
 
-        const users: OktaUser[] = await OktaService.searchOktaUsers({ limit: 100, role });
-        return users.map(OktaService.convertOktaUserToIUser).map((el) => el.id);
+        const userIds: string[] = [];
+        let shouldFetchMore: boolean = true;
+        let pageAfterCursor: string;
+
+        while (shouldFetchMore) {
+            const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
+                OktaService.getOktaSearchCriteria({ role }),
+                '200',
+                pageAfterCursor || undefined,
+                undefined,
+            );
+
+            pageAfterCursor = cursor;
+
+            data.forEach(user => userIds.push(user.profile.legacyId));
+            pageAfterCursor = cursor;
+            shouldFetchMore = !!cursor && data.length === 200;
+        }
+
+        return userIds;
     }
 
     static async checkRevokedToken(ctx: Context, payload: JWTPayload): Promise<boolean> {

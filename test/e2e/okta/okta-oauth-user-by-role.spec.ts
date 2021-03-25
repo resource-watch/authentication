@@ -82,7 +82,7 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role with a valid role and no users on the database returns a 200 response and an empty array', async () => {
-        mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, []);
+        mockOktaListUsers({ limit: 200, search: `(profile.role eq "USER")` }, []);
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
@@ -94,7 +94,7 @@ describe('[OKTA] GET users ids by role', () => {
 
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, single user)', async () => {
         const user: OktaUser = getMockOktaUser({ role: 'USER' });
-        mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, [user]);
+        mockOktaListUsers({ limit: 200, search: `(profile.role eq "USER")` }, [user]);
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
@@ -108,7 +108,7 @@ describe('[OKTA] GET users ids by role', () => {
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, multiple users)', async () => {
         const userOne: OktaUser = getMockOktaUser({ role: 'USER' });
         const userTwo: OktaUser = getMockOktaUser({ role: 'USER' });
-        mockOktaListUsers({ limit: 100, search: `(profile.role eq "USER")` }, [userOne, userTwo]);
+        mockOktaListUsers({ limit: 200, search: `(profile.role eq "USER")` }, [userOne, userTwo]);
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
