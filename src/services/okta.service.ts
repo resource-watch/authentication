@@ -20,6 +20,7 @@ import {Context} from 'koa';
 import {URL} from 'url';
 import OktaApiService from 'services/okta.api.service';
 import {v4 as uuidv4} from 'uuid';
+import mongoose from 'mongoose';
 
 export default class OktaService {
 
@@ -212,7 +213,7 @@ export default class OktaService {
         const updateData: OktaUpdateUserProtectedFieldsPayload = {};
 
         if (!user.profile.legacyId) {
-            updateData.legacyId = uuidv4();
+            updateData.legacyId = mongoose.Types.ObjectId().toString();
         }
 
         if (!user.profile.role) {

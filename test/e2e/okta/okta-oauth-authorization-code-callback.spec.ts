@@ -1,6 +1,7 @@
 import chai from 'chai';
 import nock from 'nock';
 import JWT from 'jsonwebtoken';
+import mongoose from 'mongoose';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
@@ -224,19 +225,21 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
 
         mockGetUserByOktaId(tokenData.uid, user);
 
+        const id: string = mongoose.Types.ObjectId().toString();
+
         // Mock request that finds valid fake user with 123@google.com email
         const fakeUser: OktaUser = mockOktaGetUserByEmail({
             email: '123@google.com',
             login: '123@google.com',
             provider: 'google',
             providerId: '123',
-            legacyId: 'legacyId',
+            legacyId: id,
             apps: ['prep'],
             role: 'MANAGER',
         });
 
         // Mock update of protected fields
-        mockOktaUpdateUser(user, { legacyId: 'legacyId', apps: ['prep'], role: 'MANAGER' });
+        mockOktaUpdateUser(user, { legacyId: id, apps: ['prep'], role: 'MANAGER' });
 
         // Mock delete of fake user twice
         nock(config.get('okta.url'))
@@ -251,7 +254,7 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
         response.should.redirect;
         response.should.redirectTo(new RegExp(`/auth/success$`));
 
-        user.profile.legacyId = 'legacyId';
+        user.profile.legacyId = id.toString();
         user.profile.apps = ['prep'];
         user.profile.role = 'MANAGER';
 
@@ -339,19 +342,21 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
 
         mockGetUserByOktaId(tokenData.uid, user);
 
+        const id: string = mongoose.Types.ObjectId().toString();
+
         // Mock request that finds valid fake user with 123@google.com email
         const fakeUser: OktaUser = mockOktaGetUserByEmail({
             email: '123@google.com',
             login: '123@google.com',
             provider: 'google',
             providerId: '123',
-            legacyId: 'legacyId',
+            legacyId: id,
             apps: ['prep'],
             role: 'MANAGER',
         });
 
         // Mock update of protected fields
-        mockOktaUpdateUser(user, { legacyId: 'legacyId', apps: ['prep'], role: 'MANAGER' });
+        mockOktaUpdateUser(user, { legacyId: id, apps: ['prep'], role: 'MANAGER' });
 
         // Mock failed delete
         nock(config.get('okta.url'))

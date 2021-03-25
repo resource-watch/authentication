@@ -1,7 +1,7 @@
 import axios, {AxiosResponse} from 'axios';
 import config from 'config';
 import JWT from 'jsonwebtoken';
-import {v4 as uuidv4} from 'uuid';
+import mongoose from 'mongoose';
 
 import {
     OktaCreateUserPayload, OktaImportUserPayload,
@@ -143,7 +143,7 @@ export default class OktaApiService {
                     lastName: payload.lastName,
                     displayName: payload.name,
                     provider: payload.provider,
-                    legacyId: payload.legacyId || uuidv4(),
+                    legacyId: payload.legacyId || mongoose.Types.ObjectId(),
                     role: payload.role || 'USER',
                     apps: payload.apps || [],
                     photo: payload.photo || null,
