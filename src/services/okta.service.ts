@@ -272,6 +272,11 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(user);
     }
 
+    static async logoutUser(user: IUser): Promise<void> {
+        const oktaUser: OktaUser = await OktaService.getOktaUserById(user.id);
+        return OktaApiService.deleteUserSession(oktaUser.id);
+    }
+
     static async createUserWithoutPassword(payload: OktaCreateUserPayload, sendEmail: boolean = true): Promise<IUser> {
         const newUser: OktaUser = await OktaApiService.postUser(payload);
         await OktaApiService.postUserActivate(newUser.id, sendEmail);

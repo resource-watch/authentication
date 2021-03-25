@@ -1,3 +1,7 @@
+## 25/03/2021
+
+- Add call to Okta delete session endpoint on logout.
+
 ## 09/02/2021
 
 - Prefer `authorization` header over `authentication`.

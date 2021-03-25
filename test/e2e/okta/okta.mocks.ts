@@ -177,6 +177,12 @@ export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload
         .reply(200, user);
 };
 
+export const mockOktaLogoutUser: (oktaId: string) => void = (oktaId: string) => {
+    nock(config.get('okta.url'))
+        .delete(`/api/v1/users/${oktaId}/sessions`)
+        .reply(200);
+};
+
 export const mockOktaSendActivationEmail: (user: OktaUser, sendEmail?: boolean) => void = (user, sendEmail = true) => {
     nock(config.get('okta.url'))
         .post(`/api/v1/users/${user.id}/lifecycle/activate?sendEmail=${sendEmail}`)

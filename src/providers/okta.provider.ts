@@ -404,6 +404,12 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async logout(ctx: Context): Promise<void> {
+        const user : IUser = Utils.getUser(ctx);
+        if (!user) {
+            return ctx.throw(401, 'Not logged');
+        }
+        await OktaService.logoutUser(user);
+
         ctx.logout();
         ctx.redirect('/auth/login');
     }

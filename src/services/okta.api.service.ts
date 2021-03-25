@@ -203,4 +203,12 @@ export default class OktaApiService {
             { headers: OktaApiService.oktaRequestHeaders() }
         );
     }
+
+    static async deleteUserSession(oktaId: string): Promise<void> {
+        logger.info(`[OktaApiService] Deleting user sessions with Okta ID ${oktaId}`);
+        return axios.delete(
+            `${config.get('okta.url')}/api/v1/users/${oktaId}/sessions`,
+            { headers: OktaApiService.oktaRequestHeaders() }
+        );
+    }
 }
