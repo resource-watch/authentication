@@ -36,7 +36,7 @@ describe('[OKTA] GET generate token test suite', () => {
         response.status.should.equal(401);
     });
 
-    it('Generating a JWT token while being logged should return 200 OK with a JWT token including the user information', async () => {
+    it('Generating a JWT token while being logged in should return 200 OK with a JWT token including the user information', async () => {
         const user: OktaUser = getMockOktaUser();
         const token: string = mockValidJWT({
             id: user.profile.legacyId,
@@ -64,12 +64,14 @@ describe('[OKTA] GET generate token test suite', () => {
     it('Generating a JWT for a user which does not have all the required profile fields updates the user, returning 200 OK with a JWT token including the updated user information', async () => {
         const legacyId: string = getUUID();
         const user: OktaUser = getMockOktaUser();
-        const token: string = createTokenForUser({
+        const token: string = JWT.sign({
             id: legacyId,
             email: user.profile.email,
             role: user.profile.role,
             extraUserData: { apps: [] },
-        });
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
+        }, process.env.JWT_SECRET);
 
         // Delete some of the required fields
         delete user.profile.legacyId;

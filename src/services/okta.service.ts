@@ -131,8 +131,13 @@ export default class OktaService {
             return isRevoked;
         }
 
+        // Validate token age, and only go to Okta if token is older than 1h
+        const ONE_HOUR: number = 60 * 60 * 1000;
+        if ((new Date().getTime() - (payload.iat * 1000)) < ONE_HOUR) {
+            return isRevoked;
+        }
+
         try {
-            // TODO: maybe add a validation on the token age, and only go out to OKTA if the token is older than X
             const user: OktaUser = await OktaService.getOktaUserByEmail(payload.email);
             const updatedUser: OktaUser = await OktaService.setAndUpdateRequiredFields(user);
             const userToCheck: IUser = OktaService.convertOktaUserToIUser(updatedUser);

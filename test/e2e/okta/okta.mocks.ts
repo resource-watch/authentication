@@ -151,21 +151,13 @@ export const generateRandomTokenPayload: (override?: Partial<JWTPayload>) => JWT
     const email: string = faker.internet.email();
     const role: string = 'USER';
     const extraUserData: { apps: string[]; } = { apps: ['rw'] };
-    return { id, email, role, extraUserData, ...override };
+    const iat: number = new Date().getTime();
+    return { id, email, role, extraUserData, iat, ...override };
 };
 
-export const mockValidJWT: (override?: Partial<JWTPayload>, times?: number) => string = (override = {}, times = 1) => {
+export const mockValidJWT: (override?: Partial<JWTPayload>, times?: number) => string = (override = {}) => {
     const tokenPayload: JWTPayload = generateRandomTokenPayload(override);
-    const token: string = createTokenForUser(tokenPayload);
-
-    mockOktaGetUserByEmail({
-        legacyId: tokenPayload.id,
-        email: tokenPayload.email,
-        role: tokenPayload.role,
-        apps: tokenPayload.extraUserData.apps,
-    }, times);
-
-    return token;
+    return createTokenForUser(tokenPayload);
 };
 
 export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload) => void = (user, payload) => {

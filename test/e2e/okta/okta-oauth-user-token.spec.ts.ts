@@ -35,7 +35,9 @@ describe('[OKTA] Token validations test suite', () => {
             id: 'fakeId',
             email: user.profile.email,
             role: user.profile.role,
-            extraUserData: { apps: user.profile.apps }
+            extraUserData: { apps: user.profile.apps },
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
         });
         const token: string = createTokenForUser(tokenPayload);
 
@@ -56,7 +58,9 @@ describe('[OKTA] Token validations test suite', () => {
             id: user.profile.legacyId,
             email: user.profile.email,
             role: user.profile.role,
-            extraUserData: { apps: ['rw', 'gfw'] }
+            extraUserData: { apps: ['rw', 'gfw'] },
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
         });
 
         const token: string = createTokenForUser({ ...tokenPayload, extraUserData: { apps: ['gfw', 'rw'] } });

@@ -9,6 +9,7 @@ export interface JWTPayload {
     extraUserData: {
         apps: string[]
     };
+    iat: number;
 }
 
 export interface OktaUserProfile {
