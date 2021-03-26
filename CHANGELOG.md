@@ -21,6 +21,7 @@
 ## 26/03/2021
 
 - Add `sign-up-redirect` endpoint to redirect users to referrer of sign up call (stored in user).
+- Fix issue where some users were still being created with display name "RW API USER".
 
 ## 25/03/2021
 
