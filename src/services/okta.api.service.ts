@@ -143,6 +143,7 @@ export default class OktaApiService {
                     lastName: payload.lastName,
                     displayName: payload.name,
                     provider: payload.provider,
+                    origin: payload.origin || '',
                     legacyId: payload.legacyId || mongoose.Types.ObjectId(),
                     role: payload.role || 'USER',
                     apps: payload.apps || [],

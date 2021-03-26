@@ -320,6 +320,7 @@ export class OktaProvider extends BaseProvider {
                 apps: body.extraUserData.apps,
                 photo: body.photo,
                 provider: OktaOAuthProvider.LOCAL,
+                origin: ctx.request.headers.referer || '',
             });
         } catch (err) {
             logger.error('[OktaProvider] - Error creating user, ', err);
@@ -434,6 +435,7 @@ export class OktaProvider extends BaseProvider {
                 email: ctx.request.body.email,
                 provider: OktaOAuthProvider.LOCAL,
                 role: 'USER',
+                origin: ctx.request.headers.referer || '',
             });
 
             if (ctx.request.type === 'application/json') {
@@ -654,15 +656,36 @@ export class OktaProvider extends BaseProvider {
     }
 
     static async signUpRedirect(ctx: Context): Promise<void> {
-        const redirectPath: string = ctx.session.signUpOrigin;
-
-        if (redirectPath) {
-            logger.info(`[OktaProvider] Entered sign-up-redirect, going to forward user to ${redirectPath}`);
-            return ctx.redirect(redirectPath);
+        const email: string = ctx.query.email;
+        if (!email) {
+            logger.error(`[OktaProvider] No email provided for sign-up-redirect.`);
+            return ctx.throw(400, 'No email provided.');
         }
 
-        logger.error(`[OktaProvider] sign-up-redirect not found in session`);
-        return ctx.throw(400, 'Redirect not found.');
+        try {
+            const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);
+            const redirect: string = oktaUser.profile.origin;
+            if (!redirect) {
+                return ctx.throw(404, 'Redirect not found.');
+            }
+
+            logger.info(`[OktaProvider] Redirect found, redirecting user to ${redirect}`);
+            return ctx.redirect(redirect);
+        } catch (err) {
+            // User not found in Okta
+            if (err.response?.status === 404) {
+                logger.error(`[OktaProvider] User not found in Okta.`);
+                return ctx.throw(404, 'User not found.');
+            }
+
+            if (err.message === 'Redirect not found.') {
+                logger.error(`[OktaProvider] User doesn't have redirect stored in "origin" field of profile.`);
+                return ctx.throw(404, 'Redirect not found.');
+            }
+
+            logger.error(`[OktaProvider] Unknown error occurred, `, err);
+            return ctx.throw(500, 'Internal server error');
+        }
     }
 
     /**

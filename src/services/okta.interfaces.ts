@@ -24,6 +24,7 @@ export interface OktaUserProfile {
     role: string;
     provider: string;
     apps: string[];
+    origin?: string;
     providerId?: string;
     photo?: string;
 }
@@ -51,6 +52,7 @@ export interface OktaCreateUserPayload {
     firstName: string;
     lastName: string;
     name: string;
+    origin?: string;
     role?: string;
     apps?: string[];
     photo?: string;

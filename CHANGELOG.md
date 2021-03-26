@@ -2,7 +2,7 @@
 
 ## 26/03/2021
 
-- Add `sign-up-redirect` endpoint to redirect users to referrer of sign up call.
+- Add `sign-up-redirect` endpoint to redirect users to referrer of sign up call (stored in user).
 
 ## 25/03/2021
 

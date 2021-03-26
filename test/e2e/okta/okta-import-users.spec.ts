@@ -217,6 +217,7 @@ describe('[OKTA] User import test suite', () => {
                     provider: userTwo.provider,
                     photo: userTwo.photo,
                     providerId: null,
+                    origin: '',
                 }
             }))
             .reply(200, oktaUser);
@@ -280,6 +281,7 @@ describe('[OKTA] User import test suite', () => {
                     role: userTwo.role,
                     apps: userTwo.extraUserData.apps,
                     provider: userTwo.provider,
+                    origin: '',
                     ...(userTwo.photo && { photo: userTwo.photo }),
                     ...(userTwo.providerId && { providerId: userTwo.providerId }),
                 }

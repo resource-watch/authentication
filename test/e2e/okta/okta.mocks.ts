@@ -41,6 +41,7 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
             lastName,
             displayName: `${firstName} ${lastName}`,
             photo: faker.image.imageUrl(),
+            origin: '',
             ...override,
         },
         'credentials': {
@@ -169,6 +170,7 @@ export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload
             body.profile.lastName === payload.lastName,
             body.profile.displayName === payload.name,
             body.profile.provider === payload.provider,
+            body.profile.origin === payload.origin || body.profile.origin === '',
             body.profile.role === payload.role || body.profile.role === 'USER',
             isEqual(body.profile.apps, payload.apps) || isEqual(body.profile.apps, []),
             !payload.photo || body.profile.photo === payload.photo,
