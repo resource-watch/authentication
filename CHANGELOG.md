@@ -1,3 +1,9 @@
+# 1.1.0
+
+## 26/03/2021
+
+- Add `sign-up-redirect` endpoint to redirect users to referrer of sign up call.
+
 ## 25/03/2021
 
 - Add call to Okta delete session endpoint on logout.

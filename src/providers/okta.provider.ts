@@ -416,6 +416,9 @@ export class OktaProvider extends BaseProvider {
 
     static async signUp(ctx: Context): Promise<void> {
         try {
+            // Store referer URL in session, to be used later by the sign-up-redirect endpoint
+            ctx.session.signUpOrigin = ctx.request.headers.referer;
+
             logger.info('[OktaProvider] - Creating user');
 
             if (ctx.request.body.firstName && !ctx.request.body.lastName) {
@@ -648,6 +651,18 @@ export class OktaProvider extends BaseProvider {
     static async resetPassword(ctx: Context): Promise<void> {
         logger.error('[OktaProvider] - Trying to call reset password endpoint, which is not supported anymore.');
         ctx.throw(400, 'Method not supported');
+    }
+
+    static async signUpRedirect(ctx: Context): Promise<void> {
+        const redirectPath: string = ctx.session.signUpOrigin;
+
+        if (redirectPath) {
+            logger.info(`[OktaProvider] Entered sign-up-redirect, going to forward user to ${redirectPath}`);
+            return ctx.redirect(redirectPath);
+        }
+
+        logger.error(`[OktaProvider] sign-up-redirect not found in session`);
+        return ctx.throw(400, 'Redirect not found.');
     }
 
     /**

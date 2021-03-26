@@ -153,6 +153,8 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     router.get('/import-users-to-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.importUsersFromMongo);
     // @ts-ignore
     router.get('/fix-user-names-in-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.fixUserNamesOnOkta);
+    // @ts-ignore
+    router.get('/sign-up-redirect', OktaProvider.signUpRedirect);
 
     return router;
 };
