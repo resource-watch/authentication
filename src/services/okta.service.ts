@@ -2,7 +2,7 @@ import config from 'config';
 import logger from 'logger';
 import {difference, isEqual} from 'lodash';
 
-import {IUser, UserDocument} from 'models/user.model';
+import { IUser } from 'models/user.model';
 import {
     JWTPayload,
     OktaCreateUserPayload,
@@ -394,94 +394,6 @@ export default class OktaService {
             });
 
         return searchCriteria.filter(el => el !== '').join(' and ');
-    }
-
-    static async createUserWithExistingPassword(user: UserDocument): Promise<boolean> {
-        try {
-            // User does not exist, create it in Okta
-            await OktaApiService.postUserWithEncryptedPassword({
-                profile: {
-                    displayName: user.name,
-                    email: user.email,
-                    login: user.email,
-                    legacyId: user.id,
-                    role: user.role,
-                    apps: user.extraUserData.apps,
-                    photo: user.photo,
-                    provider: user.provider,
-                    providerId: user.providerId,
-                },
-                credentials: {
-                    password : {
-                        hash: {
-                            algorithm: 'BCRYPT',
-                            workFactor: 10,
-                            // Need to tweak the salt and password sent so that Okta knows how to deal with it :shrug:
-                            salt: user.salt
-                                .replace('$2b$10$', '')
-                                .replace('$2a$10$', ''),
-                            value: user.password.replace(user.salt, ''),
-                        }
-                    }
-                },
-            });
-
-            // User imported to Okta, log it and move on
-            logger.info(`User with id ${user.id} imported successfully to Okta`);
-            return true;
-        } catch (err) {
-            logger.error(`Error creating user with id ${user.id} in Okta`, err.response?.data);
-            return false;
-        }
-    }
-
-    static async pushUserToOkta(user: UserDocument): Promise<void> {
-        try {
-            // Check if user exists in Okta
-            const [oktaUser] = await OktaService.searchOktaUsers({ limit: 1, id: user.id });
-
-            if (!oktaUser) {
-                if (user.email && user.password) {
-                    logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                    await OktaService.createUserWithExistingPassword(user);
-                } else if (user.email && !user.password) {
-                    // Import user without password
-                    logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                    await OktaService.createUserWithoutPassword({
-                        email: user.email,
-                        name: user.name,
-                        role: user.role,
-                        apps: user.extraUserData?.apps || [],
-                        photo: user.photo,
-                        provider: user.provider as OktaOAuthProvider,
-                        providerId: user.providerId,
-                        legacyId: user.id,
-                    }, false);
-                } else if (!user.email && !user.password && user.provider && user.providerId) {
-                    // Import with fake email
-                    logger.info(`Imported user with id ${user.id} to Okta successfully.`);
-                    await OktaService.createUserWithoutPassword({
-                        email: `${user.providerId}@${user.provider}.com`,
-                        name: user.name,
-                        role: user.role,
-                        apps: user.extraUserData?.apps || [],
-                        photo: user.photo,
-                        provider: user.provider as OktaOAuthProvider,
-                        providerId: user.providerId,
-                        legacyId: user.id,
-                    }, false);
-                } else {
-                    // Unsupported case
-                    logger.error(`Error importing user with id ${user.id} to Okta`);
-                }
-            } else {
-                // User exists in Okta, log it and move on
-                logger.info(`User with id ${user.id} already exists in Okta`);
-            }
-        } catch (err) {
-            // Some error occurred, log it and move on
-            logger.error(`Error importing user with id ${user.id} to Okta`, err);
-        }
     }
 
     static convertOktaUserToIUser(user: OktaUser): IUser {

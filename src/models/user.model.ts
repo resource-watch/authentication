@@ -1,6 +1,3 @@
-import mongoose, { Document, Schema } from 'mongoose';
-import mongoosePaginate from 'mongoose-paginate';
-
 export interface IUser {
     id: string;
     name?: string;
@@ -16,28 +13,3 @@ export interface IUser {
     extraUserData: { apps: string[]; };
     userToken?: string;
 }
-
-export interface UserDocument extends IUser, Document {}
-
-const UserSchema: Schema = new Schema({
-    name: { type: String, required: false, trim: true },
-    photo: { type: String, required: false, trim: true },
-    provider: {
-        type: String, required: true, trim: true, default: 'local'
-    },
-    providerId: { type: String, required: false, trim: true },
-    email: { type: String, required: false, trim: true },
-    password: { type: String, required: false, trim: true },
-    salt: { type: String, required: false, trim: true },
-    role: {
-        type: String, required: true, default: 'USER', trim: true
-    },
-    createdAt: { type: Date, required: true, default: Date.now },
-    updatedAt: { type: Date, required: true, default: Date.now },
-    extraUserData: { type: Schema.Types.Mixed },
-    userToken: { type: String, required: false, trim: true }
-});
-
-UserSchema.plugin(mongoosePaginate);
-
-export default mongoose.model<UserDocument>('User', UserSchema);
