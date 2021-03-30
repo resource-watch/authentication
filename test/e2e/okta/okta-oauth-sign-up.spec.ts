@@ -24,10 +24,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         }
 
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, {
-            'settings.defaultApp': 'gfw',
-            'authProvider': 'OKTA'
-        });
+        stubConfigValue(sandbox, { 'settings.defaultApp': 'gfw' });
 
         requester = await getTestAgent();
     });

@@ -36,7 +36,6 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
     beforeEach(async () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, {
-            'authProvider': 'OKTA',
             'okta.gfw.facebook.idp': 'GFW_FB_IDP',
             'okta.rw.facebook.idp': 'RW_FB_IDP',
             'okta.prep.facebook.idp': 'PREP_FB_IDP',

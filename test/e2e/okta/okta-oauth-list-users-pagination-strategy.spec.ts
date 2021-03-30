@@ -1,18 +1,16 @@
 import chai from 'chai';
 import nock from 'nock';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from 'sinon';
 
 import { IUser } from 'models/user.model';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import {ensureHasOktaPaginationElements, ensureHasPaginationElements, stubConfigValue} from '../utils/helpers';
+import { ensureHasOktaPaginationElements, ensureHasPaginationElements } from '../utils/helpers';
 import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
 
 chai.should();
 
 let requester: ChaiHttp.Agent;
-let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -23,9 +21,6 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
         requester = await getTestAgent();
     });
@@ -174,7 +169,6 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
     });
 
     after(async () => {
-        sandbox.restore();
         await closeTestAgent();
     });
 

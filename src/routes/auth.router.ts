@@ -6,10 +6,6 @@ import logger from 'logger';
 import Utils from 'utils';
 
 import Settings, { IApplication } from 'services/settings.service';
-import AppleProvider from 'providers/apple.provider';
-import FacebookProvider from 'providers/facebook.provider';
-import GoogleProvider from 'providers/google.provider';
-import LocalProvider from 'providers/local.provider';
 import OktaProvider from 'providers/okta.provider';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
@@ -69,7 +65,7 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: Next): Promi
     await next();
 }
 
-const authRouterGenerator: (authProvider: string) => Router = (authProvider: string) => {
+const authRouterGenerator: () => Router = () => {
 
     // TODO: add a proper interface definition here
     let UserProvider: Record<string, any>;
@@ -77,24 +73,10 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
     let GProvider: Record<string, any>;
     let AProvider: Record<string, any>;
 
-    switch (authProvider) {
-
-        case 'CT':
-            UserProvider = LocalProvider;
-            FBProvider = FacebookProvider;
-            GProvider = GoogleProvider;
-            AProvider = AppleProvider;
-            break;
-        case 'OKTA':
-            UserProvider = OktaProvider;
-            FBProvider = OktaFacebookProvider;
-            GProvider = OktaGoogleProvider;
-            AProvider = OktaAppleProvider;
-            break;
-        default:
-            throw new Error(`Unknown Auth provider ${authProvider}`);
-
-    }
+    UserProvider = OktaProvider;
+    FBProvider = OktaFacebookProvider;
+    GProvider = OktaGoogleProvider;
+    AProvider = OktaAppleProvider;
 
     const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
@@ -145,9 +127,7 @@ const authRouterGenerator: (authProvider: string) => Router = (authProvider: str
 // @ts-ignore
     router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.deleteUser);
 
-    if (authProvider === 'OKTA') {
-        router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
-    }
+    router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
     // @ts-ignore
     router.get('/import-users-to-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.importUsersFromMongo);

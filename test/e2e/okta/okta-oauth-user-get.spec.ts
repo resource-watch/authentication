@@ -1,17 +1,15 @@
 import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from 'sinon';
 
 import { OktaUser } from 'services/okta.interfaces';
-import { assertOktaTokenInfo, stubConfigValue } from '../utils/helpers';
+import { assertOktaTokenInfo } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {getMockOktaUser, mockGetUserByIdNotFound, mockOktaListUsers, mockValidJWT} from './okta.mocks';
 
 chai.should();
 
 let requester: ChaiHttp.Agent;
-let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -22,9 +20,6 @@ describe('[OKTA] GET users by id', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
         requester = await getTestAgent();
     });
@@ -70,7 +65,6 @@ describe('[OKTA] GET users by id', () => {
     });
 
     after(async () => {
-        sandbox.restore();
         await closeTestAgent();
     });
 

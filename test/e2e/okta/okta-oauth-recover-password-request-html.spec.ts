@@ -1,18 +1,15 @@
 import nock from 'nock';
 import chai from 'chai';
-import sinon, { SinonSandbox } from 'sinon';
 import type request from 'superagent';
 
 import RenewModel from 'models/renew.model';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { stubConfigValue } from '../utils/helpers';
 import { mockOktaSendResetPasswordEmail } from './okta.mocks';
 
 chai.should();
 
 let requester: ChaiHttp.Agent;
-let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -23,9 +20,6 @@ describe('[OKTA] OAuth endpoints tests - Recover password request - HTML version
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
         requester = await getTestAgent();
 
@@ -64,7 +58,6 @@ describe('[OKTA] OAuth endpoints tests - Recover password request - HTML version
     });
 
     after(async () => {
-        sandbox.restore();
         await closeTestAgent();
     });
 

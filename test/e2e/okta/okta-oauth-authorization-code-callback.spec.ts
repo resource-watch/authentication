@@ -5,8 +5,7 @@ import mongoose from 'mongoose';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
-import sinon, {SinonSandbox} from 'sinon';
-import {getUUID, stubConfigValue} from '../utils/helpers';
+import { getUUID } from '../utils/helpers';
 import {
     getMockOktaUser,
     mockGetUserById,
@@ -21,7 +20,6 @@ import config from 'config';
 chai.should();
 
 let requester: ChaiHttp.Agent;
-let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -40,16 +38,13 @@ const validateTokenRequestAndaPayload: (user: OktaUser) => Promise<void> = async
 
 describe('[OKTA] Authorization code callback endpoint tests', () => {
 
-    before(async () => {
+    before(() => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
     });
 
     beforeEach(async () => {
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
-
         requester = await getTestAgent(true);
     });
 
@@ -376,7 +371,6 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        sandbox.restore();
         await closeTestAgent();
     });
 });
