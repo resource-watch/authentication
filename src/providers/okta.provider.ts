@@ -6,17 +6,14 @@ import Utils from 'utils';
 import {omit} from 'lodash';
 
 import Settings, {IThirdPartyAuth} from 'services/settings.service';
-import UserTempSerializer from 'serializers/user-temp.serializer';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
-import UserModel, {IUser, UserDocument} from 'models/user.model';
+import {IUser} from 'models/user.model';
 import OktaService from 'services/okta.service';
 import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOption} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
-import PQueue from 'p-queue';
-import OktaApiService from 'services/okta.api.service';
 
 export class OktaProvider {
 
@@ -423,7 +420,7 @@ export class OktaProvider {
 
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
-                ctx.body = UserTempSerializer.serialize(newUser);
+                ctx.body = UserSerializer.serialize(newUser);
             } else {
                 await ctx.render('sign-up-correct', {
                     generalConfig: ctx.state.generalConfig,
@@ -460,10 +457,6 @@ export class OktaProvider {
             email: null,
             generalConfig: ctx.state.generalConfig,
         });
-    }
-
-    static async confirmUser(ctx: Context): Promise<void> {
-        ctx.throw(400, 'Method not supported');
     }
 
     static async loginView(ctx: Context): Promise<void> {
@@ -528,11 +521,6 @@ export class OktaProvider {
 
     static async redirectLogin(ctx: Context): Promise<void> {
         ctx.redirect('/auth/login');
-    }
-
-    static async resetPasswordView(ctx: Context): Promise<void> {
-        logger.error('[OktaProvider] - Trying to go to request password view, which is not supported anymore.');
-        ctx.throw(400, 'Method not supported');
     }
 
     static async sendResetMail(ctx: Context): Promise<void> {
@@ -633,11 +621,6 @@ export class OktaProvider {
         }
     }
 
-    static async resetPassword(ctx: Context): Promise<void> {
-        logger.error('[OktaProvider] - Trying to call reset password endpoint, which is not supported anymore.');
-        ctx.throw(400, 'Method not supported');
-    }
-
     static async signUpRedirect(ctx: Context): Promise<void> {
         const email: string = ctx.query.email;
         if (!email) {
@@ -669,49 +652,6 @@ export class OktaProvider {
             logger.error(`[OktaProvider] Unknown error occurred, `, err);
             return ctx.throw(500, 'Internal server error');
         }
-    }
-
-    /**
-     * Imports users from MongoDB to Okta, preserving the existing passwords for MongoDB users.
-     *
-     * NOTE: Ensure READ ONLY mode is activated before running this endpoint!
-     *
-     * This endpoint must be used before switching the auth provider flag to Okta, and it can be
-     * removed once the migration is completed.
-     */
-    static async importUsersFromMongo(ctx: Context): Promise<void> {
-        const users: UserDocument[] = await UserModel.find();
-        const queue: PQueue = new PQueue({ interval: 1000, intervalCap: 6 });
-
-        for (const user of users) {
-            // TODO: this is just for testing purposes
-            if (ctx.query.wait) {
-                await queue.add(() => OktaService.pushUserToOkta(user));
-            } else {
-                queue.add(() => OktaService.pushUserToOkta(user));
-            }
-        }
-
-        ctx.status = 204;
-    }
-
-    static async fixUserNamesOnOkta(ctx: Context): Promise<void> {
-        const users: UserDocument[] = await UserModel.find({
-            name: { $exists: true, $regex: /^[^\s+]+$/ },
-        });
-
-        logger.info(users.length);
-        for (const user of users) {
-            logger.info('Finding user in Okta...');
-            const [oktaUser] = await OktaService.searchOktaUsers({ limit: 1, id: user._id.toString() });
-            if (oktaUser && oktaUser.profile.displayName !== user.name) {
-                logger.info(`Okta user with ID ${oktaUser.id}`);
-                await OktaApiService.postUserProtectedFieldsByOktaId(oktaUser.id, { displayName: user.name });
-                logger.info(`Updated display name to ${user.name}`);
-            }
-        }
-
-        ctx.status = 204;
     }
 }
 

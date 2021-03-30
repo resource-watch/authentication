@@ -1,54 +1,13 @@
 import config from 'config';
 import JWT from 'jsonwebtoken';
-import mongoose from 'mongoose';
 import Sinon, { SinonSandbox } from 'sinon';
 
-import UserModel, { UserDocument } from 'models/user.model';
 import { OktaUser } from 'services/okta.interfaces';
-
-const { ObjectId } = mongoose.Types;
+import { IUser } from 'models/user.model';
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
-export const createUser: (userData?: Partial<UserDocument>) => Partial<UserDocument> = (userData: Partial<UserDocument> = {}) => ({
-    _id: new ObjectId(),
-    name: `${getUUID()} name`,
-    email: `${getUUID()}@authorization.com`,
-    password: '$password.hash',
-    salt: '$password.salt',
-    extraUserData: {
-        apps: ['rw']
-    },
-    role: 'USER',
-    provider: 'local',
-    userToken: 'myUserToken',
-    photo: `http://photo.com/${getUUID()}.jpg`,
-    ...userData
-});
-
-export const createTokenForUser: (tokenData: Partial<UserDocument>) => string = (tokenData: Partial<UserDocument>) => JWT.sign(tokenData, process.env.JWT_SECRET);
-
-export const createUserInDB: (userData: Partial<UserDocument>) => Promise<Partial<UserDocument>> = async (userData: Partial<UserDocument>): Promise<Partial<UserDocument>> => {
-    const user: UserDocument = await new UserModel(createUser(userData)).save();
-
-    return {
-        id: user._id.toString(),
-        role: user.role,
-        provider: user.provider,
-        email: user.email,
-        extraUserData: user.extraUserData,
-        createdAt: new Date(),
-        photo: user.photo,
-        name: user.name
-    };
-};
-
-export const createUserAndToken: (userData?: Partial<UserDocument>) => Promise<{ user: Partial<UserDocument>; token: string }> = async (userData: Partial<UserDocument> = {}) => {
-    const user: Partial<UserDocument> = await createUserInDB(userData);
-    const token: string = await createTokenForUser(user);
-
-    return { user, token };
-};
+export const createTokenForUser: (tokenData: Partial<IUser>) => string = (tokenData: Partial<IUser>) => JWT.sign(tokenData, process.env.JWT_SECRET);
 
 export const ensureHasPaginationElements: (response: ChaiHttp.Response) => void = (response: ChaiHttp.Response) => {
     response.body.should.have.property('links').and.be.an('object');

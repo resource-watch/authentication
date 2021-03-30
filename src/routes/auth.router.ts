@@ -90,12 +90,8 @@ router.get('/success', loadApplicationGeneralConfig, OktaProvider.success);
 router.get('/logout', setCallbackUrlOnlyWithQueryParam, OktaProvider.logout);
 router.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
 router.post('/sign-up', loadApplicationGeneralConfig, OktaProvider.signUp);
-// @ts-ignore
-router.get('/confirm/:token', OktaProvider.confirmUser);
 router.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
 router.post('/reset-password', loadApplicationGeneralConfig, OktaProvider.sendResetMail);
-router.get('/reset-password/:token', loadApplicationGeneralConfig, OktaProvider.resetPasswordView);
-router.post('/reset-password/:token', loadApplicationGeneralConfig, OktaProvider.resetPassword);
 router.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);
 // @ts-ignore
 router.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
@@ -116,10 +112,6 @@ router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.deleteUse
 
 router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
-// @ts-ignore
-router.get('/import-users-to-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.importUsersFromMongo);
-// @ts-ignore
-router.get('/fix-user-names-in-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.fixUserNamesOnOkta);
 // @ts-ignore
 router.get('/sign-up-redirect', OktaProvider.signUpRedirect);
 
