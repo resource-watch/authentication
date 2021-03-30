@@ -377,22 +377,6 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
-    /**
-     * Weird logic to find user name...
-     * TODO: in the future, deprecate "name" in favour of "firstName" + "lastName" and remove this
-     */
-    static findUserName(body: Record<string, any>): { firstName: string, lastName: string, name: string } {
-        if (body?.firstName && body?.lastName) {
-            return { firstName: body.firstName, lastName: body.lastName, name: `${body.firstName} ${body.lastName}` };
-        }
-
-        if (body?.name && body?.name.split(' ').length > 1) {
-            return { firstName: body.name.split(' ')[0], lastName: body.name.split(' ').slice(1).join(' '), name: body.name };
-        }
-
-        return { firstName: 'RW API', lastName: 'USER', name: 'RW API USER' };
-    }
-
     private static getOktaSearchCriteria(query: Record<string, any>): string {
         logger.debug('[OktaService] getOktaSearchCriteria Object.keys(query)', Object.keys(query));
 
@@ -414,14 +398,10 @@ export default class OktaService {
 
     static async createUserWithExistingPassword(user: UserDocument): Promise<boolean> {
         try {
-            const userNameInfo: { lastName: string; firstName: string; name: string; } = OktaService.findUserName({ name: user.name });
-
             // User does not exist, create it in Okta
             await OktaApiService.postUserWithEncryptedPassword({
                 profile: {
-                    firstName: userNameInfo.firstName,
-                    lastName: userNameInfo.lastName,
-                    displayName: userNameInfo.name,
+                    displayName: user.name,
                     email: user.email,
                     login: user.email,
                     legacyId: user.id,
@@ -469,26 +449,26 @@ export default class OktaService {
                     logger.info(`Imported user with id ${user.id} to Okta successfully.`);
                     await OktaService.createUserWithoutPassword({
                         email: user.email,
+                        name: user.name,
                         role: user.role,
                         apps: user.extraUserData?.apps || [],
                         photo: user.photo,
                         provider: user.provider as OktaOAuthProvider,
                         providerId: user.providerId,
                         legacyId: user.id,
-                        ...OktaService.findUserName({ name: user.name }),
                     }, false);
                 } else if (!user.email && !user.password && user.provider && user.providerId) {
                     // Import with fake email
                     logger.info(`Imported user with id ${user.id} to Okta successfully.`);
                     await OktaService.createUserWithoutPassword({
                         email: `${user.providerId}@${user.provider}.com`,
+                        name: user.name,
                         role: user.role,
                         apps: user.extraUserData?.apps || [],
                         photo: user.photo,
                         provider: user.provider as OktaOAuthProvider,
                         providerId: user.providerId,
                         legacyId: user.id,
-                        ...OktaService.findUserName({ name: user.name }),
                     }, false);
                 } else {
                     // Unsupported case

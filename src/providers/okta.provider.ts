@@ -304,17 +304,9 @@ export class OktaProvider extends BaseProvider {
             }
         }
 
-        if (ctx.request.body.firstName && !ctx.request.body.lastName) {
-            return ctx.throw(400, 'lastName required.');
-        }
-
-        if (ctx.request.body.lastName && !ctx.request.body.firstName) {
-            return ctx.throw(400, 'firstName required.');
-        }
-
         try {
             ctx.body = await OktaService.createUserWithoutPassword({
-                ...OktaService.findUserName(ctx.request.body),
+                name: body.name,
                 email: body.email,
                 role: body.role,
                 apps: body.extraUserData.apps,
@@ -422,16 +414,8 @@ export class OktaProvider extends BaseProvider {
 
             logger.info('[OktaProvider] - Creating user');
 
-            if (ctx.request.body.firstName && !ctx.request.body.lastName) {
-                return ctx.throw(400, 'lastName required.');
-            }
-
-            if (ctx.request.body.lastName && !ctx.request.body.firstName) {
-                return ctx.throw(400, 'firstName required.');
-            }
-
             const newUser: IUser = await OktaService.createUserWithoutPassword({
-                ...OktaService.findUserName(ctx.request.body),
+                name: ctx.request.body.name,
                 email: ctx.request.body.email,
                 provider: OktaOAuthProvider.LOCAL,
                 role: 'USER',

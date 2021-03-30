@@ -47,9 +47,6 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         const user: OktaUser = getMockOktaUser({ apps: [] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            firstName: 'RW API',
-            lastName: 'USER',
-            name: 'RW API USER',
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
         });
@@ -88,9 +85,6 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            firstName: 'RW API',
-            lastName: 'USER',
-            name: 'RW API USER',
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             apps: ['gfw'],
@@ -118,9 +112,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         const user: OktaUser = getMockOktaUser({ apps: ['gfw'] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            firstName: 'RW API',
-            lastName: 'USER',
-            name: 'RW API USER',
+            name: 'Example name',
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             apps: ['gfw'],
@@ -132,6 +124,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
             .set('Content-Type', 'application/json')
             .send({
                 email: user.profile.email,
+                name: 'Example name',
                 role: 'ADMIN',
                 apps: user.profile.apps,
             });

@@ -62,11 +62,7 @@ export class OktaFacebookProvider extends BaseProvider {
                 }
 
                 user = await OktaService.createUserWithoutPassword({
-                    ...OktaService.findUserName({
-                        firstName: profile?.firstName,
-                        lastName: profile?.lastName,
-                        name: profile?.displayName,
-                    }),
+                    name: profile?.displayName,
                     email,
                     photo: profile.photos?.length > 0 ? profile.photos[0].value : null,
                     role: 'USER',

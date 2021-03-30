@@ -157,8 +157,6 @@ describe('[OKTA] Google auth endpoint tests', () => {
 
         mockOktaCreateUser(user, {
             email: 'john.doe@vizzuality.com',
-            firstName: 'John',
-            lastName: 'Doe',
             name: 'John Doe',
             photo: null,
             role: 'USER',

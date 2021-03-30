@@ -174,9 +174,6 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         }, []);
 
         mockOktaCreateUser(user, {
-            firstName: 'RW API',
-            lastName: 'USER',
-            name: 'RW API USER',
             email: 'dj8e99g34n@privaterelay.appleid.com',
             provider: OktaOAuthProvider.APPLE,
             photo: null,

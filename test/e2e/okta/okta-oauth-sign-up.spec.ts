@@ -32,11 +32,10 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         requester = await getTestAgent();
     });
 
-    it('Sign up HTML page includes firstName, lastName and email as required form input fields', async () => {
+    it('Sign up HTML page includes name and email (email as required) form input fields', async () => {
         const response: request.Response = await requester.get(`/auth/sign-up`);
         response.status.should.equal(200);
-        response.text.should.include('<input type="text" name="firstName" placeholder="First Name" required />');
-        response.text.should.include('<input type="text" name="lastName" placeholder="Last Name" required />');
+        response.text.should.include('<input type="text" name="name" placeholder="Name" />');
         response.text.should.include('<input type="email" name="email" placeholder="Email" value="" required />');
     });
 
@@ -51,13 +50,26 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         response.text.should.include('Email is required');
     });
 
-    it('Registering a user with correct data and no app returns a 200', async () => {
+    it('Registering a user with correct data (just email) and no app returns a 200', async () => {
+        const user: OktaUser = getMockOktaUser();
+        mockOktaCreateUser(user, { email: user.profile.email, provider: OktaOAuthProvider.LOCAL });
+        mockOktaSendActivationEmail(user);
+
+        const response: request.Response = await requester
+            .post(`/auth/sign-up`)
+            .type('form')
+            .send({ email: user.profile.email });
+
+        response.status.should.equal(200);
+        response.text.should.include('Registration successful');
+        response.text.should.include('We\'ve sent you an email. Click the link in it to confirm your account.');
+    });
+
+    it('Registering a user with correct data (email + name) and no app returns a 200', async () => {
         const user: OktaUser = getMockOktaUser();
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            firstName: 'RW API',
-            lastName: 'USER',
-            name: 'RW API USER',
+            name: 'Example name',
             provider: OktaOAuthProvider.LOCAL,
         });
         mockOktaSendActivationEmail(user);
@@ -65,7 +77,10 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         const response: request.Response = await requester
             .post(`/auth/sign-up`)
             .type('form')
-            .send({ email: user.profile.email });
+            .send({
+                email: user.profile.email,
+                name: 'Example name',
+            });
 
         response.status.should.equal(200);
         response.text.should.include('Registration successful');
@@ -90,9 +105,6 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
         mockOktaCreateUser(user, {
             email: user.profile.email,
             apps: ['rw'],
-            firstName: 'RW API',
-            lastName: 'USER',
-            name: 'RW API USER',
             provider: OktaOAuthProvider.LOCAL,
         });
         mockOktaSendActivationEmail(user);

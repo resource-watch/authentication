@@ -15,8 +15,6 @@ export interface JWTPayload {
 export interface OktaUserProfile {
     login: string;
     email: string;
-    firstName: string;
-    lastName: string;
     displayName: string;
     mobilePhone?: string;
     secondEmail?: string;
@@ -49,9 +47,7 @@ export interface OktaUser {
 export interface OktaCreateUserPayload {
     email: string;
     provider: OktaOAuthProvider;
-    firstName: string;
-    lastName: string;
-    name: string;
+    name?: string;
     origin?: string;
     role?: string;
     apps?: string[];
@@ -62,8 +58,6 @@ export interface OktaCreateUserPayload {
 
 export interface OktaImportUserPayload {
     profile: {
-        firstName: string;
-        lastName: string;
         email: string;
         login: string;
         displayName: string;
@@ -127,8 +121,6 @@ export interface OktaSuccessfulLoginResponse {
             passwordChanged: string;
             profile: {
                 login: string;
-                firstName: string;
-                lastName: string;
                 locale: string;
                 timeZone: string;
             }

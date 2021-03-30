@@ -36,9 +36,6 @@ export class OktaAppleProvider extends BaseProvider {
             if (!oktaUser) {
                 logger.info('[OktaAppleProvider] User does not exist');
                 user = await OktaService.createUserWithoutPassword({
-                    firstName: 'RW API',
-                    lastName: 'USER',
-                    name: 'RW API USER',
                     email: jwtToken.email,
                     role: 'USER',
                     apps: [],

@@ -25,8 +25,6 @@ const mockImportProcess: (user: UserDocument) => void = (user) => {
     const mockBody: OktaImportUserPayload = {
         profile: {
             // Fields expected to always be present
-            firstName: user.name.split(' ')[0],
-            lastName: user.name.split(' ').slice(1).join(' '),
             email: user.email,
             login: user.email,
             displayName: user.name,
@@ -206,8 +204,6 @@ describe('[OKTA] User import test suite', () => {
         nock(config.get('okta.url'))
             .post('/api/v1/users?activate=false', (body) => isEqual(body, {
                 profile: {
-                    firstName: userTwo.name.split(' ')[0],
-                    lastName: userTwo.name.split(' ').slice(1).join(' '),
                     email: userTwo.email,
                     login: userTwo.email,
                     displayName: userTwo.name,
@@ -272,8 +268,6 @@ describe('[OKTA] User import test suite', () => {
         nock(config.get('okta.url'))
             .post('/api/v1/users?activate=false', (body) => isEqual(body, {
                 profile: {
-                    firstName: userTwo.name.split(' ')[0],
-                    lastName: userTwo.name.split(' ').slice(1).join(' '),
                     email: `${userTwo.providerId}@${userTwo.provider}.com`,
                     login: `${userTwo.providerId}@${userTwo.provider}.com`,
                     displayName: userTwo.name,
