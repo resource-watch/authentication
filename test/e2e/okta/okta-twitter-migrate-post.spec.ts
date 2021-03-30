@@ -5,8 +5,6 @@ import ChaiString from 'chai-string';
 import type request from 'superagent';
 
 import { getTestAgent, closeTestAgent } from '../utils/test-server';
-import {stubConfigValue} from '../utils/helpers';
-import sinon, {SinonSandbox} from 'sinon';
 import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 import {getMockOktaUser, mockGetUserById, mockOktaListUsers} from './okta.mocks';
 import config from 'config';
@@ -17,7 +15,6 @@ chai.use(ChaiString);
 chai.use(ChaiHttp);
 
 let requester:ChaiHttp.Agent;
-let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -31,9 +28,6 @@ describe('[OKTA] Twitter migrate endpoint tests - Migration form submission', ()
     });
 
     beforeEach(async () => {
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
-
         requester = await getTestAgent(true);
     });
 
@@ -355,7 +349,6 @@ describe('[OKTA] Twitter migrate endpoint tests - Migration form submission', ()
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        sandbox.restore();
         await closeTestAgent();
     });
 });

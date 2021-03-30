@@ -2,11 +2,9 @@ import nock from 'nock';
 import chai from 'chai';
 import chaiDateTime from 'chai-datetime';
 import type request from 'superagent';
-import sinon, {SinonSandbox} from 'sinon';
 
 import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 import {closeTestAgent, getTestAgent} from '../utils/test-server';
-import {stubConfigValue} from '../utils/helpers';
 import {
     getMockOktaUser,
     mockOktaCreateUser,
@@ -19,7 +17,6 @@ chai.should();
 chai.use(chaiDateTime);
 
 let requester: ChaiHttp.Agent;
-let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -30,9 +27,6 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
-
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
 
         requester = await getTestAgent();
     });
@@ -170,7 +164,6 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     after(async () => {
-        sandbox.restore();
         await closeTestAgent();
     });
 

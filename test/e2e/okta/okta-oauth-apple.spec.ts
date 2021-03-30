@@ -101,7 +101,6 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, {
             'settings.defaultApp': 'gfw',
-            'authProvider': 'OKTA',
             'okta.gfw.apple.idp': 'GFW_APPLE_IDP',
             'okta.rw.apple.idp': 'RW_APPLE_IDP',
             'okta.prep.apple.idp': 'PREP_APPLE_IDP',

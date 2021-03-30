@@ -57,8 +57,6 @@ spec:
           value: http://www.wri.org/sites/all/themes/wri/images/logo.png
         - name: APP_COLOR
           value: '#f1b319'
-        - name: AUTHORIZATION_PROVIDER
-          value: 'OKTA'
         - name: OKTA_API_URL
           valueFrom:
             secretKeyRef:

@@ -37,7 +37,6 @@ describe('[OKTA] Google auth endpoint tests', () => {
     beforeEach(async () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, {
-            'authProvider': 'OKTA',
             'okta.gfw.google.idp': 'GFW_GOOGLE_IDP',
             'okta.rw.google.idp': 'RW_GOOGLE_IDP',
             'okta.prep.google.idp': 'PREP_GOOGLE_IDP',

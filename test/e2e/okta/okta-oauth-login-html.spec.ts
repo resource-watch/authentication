@@ -1,10 +1,8 @@
 import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
-import sinon, { SinonSandbox } from 'sinon';
 
 import { OktaSuccessfulLoginResponse, OktaUser } from 'services/okta.interfaces';
-import { stubConfigValue } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {
     mockOktaGetUserByEmail,
@@ -16,7 +14,6 @@ import {
 chai.should();
 
 let requester: ChaiHttp.Agent;
-let sandbox: SinonSandbox;
 
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
@@ -30,9 +27,6 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     beforeEach(async () => {
-        sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, { 'authProvider': 'OKTA' });
-
         requester = await getTestAgent(true);
     });
 
@@ -267,7 +261,6 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
 
-        sandbox.restore();
         await closeTestAgent();
     });
 });
