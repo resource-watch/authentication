@@ -65,78 +65,62 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: Next): Promi
     await next();
 }
 
-const authRouterGenerator: () => Router = () => {
+const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
 
-    // TODO: add a proper interface definition here
-    let UserProvider: Record<string, any>;
-    let FBProvider: Record<string, any>;
-    let GProvider: Record<string, any>;
-    let AProvider: Record<string, any>;
+router.get('/google', setCallbackUrl, OktaGoogleProvider.google);
+router.get('/google/callback', OktaGoogleProvider.googleCallback, OktaProvider.updateApplications);
+router.get('/google/token', OktaGoogleProvider.googleToken, OktaProvider.generateJWT);
 
-    UserProvider = OktaProvider;
-    FBProvider = OktaFacebookProvider;
-    GProvider = OktaGoogleProvider;
-    AProvider = OktaAppleProvider;
+router.get('/facebook', setCallbackUrl, OktaFacebookProvider.facebook);
+router.get('/facebook/callback', OktaFacebookProvider.facebookCallback, OktaProvider.updateApplications);
+router.get('/facebook/token', OktaFacebookProvider.facebookToken, OktaProvider.generateJWT);
 
-    const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
+router.get('/apple', setCallbackUrl, OktaAppleProvider.apple);
+router.post('/apple/callback', OktaAppleProvider.appleCallback, OktaProvider.updateApplications);
+router.get('/apple/token', OktaAppleProvider.appleToken, OktaProvider.generateJWT);
 
-    router.get('/google', setCallbackUrl, GProvider.google);
-    router.get('/google/callback', GProvider.googleCallback, UserProvider.updateApplications);
-    router.get('/google/token', GProvider.googleToken, UserProvider.generateJWT);
-
-    router.get('/facebook', setCallbackUrl, FBProvider.facebook);
-    router.get('/facebook/callback', FBProvider.facebookCallback, UserProvider.updateApplications);
-    router.get('/facebook/token', FBProvider.facebookToken, UserProvider.generateJWT);
-
-    router.get('/apple', setCallbackUrl, AProvider.apple);
-    router.post('/apple/callback', AProvider.appleCallback, UserProvider.updateApplications);
-    router.get('/apple/token', AProvider.appleToken, UserProvider.generateJWT);
-
-    router.get('/', setCallbackUrl, UserProvider.redirectLogin);
+router.get('/', setCallbackUrl, OktaProvider.redirectLogin);
 // @ts-ignore
-    router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, UserProvider.loginView);
-    router.post('/login', UserProvider.localCallback);
-    router.get('/fail', loadApplicationGeneralConfig, UserProvider.failAuth);
+router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.loginView);
+router.post('/login', OktaProvider.localCallback);
+router.get('/fail', loadApplicationGeneralConfig, OktaProvider.failAuth);
 // @ts-ignore
-    router.get('/check-logged', UserProvider.checkLogged);
-    router.get('/success', loadApplicationGeneralConfig, UserProvider.success);
-    router.get('/logout', setCallbackUrlOnlyWithQueryParam, UserProvider.logout);
-    router.get('/sign-up', loadApplicationGeneralConfig, UserProvider.getSignUp);
-    router.post('/sign-up', loadApplicationGeneralConfig, UserProvider.signUp);
+router.get('/check-logged', OktaProvider.checkLogged);
+router.get('/success', loadApplicationGeneralConfig, OktaProvider.success);
+router.get('/logout', setCallbackUrlOnlyWithQueryParam, OktaProvider.logout);
+router.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
+router.post('/sign-up', loadApplicationGeneralConfig, OktaProvider.signUp);
 // @ts-ignore
-    router.get('/confirm/:token', UserProvider.confirmUser);
-    router.get('/reset-password', loadApplicationGeneralConfig, UserProvider.requestEmailResetView);
-    router.post('/reset-password', loadApplicationGeneralConfig, UserProvider.sendResetMail);
-    router.get('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPasswordView);
-    router.post('/reset-password/:token', loadApplicationGeneralConfig, UserProvider.resetPassword);
-    router.get('/generate-token', Utils.isLogged, UserProvider.generateJWT);
+router.get('/confirm/:token', OktaProvider.confirmUser);
+router.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
+router.post('/reset-password', loadApplicationGeneralConfig, OktaProvider.sendResetMail);
+router.get('/reset-password/:token', loadApplicationGeneralConfig, OktaProvider.resetPasswordView);
+router.post('/reset-password/:token', loadApplicationGeneralConfig, OktaProvider.resetPassword);
+router.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);
 // @ts-ignore
-    router.get('/user', Utils.isLogged, Utils.isAdmin, UserProvider.getUsers);
-    router.get('/user/me', Utils.isLogged, UserProvider.getCurrentUser);
+router.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
+router.get('/user/me', Utils.isLogged, OktaProvider.getCurrentUser);
 // @ts-ignore
-    router.get('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.getUserById);
+router.get('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.getUserById);
 // @ts-ignore
-    router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, UserProvider.findByIds);
+router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
 // @ts-ignore
-    router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, UserProvider.getIdsByRole);
+router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, OktaProvider.getIdsByRole);
 // @ts-ignore
-    router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, UserProvider.createUser);
-    router.patch('/user/me', Utils.isLogged, UserProvider.updateMe);
+router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, OktaProvider.createUser);
+router.patch('/user/me', Utils.isLogged, OktaProvider.updateMe);
 // @ts-ignore
-    router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.updateUser);
+router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.updateUser);
 // @ts-ignore
-    router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, UserProvider.deleteUser);
+router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.deleteUser);
 
-    router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
+router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
-    // @ts-ignore
-    router.get('/import-users-to-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.importUsersFromMongo);
-    // @ts-ignore
-    router.get('/fix-user-names-in-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.fixUserNamesOnOkta);
-    // @ts-ignore
-    router.get('/sign-up-redirect', OktaProvider.signUpRedirect);
+// @ts-ignore
+router.get('/import-users-to-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.importUsersFromMongo);
+// @ts-ignore
+router.get('/fix-user-names-in-okta', Utils.isLogged, Utils.isAdmin, OktaProvider.fixUserNamesOnOkta);
+// @ts-ignore
+router.get('/sign-up-redirect', OktaProvider.signUpRedirect);
 
-    return router;
-};
-
-export default authRouterGenerator;
+export default router;

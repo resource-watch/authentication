@@ -4,8 +4,7 @@ import jwt, { Options } from 'koa-jwt';
 
 import logger from 'logger';
 import Settings from 'services/settings.service';
-import authRouterGenerator from 'routes/auth.router';
-import LocalProvider from 'providers/local.provider';
+import AuthRouter from 'routes/auth.router';
 import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
@@ -17,7 +16,6 @@ export async function loadRoutes(app: Application): Promise<void> {
     OktaFacebookProvider.registerStrategies();
     OktaGoogleProvider.registerStrategies();
     registerOktaTwitterStrategies();
-    LocalProvider.registerStrategies();
 
     app.use(passport.initialize());
     app.use(passport.session());
@@ -74,7 +72,7 @@ export async function loadRoutes(app: Application): Promise<void> {
 
     // Load routes
     logger.debug('Loading routes...');
-    app.use(authRouterGenerator().routes());
+    app.use(AuthRouter.routes());
     app.use(OktaTwitterProvider.routes());
 
     logger.debug('Loaded routes correctly!');

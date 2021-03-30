@@ -4,7 +4,6 @@ import mongoose from 'mongoose';
 import Sinon, { SinonSandbox } from 'sinon';
 
 import UserModel, { UserDocument } from 'models/user.model';
-import TempUserModel, { IUserTemp } from 'models/user-temp.model';
 import { OktaUser } from 'services/okta.interfaces';
 
 const { ObjectId } = mongoose.Types;
@@ -50,20 +49,6 @@ export const createUserAndToken: (userData?: Partial<UserDocument>) => Promise<{
 
     return { user, token };
 };
-
-export const createTempUser: (userData: Partial<IUserTemp>) => Promise<IUserTemp> = async (userData: Partial<IUserTemp>) => (new TempUserModel({
-    _id: new ObjectId(),
-    email: `${getUUID()}@authorization.com`,
-    password: '$password.hash',
-    salt: '$password.salt',
-    extraUserData: {
-        apps: []
-    },
-    createdAt: '2019-02-12T10:27:24.001Z',
-    role: 'USER',
-    confirmationToken: getUUID(),
-    ...userData
-}).save());
 
 export const ensureHasPaginationElements: (response: ChaiHttp.Response) => void = (response: ChaiHttp.Response) => {
     response.body.should.have.property('links').and.be.an('object');

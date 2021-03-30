@@ -5,14 +5,13 @@ import logger from 'logger';
 import Utils from 'utils';
 import Settings, {IThirdPartyAuth} from 'services/settings.service';
 import {IUser} from 'models/user.model';
-import BaseProvider from 'providers/base.provider';
 // @ts-ignore
 import {Strategy as GoogleTokenStrategy} from 'passport-google-token';
 import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 import OktaService from 'services/okta.service';
 import OktaProvider from 'providers/okta.provider';
 
-export class OktaGoogleProvider extends BaseProvider {
+export class OktaGoogleProvider {
 
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         try {
