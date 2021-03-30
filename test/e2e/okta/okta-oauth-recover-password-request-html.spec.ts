@@ -2,7 +2,6 @@ import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
 
-import RenewModel from 'models/renew.model';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { mockOktaSendResetPasswordEmail } from './okta.mocks';
@@ -22,8 +21,6 @@ describe('[OKTA] OAuth endpoints tests - Recover password request - HTML version
         }
 
         requester = await getTestAgent();
-
-        await RenewModel.deleteMany({}).exec();
     });
 
     it('Recover password request with no email should return an error - HTML format (TODO: this should return a 422)', async () => {
