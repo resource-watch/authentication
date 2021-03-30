@@ -134,8 +134,8 @@ export class OktaProvider extends BaseProvider {
         const clonedQuery: any = { ...query };
         delete clonedQuery['page[size]'];
         delete clonedQuery['page[number]'];
-        delete clonedQuery.after;
-        delete clonedQuery.before;
+        delete clonedQuery['page[after]'];
+        delete clonedQuery['page[before]'];
         delete clonedQuery.ids;
         delete clonedQuery.loggedUser;
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
@@ -155,9 +155,9 @@ export class OktaProvider extends BaseProvider {
 
                 // Override links
                 ctx.body.links = {
-                    self: `${link}before=${cursor}&page[size]=${limit}`,
+                    self: `${link}page[before]=${cursor}&page[size]=${limit}`,
                     first: `${link}page[size]=${limit}`,
-                    next: `${link}after=${cursor}&page[size]=${limit}`,
+                    next: `${link}page[after]=${cursor}&page[size]=${limit}`,
                 };
                 return;
             }

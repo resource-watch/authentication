@@ -1,3 +1,9 @@
+# 1.1.1
+
+## 30/03/2021
+
+- Fix issue in pagination links returned from the GET users response.
+
 # 1.1.0
 
 ## 26/03/2021

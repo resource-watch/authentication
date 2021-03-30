@@ -90,16 +90,16 @@ export const ensureHasOktaPaginationElements: (response: ChaiHttp.Response, limi
 
     response.body.links.should.have.property('self').and.be.a('string')
         .and.contain(`page[size]=${limit}`)
-        .and.contain(`before=${cursor}`);
+        .and.contain(`page[before]=${cursor}`);
 
     response.body.links.should.have.property('first').and.be.a('string')
         .and.contain(`page[size]=${limit}`)
-        .and.not.contain(`before=${cursor}`)
-        .and.not.contain(`after=${cursor}`);
+        .and.not.contain(`page[before]=${cursor}`)
+        .and.not.contain(`page[after]=${cursor}`);
 
     response.body.links.should.have.property('next').and.be.a('string')
         .and.contain(`page[size]=${limit}`)
-        .and.contain(`after=${cursor}`);
+        .and.contain(`page[after]=${cursor}`);
 };
 
 export const stubConfigValue: (sandbox: Sinon.SinonSandbox, stubMap: Record<string, any>) => void = (sandbox: SinonSandbox, stubMap: Record<string, any>): void => {
