@@ -11,7 +11,6 @@ import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
 import UserModel, {IUser, UserDocument} from 'models/user.model';
-import BaseProvider from 'providers/base.provider';
 import OktaService from 'services/okta.service';
 import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOption} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
@@ -19,7 +18,7 @@ import config from 'config';
 import PQueue from 'p-queue';
 import OktaApiService from 'services/okta.api.service';
 
-export class OktaProvider extends BaseProvider {
+export class OktaProvider {
 
     /**
      * OAuth token callback. This is the endpoint where Okta returns to after social login.
