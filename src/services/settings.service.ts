@@ -46,7 +46,6 @@ interface IJwtAuth {
 
 interface ILocalAuth extends Record<string, any> {
     confirmUrlRedirect: string;
-    sparkpostKey: string;
     active: boolean;
     gfw: { confirmUrlRedirect: string; };
     rw: { confirmUrlRedirect: string; };
@@ -123,7 +122,6 @@ export default class Settings {
             },
             local: {
                 confirmUrlRedirect: config.get('settings.local.confirmUrlRedirect'),
-                sparkpostKey: config.get('settings.local.sparkpostKey'),
                 active: true,
                 gfw: { confirmUrlRedirect: config.get('settings.local.gfw.confirmUrlRedirect') },
                 rw: { confirmUrlRedirect: config.get('settings.local.rw.confirmUrlRedirect') },

@@ -13,7 +13,6 @@ services:
       JWT_SECRET: mysecret
       COOKIE_DOMAIN: mymachine
       PUBLIC_URL: http://127.0.0.1:9000
-      SPARKPOST_KEY: fakeSparkpostKey
       REDIS_URL: redis
       ALLOW_CONFIG_MUTATIONS: "true"
       CT_URL: http://mymachine:8000

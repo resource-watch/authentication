@@ -254,11 +254,6 @@ spec:
             secretKeyRef:
               key: PREP_GOOGLE_CLIENT_SECRET
               name: authorization
-        - name: SPARKPOST_KEY
-          valueFrom:
-            secretKeyRef:
-              key: SPARKPOST_KEY
-              name: authorization
         - name: FASTLY_ENABLED
           valueFrom:
             secretKeyRef:
