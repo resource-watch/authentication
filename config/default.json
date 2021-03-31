@@ -54,7 +54,6 @@
   "settings": {
     "defaultApp": "gfw",
     "local": {
-      "sparkpostKey": "",
       "confirmUrlRedirect": "http://www.globalforestwatch.org",
       "gfw": {
         "confirmUrlRedirect": "http://www.globalforestwatch.org"

@@ -41,9 +41,6 @@
     }
   },
   "settings": {
-    "local": {
-      "sparkpostKey": "SPARKPOST_KEY"
-    },
     "thirdParty": {
       "rw": {
         "facebook": {

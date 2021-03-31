@@ -21,7 +21,6 @@ env:
     - SESSION_KEY=test
     - PUBLIC_URL=http://localhost:9000
     - API_VERSION=v1
-    - SPARKPOST_KEY=fakeSparkpostKey
     - ALLOW_CONFIG_MUTATIONS=true
     - REDIS_URL=localhost
     - LOCAL_URL=http://127.0.0.1:3001
