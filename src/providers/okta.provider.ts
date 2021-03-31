@@ -147,7 +147,7 @@ export class OktaProvider {
         switch (query.strategy) {
             case PaginationStrategyOption.CURSOR: {
                 const { data, cursor } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']));
-                ctx.body = UserSerializer.serialize(data, link);
+                ctx.body = UserSerializer.serialize(data);
 
                 // Override links
                 ctx.body.links = {
@@ -160,7 +160,7 @@ export class OktaProvider {
 
             default: {
                 const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']));
-                ctx.body = UserSerializer.serialize(data, link);
+                ctx.body = UserSerializer.serialize(data);
 
                 // Override links
                 ctx.body.links = {

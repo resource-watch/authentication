@@ -10,7 +10,7 @@ import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
 import OktaTwitterProvider, { registerOktaTwitterStrategies } from 'providers/okta.twitter.provider';
 
-export async function loadRoutes(app: Application): Promise<void> {
+export function loadRoutes(app: Application): void {
     logger.debug('Loading OAuth middleware...');
 
     OktaFacebookProvider.registerStrategies();

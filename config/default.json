@@ -1,9 +1,4 @@
 {
-  "mongodb": {
-    "database": "authorization_db",
-    "host": "localhost",
-    "port": 27017
-  },
   "redis": {
     "url": "localhost"
   },

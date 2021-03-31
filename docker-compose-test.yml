@@ -14,7 +14,6 @@ services:
       COOKIE_DOMAIN: mymachine
       PUBLIC_URL: http://127.0.0.1:9000
       SPARKPOST_KEY: fakeSparkpostKey
-      MONGO_PORT_27017_TCP_ADDR: mongo
       REDIS_URL: redis
       ALLOW_CONFIG_MUTATIONS: "true"
       CT_URL: http://mymachine:8000
@@ -26,16 +25,9 @@ services:
       GFW_APPLE_AUTH_KEY: "test"
     command: test
     depends_on:
-      - mongo
       - redis
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-
-  mongo:
-    image: mongo:3.6.13
-    command: --smallfiles
-    ports:
-      - "27017"
 
   redis:
     image: redis
