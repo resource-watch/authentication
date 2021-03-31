@@ -66,17 +66,21 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         const userThree: OktaUser = getMockOktaUser({});
         const userFour: OktaUser = getMockOktaUser({});
 
-        const after: string = '00ua8rmi6MKcs91GB5d6';
+        const cursor1: string = 'cursor1';
+        const cursor2: string = 'cursor2';
 
         // Initial request that returns after cursor, used in the second request
         mockOktaListUsers(
             { limit: 2, search: '((profile.apps eq "rw"))' },
             [userOne, userTwo],
             200,
-            { 'link': `<https://dev-42303109.okta.com/api/v1/users?limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="self", <https://dev-42303109.okta.com/api/v1/users?after=${after}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="next"` }
+            { link: `https://dev-42303109.okta.com/api/v1/users?after=${cursor1}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="self", https://dev-42303109.okta.com/api/v1/users?after=${cursor2}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="next"` }
         );
 
-        mockOktaListUsers({ limit: 2, search: '((profile.apps eq "rw"))', after }, [userThree, userFour]);
+        mockOktaListUsers(
+            { limit: 2, search: '((profile.apps eq "rw"))', after: cursor2 },
+            [userThree, userFour]
+        );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
@@ -94,13 +98,14 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         const userOne: OktaUser = getMockOktaUser({});
         const userTwo: OktaUser = getMockOktaUser({});
 
-        const cursor: string = '00ua8rmi6MKcs91GB5d6';
+        const cursor1: string = 'cursor1';
+        const cursor2: string = 'cursor2';
 
         mockOktaListUsers(
             { limit: 10, search: '((profile.apps eq "rw"))' },
             [userOne, userTwo],
             200,
-            { 'link': `<https://dev-42303109.okta.com/api/v1/users?limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="self", <https://dev-42303109.okta.com/api/v1/users?after=${cursor}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="next"` }
+            { link: `https://dev-42303109.okta.com/api/v1/users?after=${cursor1}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="self", https://dev-42303109.okta.com/api/v1/users?after=${cursor2}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="next"` }
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
@@ -112,59 +117,58 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(2);
         response.body.data.map((u: IUser) => u.id).should.deep.equal([userOne.profile.legacyId, userTwo.profile.legacyId]);
-        ensureHasOktaPaginationElements(response, 10, cursor);
+        ensureHasOktaPaginationElements(response, 10, cursor2);
     });
 
     it('With strategy="cursor", providing the cursor in the "after" query parameter fetches the page after the cursor provided, returning the user list and the correct pagination links', async () => {
         const userOne: OktaUser = getMockOktaUser({});
         const userTwo: OktaUser = getMockOktaUser({});
 
-        const cursor: string = '00ua8rmi6MKcs91GB5d6';
-        const newCursor: string = '00ua8rmi6MKcs91GB5d6';
+        const cursor1: string = 'cursor1';
+        const cursor2: string = 'cursor2';
 
         mockOktaListUsers(
-            { limit: 10, search: '((profile.apps eq "rw"))', after: cursor },
+            { limit: 10, search: '((profile.apps eq "rw"))', after: cursor1 },
             [userOne, userTwo],
             200,
-            { 'link': `<https://dev-42303109.okta.com/api/v1/users?limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="self", <https://dev-42303109.okta.com/api/v1/users?after=${newCursor}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="next"` }
+            { link: `https://dev-42303109.okta.com/api/v1/users?cursor=${cursor1}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="self", https://dev-42303109.okta.com/api/v1/users?after=${cursor2}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="next"` }
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
-            .get(`/auth/user?strategy=cursor&page[after]=${cursor}`)
+            .get(`/auth/user?strategy=cursor&page[after]=${cursor1}`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(2);
         response.body.data.map((u: IUser) => u.id).should.deep.equal([userOne.profile.legacyId, userTwo.profile.legacyId]);
-        ensureHasOktaPaginationElements(response, 10, newCursor);
+        ensureHasOktaPaginationElements(response, 10, cursor2);
     });
 
     it('With strategy="cursor", providing the cursor in the "before" query parameter fetches the page before the cursor provided, returning the user list and the correct pagination links', async () => {
         const userOne: OktaUser = getMockOktaUser({});
         const userTwo: OktaUser = getMockOktaUser({});
 
-        const cursor: string = '00ua8rmi6MKcs91GB5d6';
-        const newCursor: string = '00ua8rmi6MKcs91GB5d6';
+        const cursor1: string = 'cursor1';
 
         mockOktaListUsers(
-            { limit: 10, search: '((profile.apps eq "rw"))', before: cursor },
+            { limit: 10, search: '((profile.apps eq "rw"))', before: cursor1 },
             [userOne, userTwo],
             200,
-            { 'link': `<https://dev-42303109.okta.com/api/v1/users?limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="self", <https://dev-42303109.okta.com/api/v1/users?after=${newCursor}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29>; rel="next"` }
+            { link: `https://dev-42303109.okta.com/api/v1/users?before=${cursor1}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="self", https://dev-42303109.okta.com/api/v1/users?after=${cursor1}&limit=2&search=%28%28profile.apps+eq+%22gfw%22%29+or+%28profile.apps+eq+%22rw%22%29%29; rel="next"` }
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const response: request.Response = await requester
-            .get(`/auth/user?strategy=cursor&page[before]=${cursor}`)
+            .get(`/auth/user?strategy=cursor&page[before]=${cursor1}`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.have.length(2);
         response.body.data.map((u: IUser) => u.id).should.deep.equal([userOne.profile.legacyId, userTwo.profile.legacyId]);
-        ensureHasOktaPaginationElements(response, 10, newCursor);
+        ensureHasOktaPaginationElements(response, 10, cursor1);
     });
 
     after(async () => {

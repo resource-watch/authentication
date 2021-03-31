@@ -40,7 +40,7 @@ export default class OktaApiService {
         });
 
         // Find cursor in link header
-        const afterMatches: RegExpExecArray = /after=(\w+)/gm.exec(response.headers.link);
+        const afterMatches: RegExpExecArray = /after=(\w+)[^;]*; rel="next"/gm.exec(response.headers.link);
 
         return {
             data: response.data,
