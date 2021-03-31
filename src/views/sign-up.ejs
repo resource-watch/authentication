@@ -65,11 +65,8 @@
                             </div >
                         <% } %>
                         <form action="/auth/sign-up" method="POST" >
-                            <label for="firstName">
-                                <input type="text" name="firstName" placeholder="First Name" required />
-                            </label>
-                            <label for="lastName">
-                                <input type="text" name="lastName" placeholder="Last Name" required />
+                            <label for="name">
+                                <input type="text" name="name" placeholder="Name" />
                             </label>
                             <label for="email">
                                 <input type="email" name="email" placeholder="Email" value="<%= email %>" required />

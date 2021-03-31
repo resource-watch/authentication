@@ -139,8 +139,6 @@ export default class OktaApiService {
                 profile: {
                     email: payload.email,
                     login: payload.email,
-                    firstName: payload.firstName,
-                    lastName: payload.lastName,
                     displayName: payload.name,
                     provider: payload.provider,
                     origin: payload.origin || '',

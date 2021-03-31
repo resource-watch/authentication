@@ -18,8 +18,7 @@ import {createTokenForUser} from '../utils/helpers';
 
 export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
     const email: string = faker.internet.email();
-    const firstName: string = faker.name.firstName();
-    const lastName: string = faker.name.lastName();
+    const name: string = `${faker.name.firstName()} ${faker.name.lastName()}`;
     return {
         'id': faker.random.uuid(),
         'status': 'PROVISIONED',
@@ -37,9 +36,7 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
             role: 'USER',
             provider: 'okta',
             apps: ['rw'],
-            firstName,
-            lastName,
-            displayName: `${firstName} ${lastName}`,
+            displayName: name,
             photo: faker.image.imageUrl(),
             origin: '',
             ...override,
@@ -81,8 +78,6 @@ export const mockOktaSuccessfulLogin: () => OktaSuccessfulLoginResponse = () => 
                 'passwordChanged': '2020-11-06T16:15:53.000Z',
                 'profile': {
                     'login': faker.internet.email(),
-                    'firstName': faker.name.firstName(),
-                    'lastName': faker.name.lastName(),
                     'locale': 'en',
                     'timeZone': 'America/Los_Angeles'
                 }
@@ -166,8 +161,6 @@ export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload
         .post('/api/v1/users?activate=false', (body) => [
             body.profile.email === payload.email,
             body.profile.login === payload.email,
-            body.profile.firstName === payload.firstName,
-            body.profile.lastName === payload.lastName,
             body.profile.displayName === payload.name,
             body.profile.provider === payload.provider,
             body.profile.origin === payload.origin || body.profile.origin === '',

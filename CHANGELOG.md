@@ -1,3 +1,9 @@
+# 1.2.0
+
+## 30/03/2021
+
+- Remove references to first and last name across Okta code.
+
 # 1.1.1
 
 ## 30/03/2021

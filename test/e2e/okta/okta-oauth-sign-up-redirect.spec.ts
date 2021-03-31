@@ -59,9 +59,6 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         const user: OktaUser = getMockOktaUser({ apps: [] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
-            firstName: 'RW API',
-            lastName: 'USER',
-            name: 'RW API USER',
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             origin: 'https://www.google.com',
