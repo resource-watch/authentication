@@ -21,7 +21,8 @@ async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     }
 
     if (!ctx.session.applications && ctx.query.applications) {
-        ctx.session.applications = ctx.query.applications.split(',');
+        const applications: string = ctx.query.applications as string;
+        ctx.session.applications = applications.split(',');
     }
     if (!ctx.session.generateToken) {
         ctx.session.generateToken = ctx.query.token === 'true';
