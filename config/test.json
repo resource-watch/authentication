@@ -1,9 +1,4 @@
 {
-  "mongodb": {
-    "database": "authorization_db_test",
-    "host": "localhost",
-    "port": 27017
-  },
   "server": {
     "internalUrl": "http://authorization.com",
     "publicUrl": "http://authorization.com"

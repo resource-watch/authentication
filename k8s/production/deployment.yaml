@@ -132,11 +132,6 @@ spec:
             secretKeyRef:
               key: REDIS_URL
               name: authorization
-        - name: CT_MONGO_URI
-          valueFrom:
-            secretKeyRef:
-              key: CT_MONGO_URI
-              name: authorization
         - name: SESSION_KEY
           valueFrom:
             secretKeyRef:

@@ -9,18 +9,9 @@ services:
       - dev.env
     command: develop
     depends_on:
-      - mongo
       - redis
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-  mongo:
-    image: mongo:3.6.13
-    container_name: authorization-mongo
-    ports:
-      - "27017"
-    volumes:
-      - $HOME/docker/authorization/mongodb:/data/db
-    restart: always
   redis:
     image: redis
     container_name: authorization-redis

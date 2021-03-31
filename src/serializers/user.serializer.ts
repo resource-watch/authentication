@@ -18,13 +18,14 @@ export default class UserSerializer {
         };
     }
 
-    static serialize(data: any, link: string = null): ISerializedResponse {
+    static serialize(data: any): ISerializedResponse {
         const result: ISerializedResponse = { data: undefined };
 
         if (data && Array.isArray(data) && data.length === 0) {
             result.data = [];
             return result;
         }
+
         if (data) {
             if (data.docs) {
                 while (data.docs.indexOf(undefined) >= 0) {
@@ -37,15 +38,7 @@ export default class UserSerializer {
                 result.data = UserSerializer.serializeElement(data);
             }
         }
-        if (link) {
-            result.links = {
-                self: `${link}page[number]=${data.page}&page[size]=${data.limit}`,
-                first: `${link}page[number]=1&page[size]=${data.limit}`,
-                last: `${link}page[number]=${data.pages}&page[size]=${data.limit}`,
-                prev: `${link}page[number]=${data.page - 1 > 0 ? data.page - 1 : data.page}&page[size]=${data.limit}`,
-                next: `${link}page[number]=${data.page + 1 < data.pages ? data.page + 1 : data.pages}&page[size]=${data.limit}`,
-            };
-        }
+
         return result;
     }
 
