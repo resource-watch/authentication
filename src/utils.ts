@@ -1,7 +1,7 @@
 import { Context, Next } from 'koa';
 import logger from 'logger';
 import Settings from 'services/settings.service';
-import { IUser } from 'models/user.model';
+import { IUser } from 'services/okta.interfaces';
 
 export default class Utils {
 

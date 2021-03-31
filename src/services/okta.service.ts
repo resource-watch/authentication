@@ -2,7 +2,6 @@ import config from 'config';
 import logger from 'logger';
 import {difference, isEqual} from 'lodash';
 
-import { IUser } from 'models/user.model';
 import {
     JWTPayload,
     OktaCreateUserPayload,
@@ -11,6 +10,7 @@ import {
     OktaUpdateUserPayload,
     OktaUpdateUserProtectedFieldsPayload,
     OktaUser,
+    IUser,
 } from 'services/okta.interfaces';
 import JWT, {SignOptions} from 'jsonwebtoken';
 import Settings from 'services/settings.service';

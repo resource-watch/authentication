@@ -2,8 +2,7 @@ import config from 'config';
 import JWT from 'jsonwebtoken';
 import Sinon, { SinonSandbox } from 'sinon';
 
-import { OktaUser } from 'services/okta.interfaces';
-import { IUser } from 'models/user.model';
+import { OktaUser, IUser } from 'services/okta.interfaces';
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 

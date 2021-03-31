@@ -3,11 +3,10 @@ import {RouterContext} from 'koa-router';
 import logger from 'logger';
 import Utils from 'utils';
 import Settings, {IThirdPartyAuth} from 'services/settings.service';
-import {IUser} from 'models/user.model';
 import passport from 'koa-passport';
 import FacebookTokenStrategy from 'passport-facebook-token';
 import OktaService from 'services/okta.service';
-import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import { OktaOAuthProvider, OktaUser, IUser } from 'services/okta.interfaces';
 import OktaProvider from 'providers/okta.provider';
 
 export class OktaFacebookProvider {
