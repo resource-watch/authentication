@@ -71,7 +71,7 @@ export default class Utils {
 
     static getOriginApp(ctx: Context): string {
         if (ctx.query.origin) {
-            return ctx.query.origin;
+            return ctx.query.origin as string;
         }
 
         if (ctx.session?.originApplication) {

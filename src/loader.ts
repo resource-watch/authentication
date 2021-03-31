@@ -25,14 +25,14 @@ export function loadRoutes(app: Application): void {
         // so we need a custom function to load the token. Why don't we use authorization on both will always elude me...
 
         if (!ctx.headers || (!ctx.headers.authorization && !ctx.headers.authentication)) {
-            return;
+            return '';
         }
 
         if (ctx.headers.authentication && !ctx.headers.authorization) {
             /**
              * @deprecate Use the `authorization` header instead.
              */
-            return ctx.headers.authentication;
+            return ctx.headers.authentication as string;
         }
 
         const parts: string[] = ctx.headers.authorization.split(' ');
@@ -47,7 +47,10 @@ export function loadRoutes(app: Application): void {
         }
         if (!opts.passthrough) {
             ctx.throw(401, 'Bad Authorization header format. Format is "Authorization: Bearer <token>"');
+            return '';
         }
+
+        return '';
     };
 
     logger.debug('Loading JWT middleware...');

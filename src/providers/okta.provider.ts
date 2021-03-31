@@ -39,7 +39,7 @@ export class OktaProvider {
                 return ctx.redirect('/auth/fail?error=true');
             }
 
-            let user: OktaUser = await OktaService.getUserForAuthorizationCode(code);
+            let user: OktaUser = await OktaService.getUserForAuthorizationCode(code as string);
             user = await OktaService.updateUserWithFakeEmailDataIfExisting(user);
             user = await OktaService.setAndUpdateRequiredFields(user);
 
@@ -59,6 +59,7 @@ export class OktaProvider {
                 ctx.status = 200;
                 ctx.body = UserSerializer.serialize(user);
                 logger.info('[OktaProvider] - Generating token');
+                // @ts-ignore
                 ctx.body.data.token = OktaService.createToken(user);
             } else {
                 await ctx.logIn(user)
@@ -123,8 +124,9 @@ export class OktaProvider {
 
         const { apps } = user.extraUserData;
         const { query } = ctx;
-        const limit: string = query['page[size]'] || '10';
-        const pageNumber: string = query['page[number]'] || '10';
+        const limit: string = query['page[size]'] as string || '10';
+        const pageNumber: string = query['page[number]'] as string || '10';
+        const app: string = query.app as string;
 
         const clonedQuery: any = { ...query };
         delete clonedQuery['page[size]'];
@@ -137,18 +139,18 @@ export class OktaProvider {
         const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
 
         let appsToUse: string[]|null = apps;
-        if (query.app === 'all') {
+        if (app === 'all') {
             appsToUse = null;
-        } else if (query.app) {
-            appsToUse = query.app.split(',');
+        } else if (app) {
+            appsToUse = app.split(',');
         }
 
         switch (query.strategy) {
             case PaginationStrategyOption.CURSOR: {
-                const { data, cursor } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']));
+                const { data, cursor } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
                 ctx.body = UserSerializer.serialize(data);
 
-                // Override links
+                // @ts-ignore
                 ctx.body.links = {
                     self: `${link}page[before]=${cursor}&page[size]=${limit}`,
                     first: `${link}page[size]=${limit}`,
@@ -158,10 +160,10 @@ export class OktaProvider {
             }
 
             default: {
-                const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']));
+                const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
                 ctx.body = UserSerializer.serialize(data);
 
-                // Override links
+                // @ts-ignore
                 ctx.body.links = {
                     self: `${link}page[number]=${pageNumber}&page[size]=${limit}`,
                     first: `${link}page[number]=1&page[size]=${limit}`,
@@ -621,7 +623,7 @@ export class OktaProvider {
     }
 
     static async signUpRedirect(ctx: Context): Promise<void> {
-        const email: string = ctx.query.email;
+        const email: string = ctx.query.email as string;
         if (!email) {
             logger.error(`[OktaProvider] No email provided for sign-up-redirect.`);
             return ctx.throw(400, 'No email provided.');
