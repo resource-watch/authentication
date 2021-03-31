@@ -1,9 +1,8 @@
-import { IUser } from 'models/user.model';
-import { ISerializedResponse } from 'serializers/serializer.interface';
+import { IUser } from 'services/okta.interfaces';
 
 export default class UserSerializer {
 
-    static serializeElement(el: Record<string, any>): Record<string, any> {
+    static serializeElement(el: IUser): Record<string, any> {
         return {
             id: el.id,
             _id: el.id,
@@ -18,25 +17,18 @@ export default class UserSerializer {
         };
     }
 
-    static serialize(data: any): ISerializedResponse {
-        const result: ISerializedResponse = { data: undefined };
+    static serialize(data: IUser | IUser[]): Record<string, any> {
+        const result: Record<string, any> = { data: undefined };
 
         if (data && Array.isArray(data) && data.length === 0) {
             result.data = [];
             return result;
         }
 
-        if (data) {
-            if (data.docs) {
-                while (data.docs.indexOf(undefined) >= 0) {
-                    data.docs.splice(data.docs.indexOf(undefined), 1);
-                }
-                result.data = data.docs.map((el: IUser) => UserSerializer.serializeElement(el));
-            } else if (Array.isArray(data)) {
-                result.data = data.map((e) => UserSerializer.serializeElement(e));
-            } else {
-                result.data = UserSerializer.serializeElement(data);
-            }
+        if (data && Array.isArray(data)) {
+            result.data = data.map((e) => UserSerializer.serializeElement(e));
+        } else {
+            result.data = UserSerializer.serializeElement(data as IUser);
         }
 
         return result;

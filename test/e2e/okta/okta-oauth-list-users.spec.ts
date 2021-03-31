@@ -2,8 +2,7 @@ import chai from 'chai';
 import nock from 'nock';
 import type request from 'superagent';
 
-import { IUser } from 'models/user.model';
-import { OktaUser } from 'services/okta.interfaces';
+import { IUser, OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { ensureHasPaginationElements } from '../utils/helpers';
 import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';

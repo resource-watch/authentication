@@ -4,10 +4,9 @@ import passport from 'koa-passport';
 import logger from 'logger';
 import Utils from 'utils';
 import Settings, {IThirdPartyAuth} from 'services/settings.service';
-import {IUser} from 'models/user.model';
 // @ts-ignore
 import {Strategy as GoogleTokenStrategy} from 'passport-google-token';
-import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {OktaOAuthProvider, OktaUser, IUser} from 'services/okta.interfaces';
 import OktaService from 'services/okta.service';
 import OktaProvider from 'providers/okta.provider';
 

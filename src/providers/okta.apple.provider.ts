@@ -1,12 +1,11 @@
 import { Context, Next } from 'koa';
 import logger from 'logger';
-import {IUser} from 'models/user.model';
 // @ts-ignore
 import Verifier from 'apple-signin-verify-token';
 import { RouterContext } from 'koa-router';
 import UserSerializer from '../serializers/user.serializer';
 import OktaService from 'services/okta.service';
-import {OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import { OktaOAuthProvider, OktaUser, IUser } from 'services/okta.interfaces';
 import OktaProvider from 'providers/okta.provider';
 import Utils from '../utils';
 

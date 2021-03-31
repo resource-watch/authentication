@@ -9,9 +9,8 @@ import Settings, {IThirdPartyAuth} from 'services/settings.service';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
-import {IUser} from 'models/user.model';
 import OktaService from 'services/okta.service';
-import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOption} from 'services/okta.interfaces';
+import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOption, IUser} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 
