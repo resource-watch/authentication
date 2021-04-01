@@ -9,18 +9,6 @@
   },
   "settings": {
     "defaultApp": "rw",
-    "local": {
-      "confirmUrlRedirect": null,
-      "gfw": {
-        "confirmUrlRedirect": null
-      },
-      "rw": {
-        "confirmUrlRedirect": null
-      },
-      "prep": {
-        "confirmUrlRedirect": null
-      }
-    },
     "thirdParty": {
       "rw": {
         "facebook": {

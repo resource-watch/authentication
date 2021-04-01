@@ -23,9 +23,7 @@
   "application": {
     "name": "RW API",
     "logo": "http://www.wri.org/sites/all/themes/wri/images/logo.png",
-    "principalColor": "#f1b319",
-    "sendNotifications": false,
-    "emailSenderName": "RW API"
+    "principalColor": "#f1b319"
   },
   "jwt": {
     "token": ""
@@ -53,18 +51,6 @@
   },
   "settings": {
     "defaultApp": "gfw",
-    "local": {
-      "confirmUrlRedirect": "http://www.globalforestwatch.org",
-      "gfw": {
-        "confirmUrlRedirect": "http://www.globalforestwatch.org"
-      },
-      "rw": {
-        "confirmUrlRedirect": "https://resourcewatch.org/myrw/areas"
-      },
-      "prep": {
-        "confirmUrlRedirect": null
-      }
-    },
     "thirdParty": {
       "rw": {
         "facebook": {
