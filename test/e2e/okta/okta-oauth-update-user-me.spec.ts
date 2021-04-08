@@ -5,8 +5,10 @@ import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {getMockOktaUser, mockGetUserById, mockOktaUpdateUser, mockValidJWT} from './okta.mocks';
+import CacheService from 'services/cache.service';
+import Should = Chai.Should;
 
-chai.should();
+const should: Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 
@@ -156,6 +158,40 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
         response.body.data.should.have.property('email').and.equal(user.profile.email);
         response.body.data.should.have.property('createdAt');
         response.body.data.should.have.property('updatedAt');
+    });
+
+    it('Redis cache is cleared after a user is updated', async () => {
+        const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
+
+        mockGetUserById(user);
+        mockOktaUpdateUser(user, { displayName: 'changed name' });
+
+        // Assert value does not exist in cache before
+        const value: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.not.exist(value);
+
+        // Store it in cache
+        await CacheService.set(`okta-user-${user.profile.legacyId}`, user);
+        const value2: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.exist(value2);
+
+        const response: request.Response = await requester
+            .patch(`/auth/user/me`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'changed name' });
+
+        response.status.should.equal(200);
+
+        // Assert value does not exist in cache after
+        const value3: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.not.exist(value3);
     });
 
     after(async () => {

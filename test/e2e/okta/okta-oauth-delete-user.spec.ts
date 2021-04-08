@@ -10,8 +10,10 @@ import {
     mockOktaDeleteUser,
     mockValidJWT
 } from './okta.mocks';
+import CacheService from 'services/cache.service';
+import Should = Chai.Should;
 
-chai.should();
+const should: Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 
@@ -93,6 +95,34 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         response.status.should.equal(200);
         response.body.should.be.an('object');
         response.body.data.should.have.property('id').and.eql(user.profile.legacyId);
+    });
+
+    it('Redis cache is cleared after a user is deleted', async () => {
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+        const user: OktaUser = getMockOktaUser();
+        mockOktaDeleteUser(user);
+
+        // Assert value does not exist in cache before
+        const value: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.not.exist(value);
+
+        // Store it in cache
+        await CacheService.set(`okta-user-${user.profile.legacyId}`, user);
+        const value2: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.exist(value2);
+
+        const response: request.Response = await requester
+            .delete(`/auth/user/${user.profile.legacyId}`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.be.an('object');
+        response.body.data.should.have.property('id').and.eql(user.profile.legacyId);
+
+        // Assert value does not exist in cache after
+        const value3: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.not.exist(value3);
     });
 
     after(async () => {

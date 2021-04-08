@@ -12,8 +12,10 @@ import {
     mockOktaUpdateUser,
     mockValidJWT
 } from './okta.mocks';
+import CacheService from 'services/cache.service';
+import Should = Chai.Should;
 
-chai.should();
+const should: Should = chai.should();
 chai.use(chaiDateTime);
 
 let requester: ChaiHttp.Agent;
@@ -140,6 +142,35 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
         response.body.data.should.have.property('createdAt');
         response.body.data.should.have.property('updatedAt');
+    });
+
+    it('Redis cache is cleared after a user is updated', async () => {
+        const userToBeUpdated: OktaUser = getMockOktaUser();
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+
+        mockGetUserById(userToBeUpdated);
+        mockOktaUpdateUser(userToBeUpdated, { displayName: 'changed name' });
+
+        // Assert value does not exist in cache before
+        const value: OktaUser = await CacheService.get(`okta-user-${userToBeUpdated.profile.legacyId}`);
+        should.not.exist(value);
+
+        // Store it in cache
+        await CacheService.set(`okta-user-${userToBeUpdated.profile.legacyId}`, userToBeUpdated);
+        const value2: OktaUser = await CacheService.get(`okta-user-${userToBeUpdated.profile.legacyId}`);
+        should.exist(value2);
+
+        const response: request.Response = await requester
+            .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .send({ name: 'changed name' });
+
+        response.status.should.equal(200);
+
+        // Assert value does not exist in cache after
+        const value3: OktaUser = await CacheService.get(`okta-user-${userToBeUpdated.profile.legacyId}`);
+        should.not.exist(value3);
     });
 
     after(async () => {
