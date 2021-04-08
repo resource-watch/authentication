@@ -43,7 +43,7 @@ export default class CacheService {
         });
     }
 
-    static async delete(user: OktaUser): Promise<void> {
+    static async invalidate(user: OktaUser): Promise<void> {
         const client: RedisClient = CacheService.getCacheClient();
         logger.info(`[CacheService] Deleting key okta-user-${user.profile.legacyId} in cache...`);
         return new Promise((resolve, reject) => {

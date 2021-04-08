@@ -295,7 +295,7 @@ export default class OktaService {
     static async updateUser(id: string, payload: OktaUpdateUserPayload): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
         const updatedUser: OktaUser = await OktaApiService.postUserByOktaId(user.id, payload);
-        await CacheService.delete(user);
+        await CacheService.invalidate(user);
         return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
@@ -304,14 +304,14 @@ export default class OktaService {
         payload: OktaUpdateUserProtectedFieldsPayload
     ): Promise<OktaUser> {
         const user : OktaUser = await OktaApiService.postUserByOktaId(oktaId, payload);
-        await CacheService.delete(user);
+        await CacheService.invalidate(user);
         return user;
     }
 
     static async deleteUser(id: string): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
         await OktaApiService.deleteUserByOktaId(user.id);
-        await CacheService.delete(user);
+        await CacheService.invalidate(user);
         return OktaService.convertOktaUserToIUser(user);
     }
 
