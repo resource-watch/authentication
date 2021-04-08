@@ -3,11 +3,13 @@ import chai from 'chai';
 import type request from 'superagent';
 
 import {JWTPayload, OktaUser} from 'services/okta.interfaces';
+import CacheService from 'services/cache.service';
 import { createTokenForUser } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { generateRandomTokenPayload, getMockOktaUser, mockGetUserById, mockOktaGetUserByEmail } from './okta.mocks';
+import Should = Chai.Should;
 
-chai.should();
+const should: Should = chai.should();
 
 let requester: ChaiHttp.Agent;
 
@@ -76,13 +78,85 @@ describe('[OKTA] Token validations test suite', () => {
         response.status.should.equal(200);
     });
 
+    it('Should fetch user information from Okta and store it in cache if it does not exist there yet', async () => {
+        const user: OktaUser = getMockOktaUser({ apps: ['gfw', 'rw'] });
+
+        // Assert value does not exist in cache before
+        const value: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.not.exist(value);
+
+        const tokenPayload: JWTPayload = generateRandomTokenPayload({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: ['rw', 'gfw'] },
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
+        });
+
+        const token: string = createTokenForUser({ ...tokenPayload, extraUserData: { apps: ['gfw', 'rw'] } });
+
+        mockOktaGetUserByEmail({
+            legacyId: tokenPayload.id,
+            email: tokenPayload.email,
+            role: tokenPayload.role,
+            apps: tokenPayload.extraUserData.apps,
+        });
+
+        mockGetUserById(user);
+
+        const response: request.Response = await requester
+            .get(`/auth/user/me`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+
+        // Assert value exists in cache after
+        const value2: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.exist(value2);
+    });
+
+    it('Should not fetch information from Okta if it already exists in cache', async () => {
+        const user: OktaUser = getMockOktaUser({ apps: ['gfw', 'rw'] });
+
+        // Assert value does not exist in cache before
+        const value: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.not.exist(value);
+
+        // Store it in cache
+        await CacheService.set(`okta-user-${user.profile.legacyId}`, user);
+        const value2: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
+        should.exist(value2);
+
+        const tokenPayload: JWTPayload = generateRandomTokenPayload({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: ['rw', 'gfw'] },
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
+        });
+
+        const token: string = createTokenForUser({ ...tokenPayload, extraUserData: { apps: ['gfw', 'rw'] } });
+
+        mockGetUserById(user);
+
+        const response: request.Response = await requester
+            .get(`/auth/user/me`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+    });
+
     after(async () => {
         await closeTestAgent();
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        await CacheService.clear();
     });
 });

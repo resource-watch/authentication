@@ -21,6 +21,7 @@ import {URL} from 'url';
 import OktaApiService from 'services/okta.api.service';
 import {v4 as uuidv4} from 'uuid';
 import mongoose from 'mongoose';
+import CacheService from 'services/cache.service';
 
 export default class OktaService {
 
@@ -171,33 +172,41 @@ export default class OktaService {
         // Validate token age, and only go to Okta if token is older than 1h
         const ONE_HOUR: number = 60 * 60 * 1000;
         if ((new Date().getTime() - (payload.iat * 1000)) < ONE_HOUR) {
+            logger.info('[OktaService] Token is younger than 1h, skipping validation...');
             return isRevoked;
         }
 
         try {
-            const user: OktaUser = await OktaService.getOktaUserByEmail(payload.email);
-            const updatedUser: OktaUser = await OktaService.setAndUpdateRequiredFields(user);
-            const userToCheck: IUser = OktaService.convertOktaUserToIUser(updatedUser);
+            // Try to find user information in cache (based on legacyId)
+            let user: OktaUser = await CacheService.get(`okta-user-${payload.id}`);
+            if (!user) {
+                logger.info('[OktaService] User info not found in cache, storing...');
 
-            if (!isEqual(userToCheck.id, payload.id)) {
-                logger.info(`[OktaService] "id" in token ("${payload.id}") does not match value obtained from Okta ("${userToCheck.id}")`);
+                // If not found in cache, fetch it from Okta and store it in cache
+                user = await OktaService.getOktaUserByEmail(payload.email);
+                user = await OktaService.setAndUpdateRequiredFields(user);
+                await CacheService.set(`okta-user-${payload.id}`, user);
+            }
+
+            if (!isEqual(user.profile.legacyId, payload.id)) {
+                logger.info(`[OktaService] "id" in token ("${payload.id}") does not match value obtained from Okta ("${user.profile.legacyId}")`);
                 isRevoked = true;
             }
 
-            if (!isEqual(userToCheck.role, payload.role)) {
-                logger.info(`[OktaService] "role" in token ("${payload.role}") does not match value obtained from Okta ("${userToCheck.role}")`);
+            if (!isEqual(user.profile.role, payload.role)) {
+                logger.info(`[OktaService] "role" in token ("${payload.role}") does not match value obtained from Okta ("${user.profile.role}")`);
                 isRevoked = true;
             }
 
             const tokenApps: string[] = payload.extraUserData?.apps?.sort();
-            const userApps: string[] = userToCheck.extraUserData?.apps?.sort();
+            const userApps: string[] = user.profile.apps?.sort();
             if (!isEqual(tokenApps, userApps)) {
                 logger.info(`[OktaService] "apps" in token ("${tokenApps}") does not match value obtained from Okta ("${userApps}")`);
                 isRevoked = true;
             }
 
-            if (!isEqual(userToCheck.email, payload.email)) {
-                logger.info(`[OktaService] "email" in token ("${payload.email}") does not match value obtained from Okta ("${userToCheck.email}")`);
+            if (!isEqual(user.profile.email, payload.email)) {
+                logger.info(`[OktaService] "email" in token ("${payload.email}") does not match value obtained from Okta ("${user.profile.email}")`);
                 isRevoked = true;
             }
 
@@ -286,6 +295,7 @@ export default class OktaService {
     static async updateUser(id: string, payload: OktaUpdateUserPayload): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
         const updatedUser: OktaUser = await OktaApiService.postUserByOktaId(user.id, payload);
+        await CacheService.delete(user);
         return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
@@ -293,12 +303,15 @@ export default class OktaService {
         oktaId: string,
         payload: OktaUpdateUserProtectedFieldsPayload
     ): Promise<OktaUser> {
-        return OktaApiService.postUserByOktaId(oktaId, payload);
+        const user : OktaUser = await OktaApiService.postUserByOktaId(oktaId, payload);
+        await CacheService.delete(user);
+        return user;
     }
 
     static async deleteUser(id: string): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
         await OktaApiService.deleteUserByOktaId(user.id);
+        await CacheService.delete(user);
         return OktaService.convertOktaUserToIUser(user);
     }
 

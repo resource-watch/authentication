@@ -20,7 +20,7 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
     const email: string = faker.internet.email();
     const name: string = `${faker.name.firstName()} ${faker.name.lastName()}`;
     return {
-        'id': faker.random.uuid(),
+        'id': faker.datatype.uuid(),
         'status': 'PROVISIONED',
         'created': '2020-11-05T22:24:09.000Z',
         'activated': '2020-11-05T22:24:09.000Z',
@@ -28,9 +28,9 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
         'lastLogin': null,
         'lastUpdated': '2020-11-05T22:24:09.000Z',
         'passwordChanged': null,
-        'type': { 'id': faker.random.uuid() },
+        'type': { 'id': faker.datatype.uuid() },
         'profile': {
-            legacyId: faker.random.uuid(),
+            legacyId: faker.datatype.uuid(),
             login: email,
             email,
             role: 'USER',
@@ -143,7 +143,7 @@ export const mockOktaGetUserByEmail: (override: Partial<OktaUserProfile>, times?
 };
 
 export const generateRandomTokenPayload: (override?: Partial<JWTPayload>) => JWTPayload = (override = {}) => {
-    const id: string = faker.random.uuid();
+    const id: string = faker.datatype.uuid();
     const email: string = faker.internet.email();
     const role: string = 'USER';
     const extraUserData: { apps: string[]; } = { apps: ['rw'] };

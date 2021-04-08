@@ -1,8 +1,9 @@
-# 1.4.0
+# 1.3.0
 
 ## 08/04/2021
 
 - Unify social login accounts for Google and Facebook.
+- Add Redis cache support to reduce number of requests made to Okta on token validation.
 
 # 1.2.1
 
