@@ -7,12 +7,11 @@ import UserSerializer from '../serializers/user.serializer';
 import OktaService from 'services/okta.service';
 import { OktaOAuthProvider, OktaUser, IUser } from 'services/okta.interfaces';
 import OktaProvider from 'providers/okta.provider';
-import Utils from '../utils';
 
 export class OktaAppleProvider {
 
     static async apple(ctx: Context & RouterContext): Promise<void> {
-        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.APPLE, Utils.getOriginApp(ctx));
+        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.APPLE);
         return ctx.redirect(url);
     }
 

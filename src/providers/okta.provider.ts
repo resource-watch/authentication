@@ -370,15 +370,15 @@ export class OktaProvider {
             thirdParty.twitter = appConfig.twitter.active;
         }
 
-        if (config.get(`okta.${originApp}.google.idp`)) {
+        if (config.get(`okta.googleIdP`)) {
             thirdParty.google = true;
         }
 
-        if (config.get(`okta.${originApp}.facebook.idp`)) {
+        if (config.get(`okta.facebookIdP`)) {
             thirdParty.facebook = true;
         }
 
-        if (config.get(`okta.${originApp}.apple.idp`)) {
+        if (config.get(`okta.appleIdP`)) {
             thirdParty.apple = true;
         }
 
@@ -487,15 +487,15 @@ export class OktaProvider {
             apple: false
         };
 
-        if (config.get(`okta.${originApp}.google.idp`)) {
+        if (config.get(`okta.googleIdP`)) {
             thirdParty.google = true;
         }
 
-        if (config.get(`okta.${originApp}.facebook.idp`)) {
+        if (config.get(`okta.facebookIdP`)) {
             thirdParty.facebook = true;
         }
 
-        if (config.get(`okta.${originApp}.apple.idp`)) {
+        if (config.get(`okta.appleIdP`)) {
             thirdParty.apple = true;
         }
 

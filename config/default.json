@@ -33,21 +33,9 @@
     "apiKey": null,
     "clientId": null,
     "clientSecret": null,
-    "gfw": {
-      "facebook": { "idp": null },
-      "google": { "idp": null },
-      "apple": { "idp": null }
-    },
-    "rw": {
-      "facebook": { "idp": null },
-      "google": { "idp": null },
-      "apple": { "idp": null }
-    },
-    "prep": {
-      "facebook": { "idp": null },
-      "google": { "idp": null },
-      "apple": { "idp": null }
-    }
+    "googleIdP": null,
+    "facebookIdP": null,
+    "appleIdP": null
   },
   "settings": {
     "defaultApp": "gfw",

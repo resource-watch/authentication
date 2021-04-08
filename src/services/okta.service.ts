@@ -340,7 +340,7 @@ export default class OktaService {
         }
     }
 
-    static getOAuthRedirect(provider: OktaOAuthProvider, application: string): string {
+    static getOAuthRedirect(provider: OktaOAuthProvider): string {
         const state: string = uuidv4();
         const oktaOAuthURL: URL = new URL(`${config.get('okta.url')}/oauth2/default/v1/authorize`);
         oktaOAuthURL.searchParams.append('client_id', config.get('okta.clientId'));
@@ -348,7 +348,7 @@ export default class OktaService {
         oktaOAuthURL.searchParams.append('response_mode', 'query');
         oktaOAuthURL.searchParams.append('scope', 'openid profile email');
         oktaOAuthURL.searchParams.append('redirect_uri', `${config.get('server.publicUrl')}/auth/authorization-code/callback`);
-        oktaOAuthURL.searchParams.append('idp', config.get(`okta.${application}.${provider}.idp`));
+        oktaOAuthURL.searchParams.append('idp', config.get(`okta.${provider}IdP`));
         oktaOAuthURL.searchParams.append('state', state);
         return oktaOAuthURL.href;
     }

@@ -77,9 +77,7 @@ describe('[OKTA] Auth endpoints tests - HTML', () => {
     });
 
     it('Visiting /auth/login while not being logged in should show you the login page', async () => {
-        const response: request.Response = await requester
-            .get(`/auth/login`);
-
+        const response: request.Response = await requester.get(`/auth/login`);
         response.status.should.equal(200);
         response.redirects.should.be.an('array').and.length(0);
         response.text.should.contain('Login');
