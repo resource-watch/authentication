@@ -963,7 +963,7 @@ asynckit@^0.4.0:
   resolved "https://registry.yarnpkg.com/asynckit/-/asynckit-0.4.0.tgz#c79ed97f7f34cb8f2ba1bc9790bcc366474b4b79"
   integrity sha1-x57Zf380y48robyXkLzDZkdLS3k=
 
-axios@0.21.1, axios@^0.21.1:
+axios@^0.21.1:
   version "0.21.1"
   resolved "https://registry.yarnpkg.com/axios/-/axios-0.21.1.tgz#22563481962f4d6bde9a76d516ef0e5d3c09b2b8"
   integrity sha512-dKQiRHxGD9PPRIUNIWvZhPTPpl1rf/OxTYKsqKUDjBwYylTvV7SjSHJb9ratfyzM6wCdLCOYLzs73qpg5c4iGA==
@@ -1853,12 +1853,6 @@ fast-levenshtein@^2.0.6:
   version "2.0.6"
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
-
-fastly-promises@tiagojsag/fastly-promises#master:
-  version "0.0.0-semantically-released"
-  resolved "https://codeload.github.com/tiagojsag/fastly-promises/tar.gz/14470364f0d4e62b8ff99c8f7e7dd7cb27039242"
-  dependencies:
-    axios "0.21.1"
 
 fastq@^1.6.0:
   version "1.11.0"
@@ -4110,14 +4104,6 @@ run-parallel@^1.1.9:
   integrity sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==
   dependencies:
     queue-microtask "^1.2.2"
-
-rw-api-microservice-node@^3.3.3:
-  version "3.3.3"
-  resolved "https://registry.yarnpkg.com/rw-api-microservice-node/-/rw-api-microservice-node-3.3.3.tgz#02084f2046820a3f7be5fc7de791cdf04fc56720"
-  integrity sha512-Old/4sUDUal7X1w5loPYu2cuYIygig2Qe8K1Q3A2vwm4E3QOEzBqgyRBQeC13wlnAKaskcUEFnHCBe+86FEYhg==
-  dependencies:
-    axios "^0.21.1"
-    fastly-promises tiagojsag/fastly-promises#master
 
 rxjs@^6.6.6:
   version "6.6.7"
