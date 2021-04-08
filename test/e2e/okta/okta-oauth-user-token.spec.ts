@@ -1,13 +1,14 @@
 import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
+import config from 'config';
+import Should = Chai.Should;
 
 import {JWTPayload, OktaUser} from 'services/okta.interfaces';
 import CacheService from 'services/cache.service';
 import { createTokenForUser } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { generateRandomTokenPayload, getMockOktaUser, mockGetUserById, mockOktaGetUserByEmail } from './okta.mocks';
-import Should = Chai.Should;
 
 const should: Should = chai.should();
 
@@ -76,6 +77,81 @@ describe('[OKTA] Token validations test suite', () => {
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
+    });
+
+    it('A failing request finding user information in Okta (500 Internal server error) returns 401 with the correct error message', async () => {
+        const user: OktaUser = getMockOktaUser();
+        const tokenPayload: JWTPayload = generateRandomTokenPayload({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
+        });
+        const token: string = createTokenForUser(tokenPayload);
+
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(500, { error: 'Internal server error.' });
+
+        const response: request.Response = await requester
+            .get(`/auth/user/me`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(401);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Your token is outdated. Please use /auth/login to login and /auth/generate-token to generate a new token.`);
+    });
+
+    it('A failing request finding user information in Okta (404 Not Found) returns 401 with the correct error message', async () => {
+        const user: OktaUser = getMockOktaUser();
+        const tokenPayload: JWTPayload = generateRandomTokenPayload({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
+        });
+        const token: string = createTokenForUser(tokenPayload);
+
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(404, { error: 'User not found.' });
+
+        const response: request.Response = await requester
+            .get(`/auth/user/me`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(401);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Your token is outdated. Please use /auth/login to login and /auth/generate-token to generate a new token.`);
+    });
+
+    it('A failing request finding user information in Okta (429 Rate Limit Reached) returns 401 with the correct error message', async () => {
+        const user: OktaUser = getMockOktaUser();
+        const tokenPayload: JWTPayload = generateRandomTokenPayload({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+            // Token age older than 1h to trigger validation in Okta
+            iat: new Date('01-01-2000').getTime() / 1000,
+        });
+        const token: string = createTokenForUser(tokenPayload);
+
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(429, { error: 'Rate limit reached.' });
+
+        const response: request.Response = await requester
+            .get(`/auth/user/me`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(401);
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Your token is outdated. Please use /auth/login to login and /auth/generate-token to generate a new token.`);
     });
 
     it('Should fetch user information from Okta and store it in cache if it does not exist there yet', async () => {
