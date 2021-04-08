@@ -30,7 +30,7 @@ export default class CacheService {
         const client: RedisClient = CacheService.getCacheClient();
         logger.info(`[CacheService] Setting key ${key} in cache...`);
         return new Promise(resolve => {
-            client.set(key, JSON.stringify(value), (err, res) => {
+            client.set(key, JSON.stringify(value), 'EX', 60 * 60 * 24, (err, res) => {
                 if (err) { logger.error(err); }
                 resolve(res);
             });
