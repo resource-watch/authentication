@@ -13,7 +13,7 @@ services:
       JWT_SECRET: mysecret
       COOKIE_DOMAIN: mymachine
       PUBLIC_URL: http://127.0.0.1:9000
-      REDIS_URL: redis
+      REDIS_URL: redis://redis:6379
       ALLOW_CONFIG_MUTATIONS: "true"
       CT_URL: http://mymachine:8000
       CT_TOKEN: cttoken
