@@ -170,8 +170,7 @@ export default class OktaService {
         }
 
         // Validate token age, and only go to Okta if token is older than 1h
-        const ONE_HOUR: number = 60 * 60 * 1000;
-        if ((new Date().getTime() - (payload.iat * 1000)) < ONE_HOUR) {
+        if ((new Date().getTime() - (payload.iat * 1000)) < config.get('jwt.skipValidationTokenAge')) {
             logger.info('[OktaService] Token is younger than 1h, skipping validation...');
             return isRevoked;
         }
