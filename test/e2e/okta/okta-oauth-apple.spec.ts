@@ -101,9 +101,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         sandbox = sinon.createSandbox();
         stubConfigValue(sandbox, {
             'settings.defaultApp': 'gfw',
-            'okta.gfw.apple.idp': 'GFW_APPLE_IDP',
-            'okta.rw.apple.idp': 'RW_APPLE_IDP',
-            'okta.prep.apple.idp': 'PREP_APPLE_IDP',
+            'okta.appleIdP': 'GFW_APPLE_IDP',
             'settings.thirdParty.gfw.apple.privateKeyString': Buffer.from(b64string, 'base64').toString()
         });
 
@@ -120,7 +118,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
         response.header.location.should.match(/redirect_uri=(.*)auth(.*)authorization-code(.*)callback/);
-        response.header.location.should.contain(`idp=${config.get('okta.gfw.apple.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.appleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
@@ -136,7 +134,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.rw.apple.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.appleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
@@ -152,7 +150,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.prep.apple.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.appleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);

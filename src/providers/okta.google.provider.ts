@@ -102,7 +102,7 @@ export class OktaGoogleProvider {
     }
 
     static async google(ctx: Context): Promise<void> {
-        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.GOOGLE, Utils.getOriginApp(ctx));
+        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.GOOGLE);
         return ctx.redirect(url);
     }
 

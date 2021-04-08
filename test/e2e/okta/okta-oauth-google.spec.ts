@@ -36,12 +36,7 @@ describe('[OKTA] Google auth endpoint tests', () => {
 
     beforeEach(async () => {
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, {
-            'okta.gfw.google.idp': 'GFW_GOOGLE_IDP',
-            'okta.rw.google.idp': 'RW_GOOGLE_IDP',
-            'okta.prep.google.idp': 'PREP_GOOGLE_IDP',
-        });
-
+        stubConfigValue(sandbox, { 'okta.googleIdP': 'GFW_GOOGLE_IDP' });
         requester = await getTestAgent(true);
     });
 
@@ -54,7 +49,7 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.rw.google.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.googleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
@@ -70,7 +65,7 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.prep.google.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.googleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
@@ -86,7 +81,7 @@ describe('[OKTA] Google auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.gfw.google.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.googleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);

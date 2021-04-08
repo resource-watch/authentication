@@ -103,7 +103,7 @@ export class OktaFacebookProvider {
     }
 
     static async facebook(ctx: Context & RouterContext): Promise<void> {
-        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.FACEBOOK, Utils.getOriginApp(ctx));
+        const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.FACEBOOK);
         return ctx.redirect(url);
     }
 

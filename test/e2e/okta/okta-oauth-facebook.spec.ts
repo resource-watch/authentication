@@ -35,11 +35,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
 
     beforeEach(async () => {
         sandbox = sinon.createSandbox();
-        stubConfigValue(sandbox, {
-            'okta.gfw.facebook.idp': 'GFW_FB_IDP',
-            'okta.rw.facebook.idp': 'RW_FB_IDP',
-            'okta.prep.facebook.idp': 'PREP_FB_IDP',
-        });
+        stubConfigValue(sandbox, { 'okta.facebookIdP': 'GFW_FB_IDP' });
 
         requester = await getTestAgent(true);
     });
@@ -53,7 +49,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.rw.facebook.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.facebookIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
@@ -69,7 +65,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.gfw.facebook.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.facebookIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
@@ -85,7 +81,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.header.location.should.contain(`response_type=code`);
         response.header.location.should.contain(`response_mode=query`);
         response.header.location.should.match(/scope=openid(.*)profile(.*)email/);
-        response.header.location.should.contain(`idp=${config.get('okta.prep.facebook.idp')}`);
+        response.header.location.should.contain(`idp=${config.get('okta.facebookIdP')}`);
         response.header.location.should.match(/state=\w/);
 
         const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);

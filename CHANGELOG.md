@@ -1,3 +1,9 @@
+# 1.4.0
+
+## 08/04/2021
+
+- Unify social login accounts for Google and Facebook.
+
 # 1.2.1
 
 ## 31/03/2021

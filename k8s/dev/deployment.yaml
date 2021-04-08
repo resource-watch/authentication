@@ -90,26 +90,6 @@ spec:
             secretKeyRef:
               key: OKTA_GFW_APPLE_IDP
               name: authorization
-        - name: OKTA_RW_FACEBOOK_IDP
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_RW_FACEBOOK_IDP
-              name: authorization
-        - name: OKTA_RW_GOOGLE_IDP
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_RW_GOOGLE_IDP
-              name: authorization
-        - name: OKTA_PREP_FACEBOOK_IDP
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_PREP_FACEBOOK_IDP
-              name: authorization
-        - name: OKTA_PREP_GOOGLE_IDP
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_PREP_GOOGLE_IDP
-              name: authorization
         - name: CT_REGISTER_MODE
           valueFrom:
             secretKeyRef:

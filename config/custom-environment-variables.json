@@ -24,21 +24,9 @@
     "apiKey": "OKTA_API_KEY",
     "clientId": "OKTA_CLIENT_ID",
     "clientSecret": "OKTA_CLIENT_SECRET",
-    "gfw": {
-      "facebook": { "idp": "OKTA_GFW_FACEBOOK_IDP" },
-      "google": { "idp": "OKTA_GFW_GOOGLE_IDP" },
-      "apple": { "idp": "OKTA_GFW_APPLE_IDP" }
-    },
-    "rw": {
-      "facebook": { "idp": "OKTA_RW_FACEBOOK_IDP" },
-      "google": { "idp": "OKTA_RW_GOOGLE_IDP" },
-      "apple": { "idp": "OKTA_RW_APPLE_IDP" }
-    },
-    "prep": {
-      "facebook": { "idp": "OKTA_PREP_FACEBOOK_IDP" },
-      "google": { "idp": "OKTA_PREP_GOOGLE_IDP" },
-      "apple": { "idp": "OKTA_PREP_APPLE_IDP" }
-    }
+    "facebookIdP": "OKTA_GFW_FACEBOOK_IDP",
+    "googleIdP": "OKTA_GFW_GOOGLE_IDP",
+    "appleIdP":"OKTA_GFW_APPLE_IDP"
   },
   "settings": {
     "thirdParty": {
