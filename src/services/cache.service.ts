@@ -4,22 +4,19 @@ import redis, {RedisClient} from 'redis';
 
 import {OktaUser} from 'services/okta.interfaces';
 
-export default class CacheService {
-    private static getCacheClient(): RedisClient {
-        const client: RedisClient = redis.createClient({ url: config.get('redis.url') as string });
+class CacheService {
+    private client: RedisClient;
 
-        client.on('error', (error) => {
-            logger.error(error);
-        });
+    constructor() {
+        logger.debug('[CacheService] Initializing cache service');
 
-        return client;
+        this.client = redis.createClient({ url: config.get('redis.url') as string });
     }
 
-    static async get(key: string): Promise<OktaUser> {
-        const client: RedisClient = CacheService.getCacheClient();
+    async get(key: string): Promise<OktaUser> {
         logger.info(`[CacheService] Getting key ${key} from cache...`);
         return new Promise((resolve, reject) => {
-            client.get(key, (err, res) => {
+            this.client.get(key, (err, res) => {
                 if (err) {
                     logger.error(err);
                     reject(err);
@@ -29,11 +26,10 @@ export default class CacheService {
         });
     }
 
-    static async set(key: string, value: OktaUser): Promise<any> {
-        const client: RedisClient = CacheService.getCacheClient();
+    async set(key: string, value: OktaUser): Promise<any> {
         logger.info(`[CacheService] Setting key ${key} in cache...`);
         return new Promise((resolve, reject) => {
-            client.set(key, JSON.stringify(value), 'EX', config.get('redis.defaultTTL'), (err, res) => {
+            this.client.set(key, JSON.stringify(value), 'EX', config.get('redis.defaultTTL'), (err, res) => {
                 if (err) {
                     logger.error(err);
                     reject(err);
@@ -43,11 +39,10 @@ export default class CacheService {
         });
     }
 
-    static async invalidate(user: OktaUser): Promise<void> {
-        const client: RedisClient = CacheService.getCacheClient();
+    async invalidate(user: OktaUser): Promise<void> {
         logger.info(`[CacheService] Deleting key okta-user-${user.profile.legacyId} in cache...`);
         return new Promise((resolve, reject) => {
-            client.del(`okta-user-${user.profile.legacyId}`, (err) => {
+            this.client.del(`okta-user-${user.profile.legacyId}`, (err) => {
                 if (err) {
                     logger.error(err);
                     reject(err);
@@ -57,11 +52,10 @@ export default class CacheService {
         });
     }
 
-    static async clear(): Promise<any> {
-        const client: RedisClient = CacheService.getCacheClient();
+    async clear(): Promise<any> {
         logger.info(`[CacheService] Clearing cache...`);
         return new Promise((resolve, reject) => {
-            client.flushall((err, res) => {
+            this.client.flushall((err, res) => {
                 if (err) {
                     logger.error(err);
                     reject(err);
@@ -71,3 +65,5 @@ export default class CacheService {
         });
     }
 }
+
+export default new CacheService();
