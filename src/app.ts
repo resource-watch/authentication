@@ -3,6 +3,8 @@ import { Server } from 'http';
 import Koa from 'koa';
 import koaBody from 'koa-body';
 import koaLogger from 'koa-logger';
+import AWSXRay from 'aws-xray-sdk-core';
+import xrayKoa from 'aws-xray-sdk-koa2';
 // @ts-ignore
 import flash from 'koa-connect-flash';
 import { RWAPIMicroservice } from 'rw-api-microservice-node';
@@ -44,6 +46,9 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                 db: 1
             })
         }));
+
+        // @ts-ignore
+        app.use(xrayKoa.openSegment('Authentication'));
 
         app.use(flash());
 
