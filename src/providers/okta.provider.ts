@@ -309,7 +309,7 @@ export class OktaProvider {
                 apps: body.extraUserData.apps,
                 photo: body.photo,
                 provider: OktaOAuthProvider.LOCAL,
-                origin: ctx.request.headers.referer || '',
+                origin: ctx.session.callbackUrl || '',
             });
         } catch (err) {
             logger.error('[OktaProvider] - Error creating user, ', err);
@@ -406,9 +406,6 @@ export class OktaProvider {
 
     static async signUp(ctx: Context): Promise<void> {
         try {
-            // Store referer URL in session, to be used later by the sign-up-redirect endpoint
-            ctx.session.signUpOrigin = ctx.request.headers.referer;
-
             logger.info('[OktaProvider] - Creating user');
 
             const newUser: IUser = await OktaService.createUserWithoutPassword({
@@ -416,7 +413,7 @@ export class OktaProvider {
                 email: ctx.request.body.email,
                 provider: OktaOAuthProvider.LOCAL,
                 role: 'USER',
-                origin: ctx.request.headers.referer || '',
+                origin: ctx.session.callbackUrl || '',
             });
 
             if (ctx.request.type === 'application/json') {

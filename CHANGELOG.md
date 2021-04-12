@@ -1,3 +1,9 @@
+# 1.4.0
+
+## 12/04/2021
+
+- Store `callbackUrl` provided in query/request body on sign up as `origin` in Okta to be used in redirect after sign in.
+
 # 1.3.0
 
 ## 08/04/2021

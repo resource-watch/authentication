@@ -19,6 +19,9 @@ async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     if (ctx.query.callbackUrl) {
         ctx.session.callbackUrl = ctx.query.callbackUrl;
     }
+    if (ctx.request.body.callbackUrl) {
+        ctx.session.callbackUrl = ctx.request.body.callbackUrl;
+    }
 
     if (!ctx.session.applications && ctx.query.applications) {
         const applications: string = ctx.query.applications as string;
@@ -90,7 +93,8 @@ router.get('/check-logged', OktaProvider.checkLogged);
 router.get('/success', loadApplicationGeneralConfig, OktaProvider.success);
 router.get('/logout', setCallbackUrlOnlyWithQueryParam, OktaProvider.logout);
 router.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
-router.post('/sign-up', loadApplicationGeneralConfig, OktaProvider.signUp);
+// @ts-ignore
+router.post('/sign-up', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.signUp);
 router.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
 router.post('/reset-password', loadApplicationGeneralConfig, OktaProvider.sendResetMail);
 router.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);

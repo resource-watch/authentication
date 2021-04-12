@@ -24,7 +24,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         requester = await getTestAgent();
     });
 
-    it('No email provided ion query parameter returns 400 Bad Request', async () => {
+    it('No email provided on query parameter returns 400 Bad Request', async () => {
         const response: request.Response = await requester.get(`/auth/sign-up-redirect`);
         response.status.should.equal(400);
         response.body.errors[0].detail.should.equal('No email provided.');
@@ -49,7 +49,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         response.body.errors[0].detail.should.equal('Redirect not found.');
     });
 
-    it('Signing up successfully and hitting the redirect endpoint should redirect the user to the origin request stored in the user upon sign up - happy case', async () => {
+    it('Signing up with no callbackUrl provided should use HTTP header referrer, and hitting the redirect endpoint should redirect the user to the origin request stored in the user upon sign up', async () => {
         const user: OktaUser = getMockOktaUser({ apps: [] });
         mockOktaCreateUser(user, {
             email: user.profile.email,
@@ -63,6 +63,71 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
             .post(`/auth/sign-up`)
             .set('Content-Type', 'application/json')
             .set('Referer', 'https://www.google.com')
+            .send({ email: user.profile.email });
+
+        response.status.should.equal(200);
+        response.should.be.json;
+
+        mockOktaGetUserByEmail({
+            ...user.profile,
+            origin: 'https://www.google.com',
+        });
+
+        const redirectResponse: request.Response = await requester
+            .get(`/auth/sign-up-redirect?email=${user.profile.email}`)
+            .redirects(0);
+
+        redirectResponse.status.should.equal(302);
+        redirectResponse.should.redirectTo('https://www.google.com');
+    });
+
+    it('Signing up with callbackUrl in request body should redirect the user to the origin request stored in the user upon sign up', async () => {
+        const user: OktaUser = getMockOktaUser({ apps: [] });
+        mockOktaCreateUser(user, {
+            email: user.profile.email,
+            provider: OktaOAuthProvider.LOCAL,
+            role: 'USER',
+            origin: 'https://www.google.com',
+        });
+        mockOktaSendActivationEmail(user);
+
+        const response: request.Response = await requester
+            .post(`/auth/sign-up`)
+            .set('Content-Type', 'application/json')
+            .send({
+                email: user.profile.email,
+                callbackUrl: 'https://www.google.com',
+            });
+
+        response.status.should.equal(200);
+        response.should.be.json;
+
+        mockOktaGetUserByEmail({
+            ...user.profile,
+            origin: 'https://www.google.com',
+        });
+
+        const redirectResponse: request.Response = await requester
+            .get(`/auth/sign-up-redirect?email=${user.profile.email}`)
+            .redirects(0);
+
+        redirectResponse.status.should.equal(302);
+        redirectResponse.should.redirectTo('https://www.google.com');
+    });
+
+    it('Signing up with callbackUrl in query parameter should redirect the user to the origin request stored in the user upon sign up', async () => {
+        const user: OktaUser = getMockOktaUser({ apps: [] });
+        mockOktaCreateUser(user, {
+            email: user.profile.email,
+            provider: OktaOAuthProvider.LOCAL,
+            role: 'USER',
+            origin: 'https://www.google.com',
+        });
+        mockOktaSendActivationEmail(user);
+
+        const response: request.Response = await requester
+            .post(`/auth/sign-up?callbackUrl=https://www.google.com`)
+            .set('Content-Type', 'application/json')
             .send({ email: user.profile.email });
 
         response.status.should.equal(200);
