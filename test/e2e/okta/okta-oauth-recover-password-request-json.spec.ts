@@ -59,6 +59,47 @@ describe('[OKTA] OAuth endpoints tests - Recover password request - JSON version
         response.body.should.have.property('message').and.equal(`Email sent`);
     });
 
+
+    it('Okta user origin is updated with HTTP referer when a submitting a successful recover password request', async () => {
+        const user: OktaUser = mockOktaSendResetPasswordEmail({}, 1, 'https://www.google.com');
+
+        const response: request.Response = await requester
+            .post(`/auth/reset-password`)
+            .set('Content-Type', 'application/json')
+            .set('Referer', 'https://www.google.com')
+            .send({ email: user.profile.email });
+
+        response.status.should.equal(200);
+        response.should.be.json;
+        response.body.should.have.property('message').and.equal(`Email sent`);
+    });
+
+    it('Okta user origin is updated with callback URL from query if provided when a submitting a successful recover password request', async () => {
+        const user: OktaUser = mockOktaSendResetPasswordEmail({}, 1, 'https://www.facebook.com');
+
+        const response: request.Response = await requester
+            .post(`/auth/reset-password?callbackUrl=https://www.facebook.com`)
+            .set('Content-Type', 'application/json')
+            .send({ email: user.profile.email });
+
+        response.status.should.equal(200);
+        response.should.be.json;
+        response.body.should.have.property('message').and.equal(`Email sent`);
+    });
+
+    it('Okta user origin is updated with callback URL from body if provided when a submitting a successful recover password request', async () => {
+        const user: OktaUser = mockOktaSendResetPasswordEmail({}, 1, 'https://www.google.com');
+
+        const response: request.Response = await requester
+            .post(`/auth/reset-password`)
+            .set('Content-Type', 'application/json')
+            .send({ email: user.profile.email, callbackUrl: 'https://www.google.com' });
+
+        response.status.should.equal(200);
+        response.should.be.json;
+        response.body.should.have.property('message').and.equal(`Email sent`);
+    });
+
     after(async () => {
         await closeTestAgent();
     });
