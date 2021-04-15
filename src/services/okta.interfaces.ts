@@ -88,6 +88,7 @@ export interface OktaUpdateUserProtectedFieldsPayload {
     password?: string;
     role?: string;
     apps?: string[];
+    origin?: string;
 }
 
 export interface OktaErrorCause {

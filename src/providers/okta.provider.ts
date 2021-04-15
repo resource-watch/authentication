@@ -541,6 +541,11 @@ export class OktaProvider {
         }
 
         try {
+            // Find user by email and update user origin field on Okta
+            const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(ctx.request.body.email);
+            await OktaService.updateUserProtectedFields(oktaUser.id, { origin: ctx.session.callbackUrl || '' });
+
+            // Send password recovery email
             await OktaService.sendPasswordRecoveryEmail(ctx.request.body.email);
 
             if (ctx.request.type === 'application/json') {
@@ -555,6 +560,8 @@ export class OktaProvider {
                 });
             }
         } catch (err) {
+            logger.error(err);
+
             if (ctx.request.type === 'application/json') {
                 throw new UnprocessableEntityError('User not found');
             } else {

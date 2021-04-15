@@ -298,10 +298,7 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
-    static async updateUserProtectedFields(
-        oktaId: string,
-        payload: OktaUpdateUserProtectedFieldsPayload
-    ): Promise<OktaUser> {
+    static async updateUserProtectedFields(oktaId: string, payload: OktaUpdateUserProtectedFieldsPayload): Promise<OktaUser> {
         const user : OktaUser = await OktaApiService.postUserByOktaId(oktaId, payload);
         await CacheService.invalidate(user);
         return user;

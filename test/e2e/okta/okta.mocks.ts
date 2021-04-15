@@ -220,6 +220,18 @@ export const mockOktaDeleteUser: (user: OktaUser, times?: number) => void = (use
 export const mockOktaSendResetPasswordEmail: (override?: Partial<OktaUserProfile>, times?: number) => OktaUser = (override = {}, times = 1) => {
     const user: OktaUser = getMockOktaUser(override);
 
+    // Mock get user by email
+    nock(config.get('okta.url'))
+        .get(`/api/v1/users/${user.profile.email}`)
+        .times(times)
+        .reply(200, { ...user });
+
+    // Mock update origin field in Okta
+    nock(config.get('okta.url'))
+        .post(`/api/v1/users/${user.id}`, (body) => isEqual(body, { profile: { origin: '' } }))
+        .times(times)
+        .reply(200, { ...user, profile: { ...user.profile, origin: '' } });
+
     nock(config.get('okta.url'))
         .post(`/api/v1/authn/recovery/password`, { username: user.profile.email, factorType: 'EMAIL' })
         .times(times)
