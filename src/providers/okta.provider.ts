@@ -634,7 +634,8 @@ export class OktaProvider {
         }
 
         try {
-            const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);
+            // Replace possible spaces in the email with + sign :shrug:
+            const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email.replace(/\s/, '+'));
             const redirect: string = oktaUser.profile.origin;
             if (!redirect) {
                 return ctx.throw(404, 'Redirect not found.');

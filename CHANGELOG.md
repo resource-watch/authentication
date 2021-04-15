@@ -3,6 +3,7 @@
 ## 15/04/2021
 
 - Update `origin` in Okta after password reset process.
+- Fix issues with special characters when requesting a sign-up redirect.
 
 # 1.4.0
 

@@ -146,6 +146,33 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         redirectResponse.should.redirectTo('https://www.google.com');
     });
 
+    it('Emails with special characters get correctly decoded when requesting a sign-up redirect', async () => {
+        const user: OktaUser = getMockOktaUser({ email: 'test-with-plus+2@email.com' });
+
+        mockOktaGetUserByEmail({ ...user.profile, origin: 'https://www.google.com' });
+
+        const redirectResponse: request.Response = await requester
+            .get(`/auth/sign-up-redirect?email=test-with-plus%2B2%40email.com`)
+            .redirects(0);
+
+        redirectResponse.status.should.equal(302);
+        redirectResponse.should.redirectTo('https://www.google.com');
+    });
+
+    it('Emails with spaces get replaced with `+` signs and correctly decoded when requesting a sign-up redirect', async () => {
+        const user: OktaUser = getMockOktaUser({ email: 'test-with-plus+2@email.com' });
+
+        mockOktaGetUserByEmail({ ...user.profile, origin: 'https://www.google.com' });
+
+        const redirectResponse: request.Response = await requester
+            .get(`/auth/sign-up-redirect?email=test-with-plus%202@email.com`)
+            .redirects(0);
+
+        redirectResponse.status.should.equal(302);
+        redirectResponse.should.redirectTo('https://www.google.com');
+    });
+
+
     after(async () => {
         await closeTestAgent();
     });
