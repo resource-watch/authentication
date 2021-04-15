@@ -96,7 +96,8 @@ router.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
 // @ts-ignore
 router.post('/sign-up', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.signUp);
 router.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
-router.post('/reset-password', loadApplicationGeneralConfig, OktaProvider.sendResetMail);
+// @ts-ignore
+router.post('/reset-password', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.sendResetMail);
 router.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);
 // @ts-ignore
 router.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
