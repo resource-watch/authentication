@@ -1,3 +1,9 @@
+# 1.4.1
+
+## 15/04/2021
+
+- Update `origin` in Okta after password reset process.
+
 # 1.4.0
 
 ## 12/04/2021
