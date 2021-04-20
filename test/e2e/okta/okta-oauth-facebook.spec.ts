@@ -9,12 +9,19 @@ import type request from 'superagent';
 import sinon, {SinonSandbox} from 'sinon';
 import {stubConfigValue} from '../utils/helpers';
 import {
-    getMockOktaUser,
+    getMockOktaUser, mockGetUserByOktaId,
     mockOktaCreateUser,
     mockOktaGetUserByEmail,
+    mockOktaOAuthToken,
     mockOktaSendActivationEmail,
 } from './okta.mocks';
-import {JWTPayload, OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
+import {
+    JWTPayload,
+    OktaOAuthProvider,
+    OktaOAuthTokenPayload,
+    OktaSuccessfulOAuthTokenResponse,
+    OktaUser
+} from 'services/okta.interfaces';
 
 chai.should();
 
@@ -261,6 +268,26 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         tokenPayload.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
         tokenPayload.should.have.property('photo').and.eql(user.profile.photo);
         tokenPayload.should.have.property('name').and.eql(user.profile.displayName);
+    });
+
+    it('Visiting /auth/facebook providing the callbackUrl as query parameter should redirect the user to the callbackUrl after a successful login', async () => {
+        // Start Facebook login
+        const response: request.Response = await requester.get(`/auth/facebook?callbackUrl=https://www.google.com`).redirects(0);
+        response.should.redirect;
+
+        const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
+        const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;
+        const user: OktaUser = getMockOktaUser();
+        mockGetUserByOktaId(tokenData.uid, user);
+
+        // Callback code - should pick up the callbackUrl previously set
+        const responseOne: request.Response = await requester.get(`/auth/authorization-code/callback?code=EXAMPLE`).redirects(0);
+        responseOne.should.redirect;
+        responseOne.should.redirectTo(new RegExp(`/auth/success$`));
+
+        const responseTwo: request.Response = await requester.get('/auth/success').redirects(0);
+        responseTwo.should.redirect;
+        responseTwo.should.redirectTo('https://www.google.com');
     });
 
     afterEach(async () => {
