@@ -11,9 +11,8 @@ import {stubConfigValue} from '../utils/helpers';
 import {
     getMockOktaUser,
     mockOktaCreateUser,
-    mockOktaListUsers,
+    mockOktaGetUserByEmail,
     mockOktaSendActivationEmail,
-    mockOktaUpdateUser
 } from './okta.mocks';
 import {JWTPayload, OktaOAuthProvider, OktaUser} from 'services/okta.interfaces';
 
@@ -97,12 +96,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
             providerId,
         });
 
-        mockOktaListUsers({
-            limit: 1,
-            search: `(profile.provider eq "${OktaOAuthProvider.FACEBOOK}") and (profile.providerId eq "${providerId}")`
-        }, [user]);
-
-        mockOktaUpdateUser(user, { email: 'john.doe@vizzuality.com' });
+        mockOktaGetUserByEmail(user.profile);
 
         const proof: string = crypto.createHmac('sha256', config.get('settings.thirdParty.rw.facebook.clientSecret'))
             .update('TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN')
@@ -147,10 +141,16 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
             providerId,
         });
 
-        mockOktaListUsers({
-            limit: 1,
-            search: `(profile.provider eq "${OktaOAuthProvider.FACEBOOK}") and (profile.providerId eq "${providerId}")`
-        }, []);
+        // Mock user not found
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(404, {
+                'errorCode': 'E0000007',
+                'errorSummary': `Not found: Resource not found: ${user.profile.email} (User)`,
+                'errorLink': 'E0000007',
+                'errorId': 'oaeM-EhNh-aRXmmjoxRYFUgLQ',
+                'errorCauses': []
+            });
 
         mockOktaCreateUser(user, {
             email: 'john.doe@vizzuality.com',

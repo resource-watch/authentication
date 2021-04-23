@@ -46,42 +46,22 @@ export class OktaFacebookProvider {
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         try {
             logger.info('[OktaFacebookProvider] Registering user', profile);
-            let oktaUser: OktaUser = await OktaService.findOktaUserByProviderId(OktaOAuthProvider.FACEBOOK, profile.id);
+            const email: string = profile?.emails[0]?.value || profile?.email;
             let user: IUser;
-            if (!oktaUser) {
-                logger.info('[OktaFacebookProvider] User does not exist');
-                let email: string = null;
-                if (profile) {
-                    if (profile.emails?.length > 0) {
-                        email = profile.emails[0].value;
-                    } else if (profile.email) {
-                        ({ email } = profile);
-                    }
-                }
-
+            try {
+                const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);
+                user = OktaService.convertOktaUserToIUser(oktaUser);
+            } catch (err) {
+                // User not found, let's create him/her
+                logger.info(`[OktaFacebookProvider] User with email ${email} does not exist`);
                 user = await OktaService.createUserWithoutPassword({
                     name: profile?.displayName,
                     email,
                     photo: profile.photos?.length > 0 ? profile.photos[0].value : null,
                     role: 'USER',
-                    provider: OktaOAuthProvider.FACEBOOK,
                     apps: [],
+                    provider: OktaOAuthProvider.FACEBOOK,
                 });
-            } else {
-                let email: string = null;
-                if (profile) {
-                    if (profile.emails?.length > 0) {
-                        email = profile.emails[0].value;
-                    } else if (profile.email) {
-                        ({ email } = profile);
-                    }
-                }
-
-                if (email) {
-                    oktaUser = await OktaService.updateUserProtectedFields(oktaUser.id, { email });
-                }
-
-                user = OktaService.convertOktaUserToIUser(oktaUser);
             }
 
             logger.info('[OktaFacebookProvider] Returning user');
