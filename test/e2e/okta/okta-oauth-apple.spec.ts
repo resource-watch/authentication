@@ -13,9 +13,9 @@ import {JWTPayload, OktaOAuthProvider, OktaUser} from 'services/okta.interfaces'
 import {
     getMockOktaUser,
     mockOktaCreateUser,
+    mockOktaGetUserByEmail,
     mockOktaListUsers,
     mockOktaSendActivationEmail,
-    mockOktaUpdateUser
 } from './okta.mocks';
 import axios, {AxiosResponse} from 'axios';
 
@@ -206,12 +206,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
             providerId,
         });
 
-        mockOktaListUsers({
-            limit: 1,
-            search: `(profile.provider eq "${OktaOAuthProvider.APPLE}") and (profile.providerId eq "${providerId}")`
-        }, [user]);
-
-        mockOktaUpdateUser(user, { email: 'dj8e99g34n@privaterelay.appleid.com' });
+        mockOktaGetUserByEmail(user.profile);
 
         const token: string = await mockAppleKeys(providerId);
         const response: request.Response = await requester

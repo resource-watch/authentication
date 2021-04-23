@@ -1,3 +1,9 @@
+# 1.4.2
+
+## 23/04/2021
+
+- Fix issue with token social login where social users where not being correctly matched with Okta users.
+
 # 1.4.1
 
 ## 15/04/2021

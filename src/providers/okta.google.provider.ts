@@ -15,19 +15,14 @@ export class OktaGoogleProvider {
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         try {
             logger.info('[OktaGoogleProvider] Registering user', profile);
-            let oktaUser: OktaUser = await OktaService.findOktaUserByProviderId(OktaOAuthProvider.GOOGLE, profile.id);
             let user: IUser;
-            if (!oktaUser) {
-                logger.info('[OktaGoogleProvider] User does not exist');
-                let email: string = null;
-                if (profile) {
-                    if (profile.emails?.length > 0) {
-                        email = profile.emails[0].value;
-                    } else if (profile.email) {
-                        ({ email } = profile);
-                    }
-                }
-
+            const email: string = profile?.emails[0]?.value || profile?.email;
+            try {
+                const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);
+                user = OktaService.convertOktaUserToIUser(oktaUser);
+            } catch (err) {
+                // User not found, let's create him/her
+                logger.info(`[OktaGoogleProvider] User with email ${email} does not exist`);
                 user = await OktaService.createUserWithoutPassword({
                     name: profile?.displayName,
                     email,
@@ -36,22 +31,8 @@ export class OktaGoogleProvider {
                     apps: [],
                     provider: OktaOAuthProvider.GOOGLE,
                 });
-            } else {
-                let email: string = null;
-                if (profile) {
-                    if (profile.emails?.length > 0) {
-                        email = profile.emails[0].value;
-                    } else if (profile.email) {
-                        ({email} = profile);
-                    }
-                }
-
-                if (email) {
-                    oktaUser = await OktaService.updateUserProtectedFields(oktaUser.id, {email});
-                }
-
-                user = OktaService.convertOktaUserToIUser(oktaUser);
             }
+
             logger.info('[OktaGoogleProvider] Returning user');
             done(null, {
                 id: user.id,

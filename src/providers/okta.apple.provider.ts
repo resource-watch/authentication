@@ -28,9 +28,13 @@ export class OktaAppleProvider {
 
         try {
             let user: IUser;
-            let oktaUser: OktaUser = await OktaService.findOktaUserByProviderId(OktaOAuthProvider.APPLE, jwtToken.sub);
+            const email: string = jwtToken.email;
 
-            if (!oktaUser) {
+            try {
+                const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);
+                user = OktaService.convertOktaUserToIUser(oktaUser);
+            } catch (err) {
+                // User not found, let's create him/her
                 logger.info('[OktaAppleProvider] User does not exist');
                 user = await OktaService.createUserWithoutPassword({
                     email: jwtToken.email,
@@ -39,10 +43,6 @@ export class OktaAppleProvider {
                     provider: OktaOAuthProvider.APPLE,
                     providerId: jwtToken.sub,
                 });
-            } else if (jwtToken.email) {
-                logger.info('[OktaAppleProvider] Updating email');
-                oktaUser = await OktaService.updateUserProtectedFields(oktaUser.id, { email: jwtToken.email });
-                user = OktaService.convertOktaUserToIUser(oktaUser);
             }
 
             logger.info('[OktaAppleProvider] Returning user');
