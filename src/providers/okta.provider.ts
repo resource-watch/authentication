@@ -414,6 +414,7 @@ export class OktaProvider {
                 provider: OktaOAuthProvider.LOCAL,
                 role: 'USER',
                 origin: ctx.session.callbackUrl || '',
+                apps: ctx.request.body.apps || [],
             });
 
             if (ctx.request.type === 'application/json') {

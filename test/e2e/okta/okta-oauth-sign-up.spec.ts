@@ -49,7 +49,11 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
 
     it('Registering a user with correct data (just email) and no app returns a 200', async () => {
         const user: OktaUser = getMockOktaUser();
-        mockOktaCreateUser(user, { email: user.profile.email, provider: OktaOAuthProvider.LOCAL });
+        mockOktaCreateUser(user, {
+            email: user.profile.email,
+            provider: OktaOAuthProvider.LOCAL,
+            apps: [],
+        });
         mockOktaSendActivationEmail(user);
 
         const response: request.Response = await requester
@@ -68,6 +72,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up', () => {
             email: user.profile.email,
             name: 'Example name',
             provider: OktaOAuthProvider.LOCAL,
+            apps: [],
         });
         mockOktaSendActivationEmail(user);
 

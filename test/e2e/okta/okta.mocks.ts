@@ -165,7 +165,7 @@ export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload
             body.profile.provider === payload.provider,
             !!payload.origin ? body.profile.origin === payload.origin : body.profile.origin === '',
             body.profile.role === payload.role || body.profile.role === 'USER',
-            isEqual(body.profile.apps, payload.apps) || isEqual(body.profile.apps, []),
+            isEqual(body.profile.apps, payload.apps),
             !payload.photo || body.profile.photo === payload.photo,
             !payload.providerId || body.profile.providerId === payload.providerId,
         ].every(el => !!el))
