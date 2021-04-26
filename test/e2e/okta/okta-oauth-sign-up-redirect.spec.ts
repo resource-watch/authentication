@@ -56,6 +56,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             origin: 'https://www.google.com',
+            apps: [],
         });
         mockOktaSendActivationEmail(user);
 
@@ -88,6 +89,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             origin: 'https://www.google.com',
+            apps: [],
         });
         mockOktaSendActivationEmail(user);
 
@@ -122,6 +124,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
             origin: 'https://www.google.com',
+            apps: [],
         });
         mockOktaSendActivationEmail(user);
 

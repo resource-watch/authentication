@@ -43,6 +43,7 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
             email: user.profile.email,
             provider: OktaOAuthProvider.LOCAL,
             role: 'USER',
+            apps: [],
         });
         mockOktaSendActivationEmail(user);
 

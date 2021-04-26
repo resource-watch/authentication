@@ -1,8 +1,9 @@
 # 1.4.3
 
-## 23/04/2021
+## 26/04/2021
 
 - Fix social login with token for users who don't have an email (no email from Google, Facebook or Apple).
+- Fix issue with user apps not being taken into account on sign-up.
 
 # 1.4.2
 
