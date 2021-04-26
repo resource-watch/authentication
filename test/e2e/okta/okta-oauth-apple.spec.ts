@@ -14,7 +14,6 @@ import {
     getMockOktaUser,
     mockOktaCreateUser,
     mockOktaGetUserByEmail,
-    mockOktaListUsers,
     mockOktaSendActivationEmail,
 } from './okta.mocks';
 import axios, {AxiosResponse} from 'axios';
@@ -31,7 +30,7 @@ let jwkKey: RSA_JWK;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const mockAppleKeys: (id: string) => Promise<string> = async (id) => {
+const mockAppleKeys: (id: string, email?: string) => Promise<string> = async (id, email = 'dj8e99g34n@privaterelay.appleid.com') => {
     nock('https://appleid.apple.com')
         .persist()
         .get('/auth/keys')
@@ -46,7 +45,7 @@ const mockAppleKeys: (id: string) => Promise<string> = async (id) => {
         iat: Math.floor(Date.now() / 1000) - 100,
         sub: id,
         at_hash: 'f0M-78UN58lEDlwW9ZnXdQ',
-        email: 'dj8e99g34n@privaterelay.appleid.com',
+        email,
         email_verified: 'true',
         is_private_email: 'true',
         auth_time: Math.floor(Date.now() / 1000),
@@ -165,14 +164,21 @@ describe('[OKTA] Apple auth endpoint tests', () => {
             providerId,
         });
 
-        mockOktaListUsers({
-            limit: 1,
-            search: `(profile.provider eq "${OktaOAuthProvider.APPLE}") and (profile.providerId eq "${providerId}")`
-        }, []);
+        // Mock user not found
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(404, {
+                'errorCode': 'E0000007',
+                'errorSummary': `Not found: Resource not found: ${user.profile.email} (User)`,
+                'errorLink': 'E0000007',
+                'errorId': 'oaeM-EhNh-aRXmmjoxRYFUgLQ',
+                'errorCauses': []
+            });
 
         mockOktaCreateUser(user, {
             email: 'dj8e99g34n@privaterelay.appleid.com',
             provider: OktaOAuthProvider.APPLE,
+            providerId,
             photo: null,
             role: 'USER',
             apps: [],
@@ -209,6 +215,54 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         mockOktaGetUserByEmail(user.profile);
 
         const token: string = await mockAppleKeys(providerId);
+        const response: request.Response = await requester
+            .get(`/auth/apple/token`)
+            .query({ access_token: token });
+        response.status.should.equal(200);
+        response.should.be.json;
+        response.body.should.be.an('object');
+        response.body.should.have.property('token').and.be.a('string');
+
+        const tokenPayload: JWTPayload = JWT.verify(response.body.token, process.env.JWT_SECRET) as JWTPayload;
+        tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
+        tokenPayload.should.have.property('role').and.eql('USER');
+        tokenPayload.should.have.property('email').and.eql(user.profile.email);
+        tokenPayload.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
+        tokenPayload.should.have.property('photo').and.eql(user.profile.photo);
+        tokenPayload.should.have.property('name').and.eql(user.profile.displayName);
+    });
+
+    it('Visiting /auth/apple/token with a valid Apple OAuth token with a user that **does not have email** should create the user with a fake email and generate a new token for the existing user', async () => {
+        const providerId: string = '000958.a4550a8804284886a5b5116a1c0351af.1425';
+        const user: OktaUser = getMockOktaUser({
+            email: `${providerId}@apple.com`,
+            provider: OktaOAuthProvider.APPLE,
+            providerId,
+        });
+
+        // Mock user not found
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(404, {
+                'errorCode': 'E0000007',
+                'errorSummary': `Not found: Resource not found: ${user.profile.email} (User)`,
+                'errorLink': 'E0000007',
+                'errorId': 'oaeM-EhNh-aRXmmjoxRYFUgLQ',
+                'errorCauses': []
+            });
+
+        mockOktaCreateUser(user, {
+            email: `${providerId}@apple.com`,
+            provider: OktaOAuthProvider.APPLE,
+            providerId,
+            photo: null,
+            role: 'USER',
+            apps: [],
+        });
+
+        mockOktaSendActivationEmail(user);
+
+        const token: string = await mockAppleKeys(providerId, `${providerId}@apple.com`);
         const response: request.Response = await requester
             .get(`/auth/apple/token`)
             .query({ access_token: token });

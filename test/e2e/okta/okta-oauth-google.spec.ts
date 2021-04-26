@@ -156,6 +156,7 @@ describe('[OKTA] Google auth endpoint tests', () => {
             role: 'USER',
             apps: [],
             provider: OktaOAuthProvider.GOOGLE,
+            providerId,
         });
 
         mockOktaSendActivationEmail(user);
@@ -166,6 +167,68 @@ describe('[OKTA] Google auth endpoint tests', () => {
             .reply(200, {
                 id: providerId,
                 email: 'john.doe@vizzuality.com',
+                verified_email: true,
+                name: 'John Doe',
+                given_name: 'John',
+                family_name: 'Doe',
+                picture: 'https://images.pexels.com/photos/20787/pexels-photo.jpg?auto=compress&cs=tinysrgb&h=750&w=1260',
+                hd: 'vizzuality.com'
+            });
+
+        const response: request.Response = await requester
+            .get(`/auth/google/token?access_token=TEST_GOOGLE_OAUTH2_ACCESS_TOKEN`);
+
+        response.status.should.equal(200);
+        response.header['content-type'].should.equalIgnoreCase('application/json; charset=utf-8');
+        response.body.should.be.an('object');
+        response.body.should.have.property('token').and.be.a('string');
+
+        const tokenPayload: JWTPayload = JWT.verify(response.body.token, process.env.JWT_SECRET) as JWTPayload;
+        tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
+        tokenPayload.should.have.property('role').and.eql('USER');
+        tokenPayload.should.have.property('email').and.eql(user.profile.email);
+        tokenPayload.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
+        tokenPayload.should.have.property('photo').and.eql(user.profile.photo);
+        tokenPayload.should.have.property('name').and.eql(user.profile.displayName);
+    });
+
+    it('Visiting /auth/google/token with a valid Google OAuth token with a user that **does not have email** should create the user with a fake email and generate a new token - account with no email address', async () => {
+        const providerId: string = '113994825016233013735';
+        const user: OktaUser = getMockOktaUser({
+            email: `${providerId}@google.com`,
+            displayName: 'John Doe',
+            provider: OktaOAuthProvider.GOOGLE,
+            providerId,
+        });
+
+        // Mock user not found
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(404, {
+                'errorCode': 'E0000007',
+                'errorSummary': `Not found: Resource not found: ${user.profile.email} (User)`,
+                'errorLink': 'E0000007',
+                'errorId': 'oaeM-EhNh-aRXmmjoxRYFUgLQ',
+                'errorCauses': []
+            });
+
+        mockOktaCreateUser(user, {
+            email: `${providerId}@google.com`,
+            name: 'John Doe',
+            photo: null,
+            role: 'USER',
+            apps: [],
+            provider: OktaOAuthProvider.GOOGLE,
+            providerId,
+        });
+
+        mockOktaSendActivationEmail(user);
+
+        nock('https://www.googleapis.com')
+            .get('/oauth2/v1/userinfo')
+            .query({ access_token: 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN' })
+            .reply(200, {
+                id: providerId,
                 verified_email: true,
                 name: 'John Doe',
                 given_name: 'John',

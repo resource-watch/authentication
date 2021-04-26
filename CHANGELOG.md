@@ -1,8 +1,14 @@
+# 1.4.3
+
+## 23/04/2021
+
+- Fix social login with token for users who don't have an email (no email from Google, Facebook or Apple).
+
 # 1.4.2
 
 ## 23/04/2021
 
-- Fix issue with token social login where social users where not being correctly matched with Okta users.
+- Fix social login with token for users who weren't being correctly matched with Okta users.
 
 # 1.4.1
 
