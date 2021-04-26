@@ -47,6 +47,7 @@ export class OktaGoogleProvider {
             });
         } catch (err) {
             logger.error('[OktaGoogleProvider] Error during Google Token auth, ', err);
+            logger.error('[OktaGoogleProvider] Error causes (if present): ', err.response?.data?.errorCauses);
             done(err);
         }
     }

@@ -436,6 +436,7 @@ export class OktaProvider {
             }
 
             logger.error('[OktaProvider] - Error creating user: ', err);
+            logger.error('[OktaProvider] Error causes (if present): ', err.response?.data?.errorCauses);
 
             if (ctx.request.type === 'application/json') {
                 throw new UnprocessableEntityError(error);

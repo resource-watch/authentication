@@ -78,6 +78,7 @@ export class OktaFacebookProvider {
             });
         } catch (err) {
             logger.error('[OktaFacebookProvider] Error during Facebook Token auth, ', err);
+            logger.error('[OktaFacebookProvider] Error causes (if present): ', err.response?.data?.errorCauses);
             done(err);
         }
     }
