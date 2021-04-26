@@ -159,6 +159,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
             role: 'USER',
             apps: [],
             provider: OktaOAuthProvider.FACEBOOK,
+            providerId,
         });
 
         mockOktaSendActivationEmail(user);
@@ -180,6 +181,71 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
                 last_name: 'Doe',
                 first_name: 'John',
                 email: 'john.doe@vizzuality.com'
+            });
+
+        const response: request.Response = await requester.get(`/auth/facebook/token?access_token=TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN`);
+        response.status.should.equal(200);
+        response.should.be.json;
+        response.body.should.be.an('object');
+        response.body.should.have.property('token').and.be.a('string');
+
+        const tokenPayload: JWTPayload = JWT.verify(response.body.token, process.env.JWT_SECRET) as JWTPayload;
+        tokenPayload.should.have.property('id').and.eql(user.profile.legacyId);
+        tokenPayload.should.have.property('role').and.eql('USER');
+        tokenPayload.should.have.property('email').and.eql(user.profile.email);
+        tokenPayload.should.have.property('extraUserData').and.eql({ apps: user.profile.apps });
+        tokenPayload.should.have.property('photo').and.eql(user.profile.photo);
+        tokenPayload.should.have.property('name').and.eql(user.profile.displayName);
+    });
+
+    it('Visiting /auth/facebook/token with a valid Facebook OAuth token with a user that **does not have email** should create the user with a fake email and generate a new token', async () => {
+        const providerId: string = '10216001184997572';
+        const user: OktaUser = getMockOktaUser({
+            email: `${providerId}@facebook.com`,
+            displayName: 'John Doe',
+            provider: OktaOAuthProvider.FACEBOOK,
+            providerId,
+        });
+
+        // Mock user not found
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(404, {
+                'errorCode': 'E0000007',
+                'errorSummary': `Not found: Resource not found: ${user.profile.email} (User)`,
+                'errorLink': 'E0000007',
+                'errorId': 'oaeM-EhNh-aRXmmjoxRYFUgLQ',
+                'errorCauses': []
+            });
+
+        mockOktaCreateUser(user, {
+            email: `${providerId}@facebook.com`,
+            name: 'John Doe',
+            photo: null,
+            role: 'USER',
+            apps: [],
+            provider: OktaOAuthProvider.FACEBOOK,
+            providerId,
+        });
+
+        mockOktaSendActivationEmail(user);
+
+        const proof: string = crypto.createHmac('sha256', config.get('settings.thirdParty.rw.facebook.clientSecret'))
+            .update('TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN')
+            .digest('hex');
+
+        nock('https://graph.facebook.com')
+            .get('/v2.6/me')
+            .query({
+                appsecret_proof: proof,
+                fields: 'id,name,last_name,first_name,middle_name,email',
+                access_token: 'TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN'
+            })
+            .reply(200, {
+                id: providerId,
+                name: 'John Doe',
+                last_name: 'Doe',
+                first_name: 'John',
             });
 
         const response: request.Response = await requester.get(`/auth/facebook/token?access_token=TEST_FACEBOOK_OAUTH2_ACCESS_TOKEN`);

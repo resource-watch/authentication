@@ -28,7 +28,12 @@ export class OktaAppleProvider {
 
         try {
             let user: IUser;
-            const email: string = jwtToken.email;
+            let email: string = jwtToken.email;
+
+            // If email field was not provided, use fake email from provider ID and provider
+            if (!email) {
+                email = `${jwtToken.sub}@apple.com`;
+            }
 
             try {
                 const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);
@@ -37,7 +42,7 @@ export class OktaAppleProvider {
                 // User not found, let's create him/her
                 logger.info('[OktaAppleProvider] User does not exist');
                 user = await OktaService.createUserWithoutPassword({
-                    email: jwtToken.email,
+                    email,
                     role: 'USER',
                     apps: [],
                     provider: OktaOAuthProvider.APPLE,
