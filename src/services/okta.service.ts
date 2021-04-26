@@ -169,12 +169,6 @@ export default class OktaService {
             return isRevoked;
         }
 
-        // Validate token age, and only go to Okta if token is older than 1h
-        if ((new Date().getTime() - (payload.iat * 1000)) < config.get('jwt.skipValidationTokenAge')) {
-            logger.info('[OktaService] Token is younger than 1h, skipping validation...');
-            return isRevoked;
-        }
-
         try {
             // Try to find user information in cache (based on legacyId)
             let user: OktaUser = await CacheService.get(`okta-user-${payload.id}`);

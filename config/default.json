@@ -27,8 +27,7 @@
     "principalColor": "#f1b319"
   },
   "jwt": {
-    "token": "",
-    "skipValidationTokenAge": 3600000
+    "token": ""
   },
   "okta": {
     "url": "https://wri.okta.com",

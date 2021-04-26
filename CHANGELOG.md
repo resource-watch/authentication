@@ -4,6 +4,7 @@
 
 - Fix social login with token for users who don't have an email (no email from Google, Facebook or Apple).
 - Fix issue with user apps not being taken into account on sign-up.
+- Remove revoked token exception if token is older than less than 1h.
 
 # 1.4.2
 

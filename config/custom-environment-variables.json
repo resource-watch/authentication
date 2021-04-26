@@ -18,8 +18,7 @@
     "principalColor": "APP_COLOR"
   },
   "jwt": {
-    "token": "JWT_SECRET",
-    "skipValidationTokenAge": "JWT_SKIP_VALIDATION_TOKEN_AGE"
+    "token": "JWT_SECRET"
   },
   "okta": {
     "url": "OKTA_API_URL",

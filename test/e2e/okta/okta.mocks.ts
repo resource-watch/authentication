@@ -151,8 +151,19 @@ export const generateRandomTokenPayload: (override?: Partial<JWTPayload>) => JWT
     return { id, email, role, extraUserData, iat, ...override };
 };
 
-export const mockValidJWT: (override?: Partial<JWTPayload>, times?: number) => string = (override = {}) => {
+export const mockValidJWT: (override?: Partial<JWTPayload>, mockGetUser?: boolean) => string = (override = {}, mockGetUser = true) => {
     const tokenPayload: JWTPayload = generateRandomTokenPayload(override);
+
+    if (mockGetUser) {
+        mockOktaGetUserByEmail({
+            login: tokenPayload.email,
+            email: tokenPayload.email,
+            legacyId: tokenPayload.id,
+            role: tokenPayload.role,
+            apps: tokenPayload.extraUserData.apps,
+        });
+    }
+
     return createTokenForUser(tokenPayload);
 };
 

@@ -167,7 +167,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             email: user.profile.email,
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
-        });
+        }, false);
 
         mockGetUserById(user);
         mockOktaUpdateUser(user, { displayName: 'changed name' });
