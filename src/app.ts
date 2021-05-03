@@ -47,6 +47,9 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
             })
         }));
 
+        // @ts-ignore
+        app.use(xrayKoa.openSegment('Authentication'));
+
         app.use(flash());
 
         app.use(views(`${__dirname}/views`, { extension: 'ejs' }));
@@ -77,8 +80,6 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
             }
         });
 
-
-
         app.use(RWAPIMicroservice.bootstrap({
             name: 'authorization',
             info: require('../microservice/register.json'),
@@ -91,14 +92,10 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
             fastlyEnabled: process.env.FASTLY_ENABLED as boolean | 'true' | 'false',
             fastlyServiceId: process.env.FASTLY_SERVICEID,
             fastlyAPIKey: process.env.FASTLY_APIKEY
+
         }));
 
         app.use(koaLogger());
-
-        AWSXRay.setDaemonAddress('xray-service.default:2000');
-        // @ts-ignore
-        app.use(xrayKoa.openSegment('Authentication'));
-
         loadRoutes(app);
 
         const port: string = process.env.PORT || '9000';
