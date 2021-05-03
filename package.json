@@ -112,8 +112,6 @@
   "dependencies": {
     "@koa/cors": "^3.1.0",
     "apple-signin-verify-token": "^0.1.4",
-    "aws-xray-sdk-core": "^3.2.0",
-    "aws-xray-sdk-koa2": "^3.2.0",
     "bunyan": "^1.8.14",
     "config": "^3.3.2",
     "ejs": "^3.1.5",
