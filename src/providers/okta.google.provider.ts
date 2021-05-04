@@ -16,12 +16,7 @@ export class OktaGoogleProvider {
         try {
             logger.info('[OktaGoogleProvider] Registering user', profile);
             let user: IUser;
-            let email: string = profile?.emails[0]?.value || profile?.email;
-
-            // If email field was not provided, use fake email from provider ID and provider
-            if (!email) {
-                email = `${profile.id}@google.com`;
-            }
+            const email: string = profile?.emails[0]?.value || profile?.email;
 
             try {
                 const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);
