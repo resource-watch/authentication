@@ -125,7 +125,7 @@ export class OktaProvider {
         const { apps } = user.extraUserData;
         const { query } = ctx;
         const limit: string = query['page[size]'] as string || '10';
-        const pageNumber: string = query['page[number]'] as string || '10';
+        const pageNumber: string = query['page[number]'] as string || '1';
         const app: string = query.app as string;
 
         const clonedQuery: any = { ...query };
@@ -162,13 +162,14 @@ export class OktaProvider {
             default: {
                 const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
                 ctx.body = UserSerializer.serialize(data);
+                const nPage: number = parseInt(pageNumber, 10);
 
                 // @ts-ignore
                 ctx.body.links = {
                     self: `${link}page[number]=${pageNumber}&page[size]=${limit}`,
                     first: `${link}page[number]=1&page[size]=${limit}`,
-                    prev: `${link}page[number]=${parseInt(pageNumber, 10) - 1 > 0 ? parseInt(pageNumber, 10) - 1 : pageNumber}&page[size]=${limit}`,
-                    next: `${link}page[number]=${parseInt(pageNumber, 10) + 1 < parseInt(pageNumber, 10) ? pageNumber + 1 : parseInt(pageNumber, 10)}&page[size]=${limit}`,
+                    prev: `${link}page[number]=${Math.max(nPage - 1, 1)}&page[size]=${limit}`,
+                    next: `${link}page[number]=${nPage + 1}&page[size]=${limit}`,
                 };
 
                 return;

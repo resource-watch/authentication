@@ -39,9 +39,9 @@ describe('[OKTA] List users', () => {
             response.status.should.equal(200);
             response.body.should.have.property('data').and.be.an('array');
             response.body.should.have.property('links').and.be.an('object');
-            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=10&page[size]=10`);
-            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=9&page[size]=10`);
-            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=10&page[size]=10`);
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=1&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=2&page[size]=10`);
             response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=1&page[size]=10`);
         });
 
@@ -59,9 +59,9 @@ describe('[OKTA] List users', () => {
             response.status.should.equal(200);
             response.body.should.have.property('data').and.be.an('array');
             response.body.should.have.property('links').and.be.an('object');
-            response.body.links.should.have.property('self').and.equal('http://potato.com/auth/user?page[number]=10&page[size]=10');
-            response.body.links.should.have.property('prev').and.equal('http://potato.com/auth/user?page[number]=9&page[size]=10');
-            response.body.links.should.have.property('next').and.equal('http://potato.com/auth/user?page[number]=10&page[size]=10');
+            response.body.links.should.have.property('self').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+            response.body.links.should.have.property('prev').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+            response.body.links.should.have.property('next').and.equal('http://potato.com/auth/user?page[number]=2&page[size]=10');
             response.body.links.should.have.property('first').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
         });
     });
