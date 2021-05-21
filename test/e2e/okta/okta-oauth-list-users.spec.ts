@@ -1,5 +1,6 @@
 import chai from 'chai';
 import nock from 'nock';
+import config from 'config';
 import type request from 'superagent';
 
 import { IUser, OktaUser } from 'services/okta.interfaces';
@@ -22,6 +23,47 @@ describe('[OKTA] List users', () => {
         }
 
         requester = await getTestAgent();
+    });
+
+    describe('Test links objects', () => {
+        it('Get users without referer header should be successful and use the request host', async () => {
+            const user: OktaUser = getMockOktaUser({});
+            mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
+
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const response: request.Response = await requester
+                .get(`/auth/user`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array');
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=10&page[size]=10`);
+            response.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=9&page[size]=10`);
+            response.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=10&page[size]=10`);
+            response.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/auth/user?page[number]=1&page[size]=10`);
+        });
+
+        it('Get users with referer header should be successful and use that header on the links on the response', async () => {
+            const user: OktaUser = getMockOktaUser({});
+            mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
+
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const response: request.Response = await requester
+                .get(`/auth/user`)
+                .set('referer', `https://potato.com/get-me-all-the-data`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array');
+            response.body.should.have.property('links').and.be.an('object');
+            response.body.links.should.have.property('self').and.equal('http://potato.com/auth/user?page[number]=10&page[size]=10');
+            response.body.links.should.have.property('prev').and.equal('http://potato.com/auth/user?page[number]=9&page[size]=10');
+            response.body.links.should.have.property('next').and.equal('http://potato.com/auth/user?page[number]=10&page[size]=10');
+            response.body.links.should.have.property('first').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+        });
     });
 
     it('Visiting /auth/user while not logged in should return a 401 error', async () => {

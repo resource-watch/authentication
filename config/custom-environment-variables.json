@@ -10,7 +10,8 @@
   "server": {
     "internalUrl": "INTERNAL_URL",
     "publicUrl": "PUBLIC_URL",
-    "sessionKey": "SESSION_KEY"
+    "sessionKey": "SESSION_KEY",
+    "port": "PORT"
   },
   "application": {
     "name": "APP_NAME",

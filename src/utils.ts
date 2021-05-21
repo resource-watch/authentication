@@ -2,6 +2,7 @@ import { Context, Next } from 'koa';
 import logger from 'logger';
 import Settings from 'services/settings.service';
 import { IUser } from 'services/okta.interfaces';
+import { URL } from 'url';
 
 export default class Utils {
 
@@ -86,5 +87,13 @@ export default class Utils {
             a.push(`${k}=${encodeURIComponent(obj[k])}`);
             return a;
         }, []).join('&');
+    }
+
+    static getHostForPaginationLink(ctx: Context):string {
+        if ('referer' in ctx.request.header) {
+            const url:URL = new URL(ctx.request.header.referer);
+            return url.host;
+        }
+        return ctx.request.host;
     }
 }

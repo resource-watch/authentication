@@ -42,7 +42,7 @@ describe('[OKTA] Auth endpoints tests - JSON', () => {
 
     // Default HTML request behavior
     it('Visiting /auth while logged in should redirect to the success page', async () => {
-        const token: string = mockValidJWT({ role: 'ADMIN' }, 3);
+        const token: string = mockValidJWT({ role: 'ADMIN' }, true);
 
         const response: request.Response = await requester
             .get(`/auth`)

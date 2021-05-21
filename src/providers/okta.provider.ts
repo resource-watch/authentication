@@ -136,7 +136,7 @@ export class OktaProvider {
         delete clonedQuery.ids;
         delete clonedQuery.loggedUser;
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
-        const link: string = `${ctx.request.protocol}://${ctx.request.host}${ctx.request.path}${serializedQuery}`;
+        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
         let appsToUse: string[]|null = apps;
         if (app === 'all') {
