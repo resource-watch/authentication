@@ -220,8 +220,6 @@ export const mockOktaUpdateUser: (mockUser: OktaUser, updateData: OktaUpdateUser
 };
 
 export const mockOktaDeleteUser: (user: OktaUser, times?: number) => void = (user, times = 1) => {
-    mockGetUserById(user, times);
-
     nock(config.get('okta.url'))
         .delete(`/api/v1/users/${user.id}`)
         .times(times)
