@@ -9,19 +9,12 @@ import type request from 'superagent';
 import sinon, {SinonSandbox} from 'sinon';
 import {stubConfigValue} from '../utils/helpers';
 import {
-    getMockOktaUser, mockGetUserByOktaId,
+    getMockOktaUser,
     mockOktaCreateUser,
     mockOktaGetUserByEmail,
-    mockOktaOAuthToken,
     mockOktaSendActivationEmail,
 } from './okta.mocks';
-import {
-    JWTPayload,
-    OktaOAuthProvider,
-    OktaOAuthTokenPayload,
-    OktaSuccessfulOAuthTokenResponse,
-    OktaUser
-} from 'services/okta.interfaces';
+import { JWTPayload, OktaOAuthProvider, OktaUser } from 'services/okta.interfaces';
 
 chai.should();
 
@@ -58,7 +51,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.header.location.should.contain(`idp=${config.get('okta.facebookIdP')}`);
         response.header.location.should.match(/state=\w/);
 
-        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        const encodedRedirectUri: string = encodeURIComponent(`http://127.0.0.1:9050/auth/authorization-code/callback`);
         response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
@@ -74,7 +67,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.header.location.should.contain(`idp=${config.get('okta.facebookIdP')}`);
         response.header.location.should.match(/state=\w/);
 
-        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        const encodedRedirectUri: string = encodeURIComponent(`http://127.0.0.1:9050/auth/authorization-code/callback`);
         response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
@@ -90,7 +83,7 @@ describe('[OKTA] Facebook auth endpoint tests', () => {
         response.header.location.should.contain(`idp=${config.get('okta.facebookIdP')}`);
         response.header.location.should.match(/state=\w/);
 
-        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        const encodedRedirectUri: string = encodeURIComponent(`http://127.0.0.1:9050/auth/authorization-code/callback`);
         response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 

@@ -4,6 +4,16 @@ import Settings from 'services/settings.service';
 import { IUser } from 'services/okta.interfaces';
 import { URL } from 'url';
 
+const ALLOW_LIST: string[] = [
+    'localhost:9050',
+    'aws-dev.resourcewatch.org',
+    'aws-staging.resourcewatch.org',
+    'staging-api.resourcewatch.org',
+    'aws-production.resourcewatch.org',
+    'api.resourcewatch.org',
+    'production-api.globalforestwatch.org',
+];
+
 export default class Utils {
 
     static getUser(ctx: Context): IUser {
@@ -95,5 +105,10 @@ export default class Utils {
             return url.host;
         }
         return ctx.request.host;
+    }
+
+    static getHostForOAuthRedirect(ctx: Context): string {
+        const host: string = Utils.getHostForPaginationLink(ctx);
+        return ALLOW_LIST.includes(host) ? host : ctx.host;
     }
 }

@@ -120,7 +120,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`idp=${config.get('okta.appleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
-        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        const encodedRedirectUri: string = encodeURIComponent(`http://127.0.0.1:9050/auth/authorization-code/callback`);
         response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
@@ -136,7 +136,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`idp=${config.get('okta.appleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
-        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        const encodedRedirectUri: string = encodeURIComponent(`http://127.0.0.1:9050/auth/authorization-code/callback`);
         response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
@@ -152,7 +152,7 @@ describe('[OKTA] Apple auth endpoint tests', () => {
         response.header.location.should.contain(`idp=${config.get('okta.appleIdP')}`);
         response.header.location.should.match(/state=\w/);
 
-        const encodedRedirectUri: string = encodeURIComponent(`${config.get('server.publicUrl')}/auth/authorization-code/callback`);
+        const encodedRedirectUri: string = encodeURIComponent(`http://127.0.0.1:9050/auth/authorization-code/callback`);
         response.header.location.should.contain(`redirect_uri=${encodedRedirectUri}`);
     });
 
