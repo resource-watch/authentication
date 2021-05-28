@@ -235,6 +235,7 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
 
         // Mock update of protected fields
         mockOktaUpdateUser(user, { legacyId: id, apps: ['prep'], role: 'MANAGER' });
+        mockGetUserByOktaId(fakeUser.id, fakeUser);
 
         // Mock delete of fake user twice
         nock(config.get('okta.url'))

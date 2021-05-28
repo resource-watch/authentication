@@ -300,13 +300,25 @@ export default class OktaService {
 
     static async deleteUser(id: string): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
-        await OktaApiService.deleteUserByOktaId(user.id);
+        await OktaService.deleteUserByOktaId(user.id);
         await CacheService.invalidate(user);
         return OktaService.convertOktaUserToIUser(user);
     }
 
     static async deleteUserByOktaId(id: string): Promise<void> {
-        return await OktaApiService.deleteUserByOktaId(id);
+        await OktaApiService.deleteUserByOktaId(id);
+        try {
+            await OktaApiService.getOktaUserById(id);
+            return await OktaApiService.deleteUserByOktaId(id);
+        } catch (err) {
+            if (err.message === 'Request failed with status code 404') {
+                logger.info(`User with id ${id} deactivated prior to being deleted, moving on...`);
+                return;
+            }
+
+            logger.error('User deletion - Error occurred while loading the deactivated user: ', err);
+            throw err;
+        }
     }
 
     static async updateUserWithFakeEmailDataIfExisting(user: OktaUser): Promise<OktaUser> {
@@ -328,7 +340,6 @@ export default class OktaService {
             });
 
             // Delete the fake user account (deleting twice since first time it only deactivates the user)
-            await OktaService.deleteUserByOktaId(fakeUser.id);
             await OktaService.deleteUserByOktaId(fakeUser.id);
 
             return updatedUser;

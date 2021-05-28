@@ -1,3 +1,7 @@
+## 28/05/2021
+
+- Fix issue that caused DELETE `/auth/user/:userId` to deactivate users instead of deleting them.
+
 ## 21/05/2021
 
 - Add support for hosts from `referer` header when generating pagination links.

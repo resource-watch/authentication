@@ -5,13 +5,14 @@ import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {
-    getMockOktaUser,
-    mockGetUserByIdNotFound,
+    getMockOktaUser, mockGetUserById,
+    mockGetUserByIdNotFound, mockGetUserByOktaId,
     mockOktaDeleteUser,
     mockValidJWT
 } from './okta.mocks';
 import CacheService from 'services/cache.service';
 import Should = Chai.Should;
+import config from 'config';
 
 const should: Should = chai.should();
 
@@ -85,7 +86,37 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
     it('Deleting a existing user while logged in as an ADMIN should return 200 OK with the deleted user data', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const user: OktaUser = getMockOktaUser();
+
+        mockGetUserById(user);
         mockOktaDeleteUser(user);
+        mockGetUserByOktaId(user.id, user, 1);
+        mockOktaDeleteUser(user);
+
+        const response: request.Response = await requester
+            .delete(`/auth/user/${user.profile.legacyId}`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.be.an('object');
+        response.body.data.should.have.property('id').and.eql(user.profile.legacyId);
+    });
+
+    it('Deleting a deactivated user while logged in as an ADMIN should return 200 OK with the deleted user data', async () => {
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+        const user: OktaUser = getMockOktaUser();
+
+        mockGetUserById(user);
+        mockOktaDeleteUser(user);
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.id}`)
+            .reply(404, {
+                errorCode: 'E0000007',
+                errorSummary: `Not found: Resource not found: ${user.id} (User)`,
+                errorLink: 'E0000007',
+                errorId: 'oaesbELdOmpRsax4UknivKcfg',
+                errorCauses: []
+            });
 
         const response: request.Response = await requester
             .delete(`/auth/user/${user.profile.legacyId}`)
@@ -100,6 +131,9 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
     it('Redis cache is cleared after a user is deleted', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const user: OktaUser = getMockOktaUser();
+        mockGetUserById(user);
+        mockOktaDeleteUser(user);
+        mockGetUserByOktaId(user.id, user, 1);
         mockOktaDeleteUser(user);
 
         // Assert value does not exist in cache before
