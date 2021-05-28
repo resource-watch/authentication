@@ -28,12 +28,7 @@ export class OktaAppleProvider {
 
         try {
             let user: IUser;
-            let email: string = jwtToken.email;
-
-            // If email field was not provided, use fake email from provider ID and provider
-            if (!email) {
-                email = `${jwtToken.sub}@apple.com`;
-            }
+            const email: string = jwtToken.email;
 
             try {
                 const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email);

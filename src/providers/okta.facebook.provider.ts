@@ -46,12 +46,7 @@ export class OktaFacebookProvider {
     static async registerUser(accessToken: string, refreshToken: string, profile: any, done: (error: any, user?: any) => void): Promise<void> {
         try {
             logger.info('[OktaFacebookProvider] Registering user', profile);
-            let email: string = profile?.emails[0]?.value || profile?.email;
-
-            // If email field was not provided, use fake email from provider ID and provider
-            if (!email) {
-                email = `${profile.id}@facebook.com`;
-            }
+            const email: string = profile?.emails[0]?.value || profile?.email;
 
             let user: IUser;
             try {
