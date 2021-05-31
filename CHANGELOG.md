@@ -1,3 +1,7 @@
+## 31/05/2021
+
+- Update `rw-api-microservice-node` to add CORS support.
+
 ## 28/05/2021
 
 - Fix issue that caused DELETE `/auth/user/:userId` to deactivate users instead of deleting them.
