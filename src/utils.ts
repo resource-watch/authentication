@@ -89,7 +89,11 @@ export default class Utils {
         }, []).join('&');
     }
 
-    static getHostForPaginationLink(ctx: Context):string {
+    static getHostForPaginationLink(ctx: Context): string {
+        if ('x-rw-domain' in ctx.request.header) {
+            return ctx.request.header['x-rw-domain'] as string;
+        }
+
         if ('referer' in ctx.request.header) {
             const url:URL = new URL(ctx.request.header.referer);
             return url.host;

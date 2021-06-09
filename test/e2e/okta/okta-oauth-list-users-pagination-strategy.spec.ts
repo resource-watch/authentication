@@ -171,6 +171,49 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         ensureHasOktaPaginationElements(response, 10, cursor1);
     });
 
+    it('Get users with x-rw-domain header should be successful and use that header on the links on the response', async () => {
+        const userOne: OktaUser = getMockOktaUser({});
+        const userTwo: OktaUser = getMockOktaUser({});
+        mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [userOne, userTwo]);
+
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+        const response: request.Response = await requester
+            .get(`/auth/user`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .set('x-rw-domain', `potato.com`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array');
+        response.body.should.have.property('links').and.be.an('object');
+        response.body.links.should.have.property('self').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+        response.body.links.should.have.property('prev').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+        response.body.links.should.have.property('next').and.equal('http://potato.com/auth/user?page[number]=2&page[size]=10');
+        response.body.links.should.have.property('first').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+    });
+
+    it('Get users with x-rw-domain and referer headers should be successful and use the x-rw-domain header on the links on the response', async () => {
+        const userOne: OktaUser = getMockOktaUser({});
+        const userTwo: OktaUser = getMockOktaUser({});
+        mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [userOne, userTwo]);
+
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+        const response: request.Response = await requester
+            .get(`/auth/user`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .set('x-rw-domain', `potato.com`)
+            .set('referer', `https://tomato.com/get-me-all-the-data`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array');
+        response.body.should.have.property('links').and.be.an('object');
+        response.body.links.should.have.property('self').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+        response.body.links.should.have.property('prev').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+        response.body.links.should.have.property('next').and.equal('http://potato.com/auth/user?page[number]=2&page[size]=10');
+        response.body.links.should.have.property('first').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
+    });
+
     after(async () => {
         await closeTestAgent();
     });
