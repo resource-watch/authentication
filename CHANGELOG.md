@@ -1,17 +1,11 @@
+# 1.5.0
+
 ## 09/06/2021
 
+- Return 200 OK in `sign-up-redirect` endpoint when `origin` redirect cannot be found.
 - Add support for hosts from `x-rw-domain` header when generating pagination links.
-
-## 31/05/2021
-
 - Update `rw-api-microservice-node` to add CORS support.
-
-## 28/05/2021
-
 - Fix issue that caused DELETE `/auth/user/:userId` to deactivate users instead of deleting them.
-
-## 21/05/2021
-
 - Add support for hosts from `referer` header when generating pagination links.
 
 # 1.4.3

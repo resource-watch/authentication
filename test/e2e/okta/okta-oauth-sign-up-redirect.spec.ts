@@ -45,8 +45,9 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         mockOktaGetUserByEmail(user.profile);
 
         const response: request.Response = await requester.get(`/auth/sign-up-redirect?email=${user.profile.email}`);
-        response.status.should.equal(404);
-        response.body.errors[0].detail.should.equal('Redirect not found.');
+        response.status.should.equal(200);
+        response.should.be.json;
+        response.body.should.have.property('error', 'Redirect not found.');
     });
 
     it('Signing up with no callbackUrl provided should use HTTP header referrer, and hitting the redirect endpoint should redirect the user to the origin request stored in the user upon sign up', async () => {

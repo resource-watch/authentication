@@ -641,7 +641,8 @@ export class OktaProvider {
             const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(email.replace(/\s/, '+'));
             const redirect: string = oktaUser.profile.origin;
             if (!redirect) {
-                return ctx.throw(404, 'Redirect not found.');
+                ctx.body = { error: 'Redirect not found.' };
+                return;
             }
 
             logger.info(`[OktaProvider] Redirect found, redirecting user to ${redirect}`);

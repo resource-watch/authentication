@@ -1,6 +1,6 @@
 {
   "name": "authorization",
-  "version": "1.4.3",
+  "version": "1.5.0",
   "description": "Authorization service for the RW API.",
   "repository": "https://github.com/resource-watch/authorization",
   "main": "index.js",
