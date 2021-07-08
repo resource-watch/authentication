@@ -1854,7 +1854,7 @@ fast-levenshtein@^2.0.6:
   resolved "https://registry.yarnpkg.com/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz#3d8a5c66883a16a30ca8643e851f19baa7797917"
   integrity sha1-PYpcZog6FqMMqGQ+hR8Zuqd5eRc=
 
-fastly-promises@tiagojsag/fastly-promises#master:
+"fastly-promises@github:tiagojsag/fastly-promises#master":
   version "0.0.0-semantically-released"
   resolved "https://codeload.github.com/tiagojsag/fastly-promises/tar.gz/14470364f0d4e62b8ff99c8f7e7dd7cb27039242"
   dependencies:
@@ -4111,10 +4111,10 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
-rw-api-microservice-node@^3.4.1:
-  version "3.4.1"
-  resolved "https://registry.yarnpkg.com/rw-api-microservice-node/-/rw-api-microservice-node-3.4.1.tgz#01b2876d2b2acc13aaf01d630784e10b7410e186"
-  integrity sha512-blxLH1IXYudV+fMzuXFDPqkQyfqgWg2XDhjpDwRBdxW6PRW8ztOh7IKhVHov/RWeonrVQI6OzLnYEWsv3CBw0Q==
+rw-api-microservice-node@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.yarnpkg.com/rw-api-microservice-node/-/rw-api-microservice-node-4.0.2.tgz#0b373da8edc28e734b67c3ab473f4aa619a559ea"
+  integrity sha512-R0zF3owYU1yOanaMICcLk8TxJeD6fvMMsHwxD5ut3fw83RjU8gcVdHlK6XtsdEyN5CD254ng+HBw6Oua0+oq5g==
   dependencies:
     "@koa/cors" "^3.1.0"
     axios "^0.21.1"

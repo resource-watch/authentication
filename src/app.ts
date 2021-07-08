@@ -76,18 +76,13 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
         });
 
         app.use(RWAPIMicroservice.bootstrap({
-            name: 'authorization',
-            info: require('../microservice/register.json'),
-            swagger: {},
             logger,
-            baseURL: process.env.CT_URL,
-            url: process.env.LOCAL_URL,
-            token: process.env.CT_TOKEN,
+            gatewayURL: process.env.GATEWAY_URL,
+            microserviceToken: process.env.MICROSERVICE_TOKEN,
             skipGetLoggedUser: true,
             fastlyEnabled: process.env.FASTLY_ENABLED as boolean | 'true' | 'false',
             fastlyServiceId: process.env.FASTLY_SERVICEID,
             fastlyAPIKey: process.env.FASTLY_APIKEY
-
         }));
 
         app.use(koaLogger());
@@ -95,16 +90,7 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
 
         const port: string = process.env.PORT || '9000';
 
-        const server: Server = app.listen(port, () => {
-            if (process.env.CT_REGISTER_MODE === 'auto') {
-                RWAPIMicroservice.register().then(() => {
-                    logger.info('CT registration process started');
-                }, (error) => {
-                    logger.error(error);
-                    process.exit(1);
-                });
-            }
-        });
+        const server: Server = app.listen(port);
 
         logger.info('Server started in ', port);
         resolve({ app, server });
