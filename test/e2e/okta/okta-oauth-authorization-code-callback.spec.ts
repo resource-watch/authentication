@@ -58,6 +58,17 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
         response.should.redirectTo(new RegExp(`/auth/fail`));
     });
 
+    it('If email is denied access in OAuth login redirects to auth failure page with the error description', async () => {
+        const response: request.Response = await requester
+            .get(`/auth/authorization-code/callback?state=5f6eb362-beb7-4f65-b327-d96199391175&error=access_denied&error_description=Unable+to+process+the+username+transform.+A+required+property+is+missing.+Missing+field%3A+%27email%27.`);
+
+        response.should.redirect;
+        response.redirects[0].should.include('/auth/fail');
+        response.redirects[0].should.include('?error=true');
+        response.redirects[0].should.include('&error_description=Unable%20to%20process%20the%20username%20transform.%20A%20required%20property%20is%20missing.%20Missing%20field:%20%27email%27.');
+        response.text.should.include('Unable to process the username transform. A required property is missing. Missing field: &#39;email&#39;.');
+    });
+
     it('Visiting /auth/authorization-code/callback with a valid OAuth code should redirect to the login successful page', async () => {
         const tokenResponse: OktaSuccessfulOAuthTokenResponse = mockOktaOAuthToken();
         const tokenData: OktaOAuthTokenPayload = JWT.decode(tokenResponse.access_token) as OktaOAuthTokenPayload;

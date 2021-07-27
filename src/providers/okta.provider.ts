@@ -30,8 +30,9 @@ export class OktaProvider {
             const { code, error } = ctx.query;
 
             if (error) {
-                logger.error('[OktaProvider] - Error returned from OAuth authorize call to Okta, ', error);
-                return ctx.redirect('/auth/fail?error=true');
+                const errorDescription: string = ctx.query.error_description as string || '';
+                logger.error('[OktaProvider] - Error returned from OAuth authorize call to Okta, ', error, errorDescription);
+                return ctx.redirect(`/auth/fail?error=true&error_description=${errorDescription}`);
             }
 
             if (!code) {
@@ -386,6 +387,7 @@ export class OktaProvider {
         if (ctx.query.error) {
             await ctx.render('login', {
                 error: true,
+                error_description: ctx.query.error_description || '',
                 thirdParty,
                 generalConfig: ctx.state.generalConfig
             });

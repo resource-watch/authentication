@@ -61,7 +61,7 @@
                         <h1 >Login</h1 >
                         <% if (error) { %>
                             <div class="callout alert" data-closable >
-                                <p >Email or password invalid</p >
+                                <p><%= error_description && error_description !== '' ? error_description : 'Email or password invalid' %></p >
                                 <button class="close-button" aria-label="Dismiss alert" type="button" data-close >
                                     <span aria-hidden="true" >&times;</span >
                                 </button >
