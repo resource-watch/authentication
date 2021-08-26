@@ -215,14 +215,17 @@ export default class OktaService {
         const updateData: OktaUpdateUserProtectedFieldsPayload = {};
 
         if (!user.profile.legacyId) {
+            logger.info(`[OktaService - setAndUpdateRequiredFields] - Setting legacyId`);
             updateData.legacyId = mongoose.Types.ObjectId().toString();
         }
 
         if (!user.profile.role) {
+            logger.info(`[OktaService - setAndUpdateRequiredFields] - Setting role`);
             updateData.role = 'USER';
         }
 
         if (!user.profile.apps) {
+            logger.info(`[OktaService - setAndUpdateRequiredFields] - Setting apps`);
             updateData.apps = [];
         }
 
@@ -322,8 +325,11 @@ export default class OktaService {
     }
 
     static async updateUserWithFakeEmailDataIfExisting(user: OktaUser): Promise<OktaUser> {
+        logger.info(`[OktaService - updateUserWithFakeEmailDataIfExisting] - Running for user with email ${user.profile.email}`);
+
         // Logic does not apply in this case
         if (user.profile.legacyId || !user.profile.provider || !user.profile.providerId) {
+            logger.info(`[OktaService - updateUserWithFakeEmailDataIfExisting] - Logic does not apply for user, moving on...`);
             return user;
         }
 
@@ -332,6 +338,7 @@ export default class OktaService {
             // Try to find existing user in Okta with fake email
             const fakeUser: OktaUser = await OktaService.getOktaUserByEmail(`${user.profile.providerId}@${user.profile.provider}.com`);
 
+            logger.info(`[OktaService - updateUserWithFakeEmailDataIfExisting] - Fake user exists, update current user with the profile attrs from the fake user`);
             // Fake user exists, update current user with the profile attrs from the fake user
             const updatedUser: OktaUser = await OktaService.updateUserProtectedFields(user.id, {
                 legacyId: fakeUser.profile.legacyId,

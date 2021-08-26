@@ -26,28 +26,31 @@ export class OktaProvider {
      * @param next {Next} Next middleware to be called.
      */
     static async authCodeCallback(ctx: Context, next: Next): Promise<void> {
+        logger.info('[OktaProvider - authCodeCallback] - authCodeCallback started');
         try {
             const { code, error } = ctx.query;
 
             if (error) {
                 const errorDescription: string = ctx.query.error_description as string || '';
-                logger.error('[OktaProvider] - Error returned from OAuth authorize call to Okta, ', error, errorDescription);
+                logger.error('[OktaProvider - authCodeCallback] - Error returned from OAuth authorize call to Okta, ', error, errorDescription);
                 return ctx.redirect(`/auth/fail?error=true&error_description=${errorDescription}`);
             }
 
             if (!code) {
-                logger.error('[OktaProvider] - No code provided by Okta\'s OAuth authorize call, ', error);
+                logger.error('[OktaProvider - authCodeCallback] - No code provided by Okta\'s OAuth authorize call, ', error);
                 return ctx.redirect('/auth/fail?error=true');
             }
 
             let user: OktaUser = await OktaService.getUserForAuthorizationCode(code as string);
             user = await OktaService.updateUserWithFakeEmailDataIfExisting(user);
             user = await OktaService.setAndUpdateRequiredFields(user);
+            logger.info('[OktaProvider - authCodeCallback] - authCodeCallback started');
 
             await ctx.login(OktaService.convertOktaUserToIUser(user));
+            logger.info('[OktaProvider] - authCodeCallback login successful');
             return next();
         } catch (err) {
-            logger.error('[OktaProvider] - Error requesting OAuth token to Okta, ', err);
+            logger.error('[OktaProvider - authCodeCallback] - Error requesting OAuth token to Okta, ', err);
             return ctx.redirect('/auth/fail?error=true');
         }
     }
@@ -584,8 +587,11 @@ export class OktaProvider {
     }
 
     static async updateApplications(ctx: Context): Promise<void> {
+        logger.info(`[OktaProvider - updateApplications] - Checking if user applications need to be updated`);
         try {
             if (ctx.session && ctx.session.applications) {
+                logger.info(`[OktaProvider - updateApplications] - Updating user applications`);
+
                 let user: IUser = Utils.getUser(ctx);
                 if (user.role === 'USER') {
                     user = await OktaService.updateApplicationsForUser(user.id, ctx.session.applications);
@@ -593,6 +599,7 @@ export class OktaProvider {
                     user = await OktaService.getUserById(user.id);
                 }
                 delete ctx.session.applications;
+                logger.debug(`[OktaProvider - updateApplications] - user data: `, JSON.stringify(user));
                 if (user) {
                     await ctx.login({
                         id: user.id,

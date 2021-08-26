@@ -76,7 +76,7 @@ export default class OktaApiService {
             `${config.get('okta.url')}/api/v1/users/${oktaId}`,
             { headers: OktaApiService.oktaRequestHeaders() }
         );
-
+        logger.info(`[OktaApiService - getOktaUserById] - got user data from Okta: `, JSON.stringify(data));
         return data;
     }
 
