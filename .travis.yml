@@ -22,7 +22,7 @@ env:
     - PUBLIC_URL=http://localhost:9000
     - API_VERSION=v1
     - ALLOW_CONFIG_MUTATIONS=true
-    - REDIS_URL=localhost
+    - REDIS_URL=redis://localhost:6379
     - LOCAL_URL=http://127.0.0.1:3001
     - GATEWAY_URL=http://127.0.0.1:9000
     - MICROSERVICE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im1pY3Jvc2VydmljZSIsImNyZWF0ZWRBdCI6IjIwMTYtMDktMTQifQ.IRCIRm1nfIQTfda_Wb6Pg-341zhV8soAgzw7dd5HxxQ
