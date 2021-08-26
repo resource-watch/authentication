@@ -13,6 +13,7 @@ import OktaService from 'services/okta.service';
 import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOption, IUser} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
+import { sleep } from 'sleep';
 
 export class OktaProvider {
 
@@ -592,6 +593,13 @@ export class OktaProvider {
             if (ctx.session && ctx.session.applications) {
                 logger.info(`[OktaProvider - updateApplications] - Updating user applications`);
 
+                /**
+                 * Hack: this method is called shortly after a new Okta user is created (following a social login, for example)
+                 * The following lines will use Okta's API to search for a user based on its legacyId.
+                 * For some reason (I assume an index delay on Okta's side) that search may come up empty if it's done straight
+                 * away, so I'm giving 2 seconds (picked randomly) to Okta, so it can index that data and properly serve it.
+                 */
+                sleep(2);
                 let user: IUser = Utils.getUser(ctx);
                 if (user.role === 'USER') {
                     user = await OktaService.updateApplicationsForUser(user.id, ctx.session.applications);

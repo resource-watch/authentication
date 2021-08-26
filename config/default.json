@@ -1,6 +1,6 @@
 {
   "redis": {
-    "url": "redis://localhost",
+    "url": "redis://localhost:6379",
     "defaultTTL": 86400
   },
   "logger": {
