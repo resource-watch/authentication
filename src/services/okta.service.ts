@@ -399,7 +399,7 @@ export default class OktaService {
     }
 
     private static getOktaSearchCriteria(query: Record<string, any>): string {
-        logger.debug('[OktaService] getOktaSearchCriteria Object.keys(query)', Object.keys(query));
+        logger.debug('[OktaService] getOktaSearchCriteria JSON.stringify(query)', JSON.stringify(query));
 
         const searchCriteria: string[] = [];
         Object.keys(query)
@@ -414,7 +414,9 @@ export default class OktaService {
                 }
             });
 
-        return searchCriteria.filter(el => el !== '').join(' and ');
+        const finalSearchCriteria: string =  searchCriteria.filter(el => el !== '').join(' and ');
+        logger.debug('[OktaService] finalSearchCriteria: ', finalSearchCriteria);
+        return finalSearchCriteria;
     }
 
     static convertOktaUserToIUser(user: OktaUser): IUser {
