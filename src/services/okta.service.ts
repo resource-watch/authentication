@@ -1,8 +1,9 @@
 import config from 'config';
 import logger from 'logger';
-import {difference, isEqual} from 'lodash';
+import { difference, isEqual } from 'lodash';
 
 import {
+    IUser,
     JWTPayload,
     OktaCreateUserPayload,
     OktaOAuthProvider,
@@ -10,16 +11,15 @@ import {
     OktaUpdateUserPayload,
     OktaUpdateUserProtectedFieldsPayload,
     OktaUser,
-    IUser,
 } from 'services/okta.interfaces';
-import JWT, {SignOptions} from 'jsonwebtoken';
+import JWT, { SignOptions } from 'jsonwebtoken';
 import Settings from 'services/settings.service';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UserNotFoundError from 'errors/userNotFound.error';
-import {Context} from 'koa';
-import {URL} from 'url';
+import { Context } from 'koa';
+import { URL } from 'url';
 import OktaApiService from 'services/okta.api.service';
-import {v4 as uuidv4} from 'uuid';
+import { v4 as uuidv4 } from 'uuid';
 import mongoose from 'mongoose';
 import CacheService from 'services/cache.service';
 
@@ -110,6 +110,9 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(await OktaService.getOktaUserById(id));
     }
 
+    /**
+     * @deprecated This is a performance nightmare as it needs to load all of Okta's DB
+     */
     static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
         const users: IUser[] = [];
         let shouldFetchMore: boolean = true;
@@ -133,6 +136,9 @@ export default class OktaService {
         return users;
     }
 
+    /**
+     * @deprecated This is a performance nightmare as it needs to load all of Okta's DB
+     */
     static async getIdsByRole(role: string): Promise<string[]> {
         if (!['SUPERADMIN', 'ADMIN', 'MANAGER', 'USER'].includes(role)) {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
@@ -264,10 +270,12 @@ export default class OktaService {
     }
 
     static async getOktaUserByEmail(email: string): Promise<OktaUser> {
+        logger.debug(`[OktaService - getOktaUserByEmail] Getting Okta user by email ${email}`);
         return OktaApiService.getOktaUserByEmail(email);
     }
 
     static async sendPasswordRecoveryEmail(email: string): Promise<void> {
+        logger.debug(`[OktaService - sendPasswordRecoveryEmail] Sending password recovery email for email ${email}`);
         await OktaApiService.postPasswordRecoveryEmail(email);
     }
 
@@ -296,7 +304,8 @@ export default class OktaService {
     }
 
     static async updateUserProtectedFields(oktaId: string, payload: OktaUpdateUserProtectedFieldsPayload): Promise<OktaUser> {
-        const user : OktaUser = await OktaApiService.postUserByOktaId(oktaId, payload);
+        logger.debug(`[OktaService - updateUserProtectedFields] Updating user protected fields for oktaId ${oktaId}`);
+        const user: OktaUser = await OktaApiService.postUserByOktaId(oktaId, payload);
         await CacheService.invalidate(user);
         return user;
     }
@@ -414,7 +423,7 @@ export default class OktaService {
                 }
             });
 
-        const finalSearchCriteria: string =  searchCriteria.filter(el => el !== '').join(' and ');
+        const finalSearchCriteria: string = searchCriteria.filter(el => el !== '').join(' and ');
         logger.debug('[OktaService] finalSearchCriteria: ', finalSearchCriteria);
         return finalSearchCriteria;
     }

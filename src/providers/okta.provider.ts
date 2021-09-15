@@ -219,6 +219,9 @@ export class OktaProvider {
         ctx.body = { data };
     }
 
+    /**
+     * @deprecated This is a performance nightmare as it needs to load all of Okta's DB
+     */
     static async getIdsByRole(ctx: Context): Promise<void> {
         logger.info(`[OktaProvider] - Get ids by role: ${ctx.params.role}`);
         const data: string[] = await OktaService.getIdsByRole(ctx.params.role);
