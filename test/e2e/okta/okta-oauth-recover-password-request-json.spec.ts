@@ -2,9 +2,11 @@ import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
 
-import { OktaUser } from 'services/okta.interfaces';
+import { OktaUser, OktaUserProfile } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { mockOktaSendResetPasswordEmail } from './okta.mocks';
+import { getMockOktaUser, mockOktaSendResetPasswordEmail } from './okta.mocks';
+import config from 'config';
+import { isEqual } from 'lodash';
 
 chai.should();
 
@@ -59,6 +61,29 @@ describe('[OKTA] OAuth endpoints tests - Recover password request - JSON version
         response.body.should.have.property('message').and.equal(`Email sent`);
     });
 
+    it('Recover password request with correct email for a google user should return a message saying account has social provider - JSON format', async () => {
+        const user: OktaUser = getMockOktaUser({ provider: 'google' });
+
+        // Mock get user by email
+        nock(config.get('okta.url'))
+            .get(`/api/v1/users/${user.profile.email}`)
+            .reply(200, { ...user });
+
+        // Mock update origin field in Okta
+        nock(config.get('okta.url'))
+            .post(`/api/v1/users/${user.id}`, (body) => isEqual(body, { profile: { origin: '' } }))
+            .reply(200, { ...user, profile: { ...user.profile, origin: '' } });
+
+        const response: request.Response = await requester
+            .post(`/auth/reset-password`)
+            .set('Content-Type', 'application/json')
+            .send({ email: user.profile.email });
+
+        response.status.should.equal(400);
+        response.should.be.json;
+        response.body.should.have.property('errors').and.be.an('array');
+        response.body.errors[0].should.have.property('detail').and.equal(`Password recovery not allowed. Your email address is already associated with an account that uses a 3rd party login (Google/Facebook/Apple)`);
+    });
 
     it('Okta user origin is updated with HTTP referer when a submitting a successful recover password request', async () => {
         const user: OktaUser = mockOktaSendResetPasswordEmail({}, 1, 'https://www.google.com');

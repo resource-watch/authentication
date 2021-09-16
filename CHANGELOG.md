@@ -1,3 +1,7 @@
+## 16/09/2021
+
+- Improve error message when requesting a password reset for an email with an already existing social login account.
+
 # 1.5.0
 
 ## 09/06/2021

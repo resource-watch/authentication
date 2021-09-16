@@ -14,6 +14,7 @@ import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOp
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 import { sleep } from 'sleep';
+import PasswordRecoveryNotAllowedError from '../errors/passwordRecoveryNotAllowed.error';
 
 export class OktaProvider {
 
@@ -552,25 +553,12 @@ export class OktaProvider {
             }
         }
 
+        let oktaUser: OktaUser;
         try {
             // Find user by email and update user origin field on Okta
-            const oktaUser: OktaUser = await OktaService.getOktaUserByEmail(ctx.request.body.email);
+            oktaUser = await OktaService.getOktaUserByEmail(ctx.request.body.email);
             await OktaService.updateUserProtectedFields(oktaUser.id, { origin: ctx.session.callbackUrl || '' });
 
-            // Send password recovery email
-            await OktaService.sendPasswordRecoveryEmail(ctx.request.body.email);
-
-            if (ctx.request.type === 'application/json') {
-                ctx.body = { message: 'Email sent' };
-            } else {
-                await ctx.render('request-mail-reset', {
-                    info: 'Email sent!!',
-                    error: null,
-                    email: ctx.request.body.email,
-                    app: Utils.getOriginApp(ctx),
-                    generalConfig: ctx.state.generalConfig,
-                });
-            }
         } catch (err) {
             logger.error(err);
 
@@ -587,6 +575,25 @@ export class OktaProvider {
 
                 return;
             }
+        }
+
+        if (oktaUser?.profile.provider !== 'local') {
+            throw new PasswordRecoveryNotAllowedError('Password recovery not allowed. Your email address is already associated with an account that uses a 3rd party login (Google/Facebook/Apple)');
+        }
+
+        // Send password recovery email
+        await OktaService.sendPasswordRecoveryEmail(ctx.request.body.email);
+
+        if (ctx.request.type === 'application/json') {
+            ctx.body = { message: 'Email sent' };
+        } else {
+            await ctx.render('request-mail-reset', {
+                info: 'Email sent!!',
+                error: null,
+                email: ctx.request.body.email,
+                app: Utils.getOriginApp(ctx),
+                generalConfig: ctx.state.generalConfig,
+            });
         }
     }
 

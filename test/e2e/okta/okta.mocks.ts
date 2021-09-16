@@ -34,7 +34,7 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
             login: email,
             email,
             role: 'USER',
-            provider: 'okta',
+            provider: 'local',
             apps: ['rw'],
             displayName: name,
             photo: faker.image.imageUrl(),
