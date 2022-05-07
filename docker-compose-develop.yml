@@ -3,7 +3,7 @@ services:
   develop:
     build: .
     ports:
-      - "9000:9000"
+      - "30505:30505"
     container_name: authorization
     env_file:
       - dev.env

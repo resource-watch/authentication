@@ -1,3 +1,7 @@
+## 10/03/2022
+
+- Upgrade node 12 -> 16.
+
 ## 16/09/2021
 
 - Improve error message when requesting a password reset for an email with an already existing social login account.
