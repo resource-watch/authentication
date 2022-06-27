@@ -222,7 +222,7 @@ export default class OktaService {
 
         if (!user.profile.legacyId) {
             logger.info(`[OktaService - setAndUpdateRequiredFields] - Setting legacyId`);
-            updateData.legacyId = mongoose.Types.ObjectId().toString();
+            updateData.legacyId = new mongoose.Types.ObjectId().toString();
         }
 
         if (!user.profile.role) {

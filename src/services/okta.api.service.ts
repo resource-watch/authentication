@@ -1,4 +1,4 @@
-import axios, {AxiosResponse} from 'axios';
+import axios, { AxiosRequestHeaders, AxiosResponse } from 'axios';
 import config from 'config';
 import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -13,14 +13,8 @@ import {
 } from './okta.interfaces';
 import logger from '../logger';
 
-interface OktaRequestHeaders {
-    Accept: string;
-    'Content-Type': string;
-    Authorization: string;
-}
-
 export default class OktaApiService {
-    private static oktaRequestHeaders(): OktaRequestHeaders {
+    private static oktaRequestHeaders(): AxiosRequestHeaders {
         return {
             'Accept': 'application/json',
             'Content-Type': 'application/json',
@@ -142,7 +136,7 @@ export default class OktaApiService {
                     displayName: payload.name,
                     provider: payload.provider,
                     origin: payload.origin || '',
-                    legacyId: payload.legacyId || mongoose.Types.ObjectId(),
+                    legacyId: payload.legacyId || new mongoose.Types.ObjectId(),
                     role: payload.role || 'USER',
                     apps: payload.apps || [],
                     photo: payload.photo || null,
