@@ -231,7 +231,7 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
 
         mockGetUserByOktaId(tokenData.uid, user);
 
-        const id: string = mongoose.Types.ObjectId().toString();
+        const id: string = new mongoose.Types.ObjectId().toString();
 
         // Mock request that finds valid fake user with 123@google.com email
         const fakeUser: OktaUser = mockOktaGetUserByEmail({
@@ -349,7 +349,7 @@ describe('[OKTA] Authorization code callback endpoint tests', () => {
 
         mockGetUserByOktaId(tokenData.uid, user);
 
-        const id: string = mongoose.Types.ObjectId().toString();
+        const id: string = new mongoose.Types.ObjectId().toString();
 
         // Mock request that finds valid fake user with 123@google.com email
         const fakeUser: OktaUser = mockOktaGetUserByEmail({

@@ -1,3 +1,8 @@
+## 27/06/2022
+
+- Update nodejs to 16.15
+- Update dependencies based on yarn audit
+
 ## 10/03/2022
 
 - Upgrade node 12 -> 16.
