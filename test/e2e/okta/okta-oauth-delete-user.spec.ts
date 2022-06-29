@@ -13,6 +13,7 @@ import {
 import CacheService from 'services/cache.service';
 import Should = Chai.Should;
 import config from 'config';
+import DeletionModel, { IDeletion } from 'models/deletion';
 
 const should: Should = chai.should();
 
@@ -87,7 +88,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const user: OktaUser = getMockOktaUser();
 
-        mockGetUserById(user);
+        mockGetUserById(user, 2);
         mockOktaDeleteUser(user);
         mockGetUserByOktaId(user.id, user, 1);
         mockOktaDeleteUser(user);
@@ -100,13 +101,16 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         response.status.should.equal(200);
         response.body.should.be.an('object');
         response.body.data.should.have.property('id').and.eql(user.profile.legacyId);
+
+        const databaseDeletion: IDeletion = await DeletionModel.findOne({ userId: user.profile.legacyId });
+        chai.expect(databaseDeletion).to.not.be.null;
     });
 
     it('Deleting a deactivated user while logged in as an ADMIN should return 200 OK with the deleted user data', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const user: OktaUser = getMockOktaUser();
 
-        mockGetUserById(user);
+        mockGetUserById(user, 2);
         mockOktaDeleteUser(user);
         nock(config.get('okta.url'))
             .get(`/api/v1/users/${user.id}`)
@@ -126,12 +130,15 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         response.status.should.equal(200);
         response.body.should.be.an('object');
         response.body.data.should.have.property('id').and.eql(user.profile.legacyId);
+
+        const databaseDeletion: IDeletion = await DeletionModel.findOne({ userId: user.profile.legacyId });
+        chai.expect(databaseDeletion).to.not.be.null;
     });
 
     it('Redis cache is cleared after a user is deleted', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
         const user: OktaUser = getMockOktaUser();
-        mockGetUserById(user);
+        mockGetUserById(user, 2);
         mockOktaDeleteUser(user);
         mockGetUserByOktaId(user.id, user, 1);
         mockOktaDeleteUser(user);
@@ -167,5 +174,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        await DeletionModel.deleteMany({}).exec();
     });
 });

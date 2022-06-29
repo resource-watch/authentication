@@ -13,6 +13,11 @@
     "sessionKey": "SESSION_KEY",
     "port": "PORT"
   },
+  "mongodb": {
+    "database": "MONGO_DATABASE",
+    "host": "MONGO_HOST",
+    "port": "MONGO_PORT"
+  },
   "application": {
     "name": "APP_NAME",
     "logo": "APP_LOGO",

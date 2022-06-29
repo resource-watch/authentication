@@ -1,8 +1,12 @@
 import config from 'config';
 import JWT from 'jsonwebtoken';
+import nock from 'nock';
 import Sinon, { SinonSandbox } from 'sinon';
 
 import { OktaUser, IUser } from 'services/okta.interfaces';
+import mongoose from 'mongoose';
+import { IDeletion } from '../../../src/models/deletion';
+import { IRequestUser } from './test.constants';
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
@@ -62,4 +66,21 @@ export const assertOktaTokenInfo: (response: ChaiHttp.Response, user: OktaUser) 
     response.body.should.have.property('role').and.equal(user.profile.role);
     response.body.should.have.property('createdAt');
     response.body.should.have.property('updatedAt');
+};
+
+export const mockGetUserFromToken: (userProfile: IRequestUser) => void = (userProfile: IRequestUser) => {
+    nock(process.env.GATEWAY_URL, { reqheaders: { authorization: 'Bearer abcd' } })
+        .get('/auth/user/me')
+        .reply(200, userProfile);
+};
+
+export const createDeletion: (anotherData?: Partial<IDeletion>) => Partial<IDeletion> & { requestorUserId: string; userId: string; status: string } = (anotherData: Partial<IDeletion> = {}) => {
+    const uuid: string = new mongoose.Types.ObjectId().toString();
+
+    return {
+        userId: uuid,
+        requestorUserId: uuid,
+        status: `pending`,
+        ...anotherData
+    };
 };

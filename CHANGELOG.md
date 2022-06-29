@@ -1,3 +1,8 @@
+## 29/06/2022
+
+- Add `deletion` model and CRUD endpoints
+- Create `deletion` object on user deletion
+
 ## 27/06/2022
 
 - Update nodejs to 16.15

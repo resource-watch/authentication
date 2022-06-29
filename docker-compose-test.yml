@@ -17,11 +17,11 @@ services:
       ALLOW_CONFIG_MUTATIONS: "true"
       GATEWAY_URL: http://mymachine:8000
       MICROSERVICE_TOKEN: cttoken
-      CT_REGISTER_MODE: autoa
       LOCAL_URL: http://127.0.0.1:9000
       HOST_IP: 127.0.0.1
       FASTLY_ENABLED: "false"
       GFW_APPLE_AUTH_KEY: "test"
+      MONGO_HOST: mongo
     command: test
     depends_on:
       - redis
@@ -34,3 +34,9 @@ services:
     ports:
       - "16379:6379"
     restart: always
+
+  mongo:
+    image: mongo:3.4
+    command: --smallfiles
+    ports:
+      - "27017"

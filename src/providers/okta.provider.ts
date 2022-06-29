@@ -1,20 +1,28 @@
-import {Context, Next} from 'koa';
-import {RouterContext} from 'koa-router';
-import {URL} from 'url';
+import { Context, Next } from 'koa';
+import { RouterContext } from 'koa-router';
+import { URL } from 'url';
 import logger from 'logger';
 import Utils from 'utils';
-import {omit} from 'lodash';
+import { omit } from 'lodash';
 
-import Settings, {IThirdPartyAuth} from 'services/settings.service';
+import Settings, { IThirdPartyAuth } from 'services/settings.service';
 import UserSerializer from 'serializers/user.serializer';
 import UnprocessableEntityError from 'errors/unprocessableEntity.error';
 import UnauthorizedError from 'errors/unauthorized.error';
 import OktaService from 'services/okta.service';
-import {OktaOAuthProvider, OktaUpdateUserPayload, OktaUser, PaginationStrategyOption, IUser} from 'services/okta.interfaces';
+import {
+    OktaOAuthProvider,
+    OktaUpdateUserPayload,
+    OktaUser,
+    PaginationStrategyOption,
+    IUser
+} from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 import { sleep } from 'sleep';
 import PasswordRecoveryNotAllowedError from '../errors/passwordRecoveryNotAllowed.error';
+import { IDeletion } from '../models/deletion';
+import DeletionService from '../services/deletion.service';
 
 export class OktaProvider {
 
@@ -130,21 +138,26 @@ export class OktaProvider {
 
         const { apps } = user.extraUserData;
         const { query } = ctx;
-        const limit: string = query['page[size]'] as string || '10';
-        const pageNumber: string = query['page[number]'] as string || '1';
+        let pageNumber: number = 1;
+        let limit: number = 10;
+
+        if (ctx.query.page) {
+            // tslint:disable-next-line:variable-name
+            const { number, size } = (ctx.query.page as Record<string, any>);
+            pageNumber = ctx.query.page && number ? parseInt(number, 10) : 1;
+            limit = ctx.query.page && size ? parseInt(size, 10) : 10;
+        }
+
         const app: string = query.app as string;
 
         const clonedQuery: any = { ...query };
-        delete clonedQuery['page[size]'];
-        delete clonedQuery['page[number]'];
-        delete clonedQuery['page[after]'];
-        delete clonedQuery['page[before]'];
+        delete clonedQuery.page;
         delete clonedQuery.ids;
         delete clonedQuery.loggedUser;
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
-        let appsToUse: string[]|null = apps;
+        let appsToUse: string[] | null = apps;
         if (app === 'all') {
             appsToUse = null;
         } else if (app) {
@@ -153,7 +166,10 @@ export class OktaProvider {
 
         switch (query.strategy) {
             case PaginationStrategyOption.CURSOR: {
-                const { data, cursor } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
+                const {
+                    data,
+                    cursor
+                } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
                 ctx.body = UserSerializer.serialize(data);
 
                 // @ts-ignore
@@ -168,7 +184,7 @@ export class OktaProvider {
             default: {
                 const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
                 ctx.body = UserSerializer.serialize(data);
-                const nPage: number = parseInt(pageNumber, 10);
+                const nPage: number = pageNumber;
 
                 // @ts-ignore
                 ctx.body.links = {
@@ -267,17 +283,33 @@ export class OktaProvider {
     }
 
     static async deleteUser(ctx: Context): Promise<void> {
+        logger.info(`[OktaProvider] - Delete user with id ${ctx.params.id}`);
         try {
-            logger.info(`[OktaProvider] - Delete user with id ${ctx.params.id}`);
-            const deletedUser: IUser = await OktaService.deleteUser(ctx.params.id);
-            ctx.body = UserSerializer.serialize(deletedUser);
+            await OktaService.getOktaUserById(ctx.params.id);
         } catch (err) {
             if (err instanceof UserNotFoundError) {
-                return ctx.throw(404, 'User not found');
+                ctx.throw(404, 'User not found');
+                return;
             }
 
-            logger.error('[OktaProvider] - Error updating my user, ', err);
+            logger.error('[OktaProvider] - Error loading user for deletion, ', err);
+            ctx.throw(500, 'Internal server error');
+        }
+
+        let deletedUser: IUser = null;
+        try {
+            deletedUser = await OktaService.deleteUser(ctx.params.id);
+            ctx.body = UserSerializer.serialize(deletedUser);
+        } catch (err) {
+            logger.error('[OktaProvider] - Error deleting user, ', err);
             return ctx.throw(500, 'Internal server error');
+        } finally {
+            const newDeletionData: Partial<IDeletion> = {
+                userId: ctx.params.id,
+                requestorUserId: Utils.getUser(ctx).id,
+                userAccountDeleted: deletedUser !== null,
+            };
+            await DeletionService.createDeletion(newDeletionData);
         }
     }
 
@@ -405,7 +437,7 @@ export class OktaProvider {
     }
 
     static async logout(ctx: Context): Promise<void> {
-        const user : IUser = Utils.getUser(ctx);
+        const user: IUser = Utils.getUser(ctx);
         if (!user) {
             return ctx.throw(401, 'Not logged');
         }
