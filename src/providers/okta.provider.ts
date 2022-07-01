@@ -23,6 +23,7 @@ import { sleep } from 'sleep';
 import PasswordRecoveryNotAllowedError from '../errors/passwordRecoveryNotAllowed.error';
 import { IDeletion } from '../models/deletion';
 import DeletionService from '../services/deletion.service';
+import { PaginateOptions } from 'mongoose';
 
 export class OktaProvider {
 
@@ -138,15 +139,8 @@ export class OktaProvider {
 
         const { apps } = user.extraUserData;
         const { query } = ctx;
-        let pageNumber: number = 1;
-        let limit: number = 10;
 
-        if (ctx.query.page) {
-            // tslint:disable-next-line:variable-name
-            const { number, size } = (ctx.query.page as Record<string, any>);
-            pageNumber = ctx.query.page && number ? parseInt(number, 10) : 1;
-            limit = ctx.query.page && size ? parseInt(size, 10) : 10;
-        }
+        const { page, limit } = Utils.getPaginationParameters(ctx);
 
         const app: string = query.app as string;
 
@@ -184,11 +178,11 @@ export class OktaProvider {
             default: {
                 const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
                 ctx.body = UserSerializer.serialize(data);
-                const nPage: number = pageNumber;
+                const nPage: number = page;
 
                 // @ts-ignore
                 ctx.body.links = {
-                    self: `${link}page[number]=${pageNumber}&page[size]=${limit}`,
+                    self: `${link}page[number]=${page}&page[size]=${limit}`,
                     first: `${link}page[number]=1&page[size]=${limit}`,
                     prev: `${link}page[number]=${Math.max(nPage - 1, 1)}&page[size]=${limit}`,
                     next: `${link}page[number]=${nPage + 1}&page[size]=${limit}`,

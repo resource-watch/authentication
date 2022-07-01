@@ -63,8 +63,8 @@ class DeletionSerializer {
         };
 
         serializedData.meta = {
-            'total-pages': data.pages as number,
-            'total-items': data.total as number,
+            'total-pages': data.totalPages as number,
+            'total-items': data.totalDocs as number,
             size: data.limit
         };
 

@@ -39,7 +39,7 @@ describe('Get deletion by id tests', () => {
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
         response.body.errors[0].should.have.property('status').and.equal(401);
-        response.body.errors[0].should.have.property('detail').and.equal('Unauthorized');
+        response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
     });
 
     it('Get deletion by id while being authenticated as a different should return a 403 \'Forbidden\' error', async () => {

@@ -8,6 +8,7 @@ import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
+import { describe } from 'mocha';
 
 chai.should();
 chai.use(chaiDateTime);
@@ -38,10 +39,10 @@ describe('Get deletions tests', () => {
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
         response.body.errors[0].should.have.property('status').and.equal(401);
-        response.body.errors[0].should.have.property('detail').and.equal('Unauthorized');
+        response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
     });
 
-    it('Get deletions while being logged in should return a 404 and no user data (happy case, empty db)', async () => {
+    it('Get deletions while being logged in as USER should return a 403 error', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
 
         const response: request.Response = await requester
@@ -119,55 +120,71 @@ describe('Get deletions tests', () => {
         doneResponse.body.data[0].should.have.property('id').and.equal(deletionDone._id.toString());
     });
 
-    it('Get deletions while being logged in should return a 200 and the user data - Paginated results, first page', async () => {
-        const deletions: HydratedDocument<IDeletion>[] = [];
-        for (let i: number = 0; i < 25; i++) {
-            deletions.push(await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>);
-        }
+    describe('Pagination', () => {
+        it('Get paginated deletions should return a 200 and the paginated deletion data - Different pages', async () => {
+            const deletions: HydratedDocument<IDeletion>[] = [];
+            for (let i: number = 0; i < 25; i++) {
+                deletions.push(await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>);
+            }
 
-        const token: string = mockValidJWT({ role: 'ADMIN' });
+            const token: string = mockValidJWT({ role: 'ADMIN' });
 
-        const responsePageOne: request.Response = await requester
-            .get(`/api/v1/deletion`)
-            .query({ 'page[size]': 10, 'page[number]': 1 })
-            .set('Authorization', `Bearer ${token}`);
+            const responsePageOne: request.Response = await requester
+                .get(`/api/v1/deletion`)
+                .query({ 'page[size]': 10, 'page[number]': 1 })
+                .set('Authorization', `Bearer ${token}`);
 
-        responsePageOne.status.should.equal(200);
-        responsePageOne.body.should.have.property('data').and.be.an('array').and.length(10);
-        responsePageOne.body.should.have.property('links').and.be.an('object');
-        responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
-        responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
-        responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=2&page[size]=10`);
-        responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
-        responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
+            responsePageOne.status.should.equal(200);
+            responsePageOne.body.should.have.property('data').and.be.an('array').and.length(10);
+            responsePageOne.body.should.have.property('links').and.be.an('object');
+            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=2&page[size]=10`);
+            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
 
-        const responsePageTwo: request.Response = await requester
-            .get(`/api/v1/deletion`)
-            .query({ 'page[size]': 10, 'page[number]': 2 })
-            .set('Authorization', `Bearer ${token}`);
+            const responsePageTwo: request.Response = await requester
+                .get(`/api/v1/deletion`)
+                .query({ 'page[size]': 10, 'page[number]': 2 })
+                .set('Authorization', `Bearer ${token}`);
 
-        responsePageTwo.status.should.equal(200);
-        responsePageTwo.body.should.have.property('data').and.be.an('array').and.length(10);
-        responsePageTwo.body.should.have.property('links').and.be.an('object');
-        responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=2&page[size]=10`);
-        responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
-        responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
-        responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
-        responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
+            responsePageTwo.status.should.equal(200);
+            responsePageTwo.body.should.have.property('data').and.be.an('array').and.length(10);
+            responsePageTwo.body.should.have.property('links').and.be.an('object');
+            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
 
-        const responsePageThree: request.Response = await requester
-            .get(`/api/v1/deletion`)
-            .query({ 'page[size]': 10, 'page[number]': 3 })
-            .set('Authorization', `Bearer ${token}`);
+            const responsePageThree: request.Response = await requester
+                .get(`/api/v1/deletion`)
+                .query({ 'page[size]': 10, 'page[number]': 3 })
+                .set('Authorization', `Bearer ${token}`);
 
-        responsePageThree.status.should.equal(200);
-        responsePageThree.body.should.have.property('data').and.be.an('array').and.length(5);
-        responsePageThree.body.should.have.property('links').and.be.an('object');
-        responsePageThree.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
-        responsePageThree.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=2&page[size]=10`);
-        responsePageThree.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
-        responsePageThree.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
-        responsePageThree.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
+            responsePageThree.status.should.equal(200);
+            responsePageThree.body.should.have.property('data').and.be.an('array').and.length(5);
+            responsePageThree.body.should.have.property('links').and.be.an('object');
+            responsePageThree.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=2&page[size]=10`);
+            responsePageThree.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=1&page[size]=10`);
+            responsePageThree.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/deletion?page[number]=3&page[size]=10`);
+        });
+
+        it('Get paginated deletions with over 100 results per page should return a 400', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const response: request.Response = await requester
+                .get(`/api/v1/deletion`)
+                .query({ 'page[size]': 101 })
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(400);
+            response.body.errors[0].should.have.property('detail').and.equal('"page.size" must be less than or equal to 100');
+        });
     });
 
     afterEach(async () => {

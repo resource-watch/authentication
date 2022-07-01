@@ -1,21 +1,16 @@
-import { Context, Next } from 'koa';
+import { Context } from 'koa';
 import router, { Config, Router } from 'koa-joi-router';
 import logger from 'logger';
 import DeletionService from 'services/deletion.service';
 import { DELETION_STATUS, IDeletion } from 'models/deletion';
 import mongoose from 'mongoose';
 import DeletionSerializer from 'serializers/deletion.serializer';
-import { URL } from 'url';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import DeletionNotFoundError from 'errors/deletionNotFound.error';
-import DeletionAlreadyExistsError from '../errors/deletionAlreadyExists.error';
+import DeletionAlreadyExistsError from 'errors/deletionAlreadyExists.error';
 import { pick } from 'lodash';
-
-interface User {
-    id: string;
-    role: string;
-    extraUserData?: Record<string, any>;
-}
+import Utils from 'utils';
+import { IUser } from 'services/okta.interfaces';
 
 const deletionRouter: Router = router();
 deletionRouter.prefix('/api/v1/deletion');
@@ -30,7 +25,7 @@ const getDeletionsConfig: Config = {
             requestorUserId: Joi.string().optional(),
             page: Joi.object({
                 number: Joi.number().integer().min(1).default(1),
-                size: Joi.number().integer().min(1).max(250).default(10),
+                size: Joi.number().integer().min(1).max(100).default(10),
             }).optional(),
             status: Joi.string().optional().allow(...DELETION_STATUS),
         }
@@ -94,56 +89,19 @@ const updateDeletionConfig: Config = {
     }
 };
 
-const serializeObjToQuery: (obj: Record<string, any>) => string = (obj: Record<string, any>) => Object.keys(obj).reduce((a, k) => {
-    a.push(`${k}=${encodeURIComponent(obj[k])}`);
-    return a;
-}, []).join('&');
-
-const getHostForPaginationLink: (ctx: Context) => (string | string[]) = (ctx: Context) => {
-    if ('x-rw-domain' in ctx.request.header) {
-        return ctx.request.header['x-rw-domain'];
-    }
-    if ('referer' in ctx.request.header) {
-        const url: URL = new URL(ctx.request.header.referer);
-        return url.host;
-    }
-    return ctx.request.host;
-};
-
-const getUser: (ctx: Context) => User = (ctx: Context): User => {
-    // @ts-ignore
-    return ctx.req.user || ctx.state.user || ctx.state.microservice;
-};
-
 class DeletionRouter {
     static async getDeletions(ctx: Context): Promise<void> {
-        const loggedUser: User = getUser(ctx);
+        const loggedUser: IUser = Utils.getUser(ctx);
         logger.info('Getting subscription for user ', loggedUser.id);
 
-        let page: number = 1;
-        let limit: number = 10;
-
-        if (ctx.query.page) {
-            // tslint:disable-next-line:variable-name
-            const { number, size } = (ctx.query.page as Record<string, any>);
-            page = ctx.query.page && number ? parseInt(number, 10) : 1;
-            limit = ctx.query.page && size ? parseInt(size, 10) : 10;
-            if (limit > 100) {
-                ctx.throw(400, 'Invalid page size (>100).');
-            }
-        }
-
-        const paginationOptions: PaginateOptions = {
-            page,
-            limit
-        };
+        const paginationOptions: PaginateOptions = Utils.getPaginationParameters(ctx);
 
         const filters: Record<string, any> = pick(ctx.query, ['userId', 'requestorUserId', 'status']);
 
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
-        const serializedQuery: string = serializeObjToQuery(originalQuery) ? `?${serializeObjToQuery(originalQuery)}&` : '?';
-        const link: string = `${ctx.request.protocol}://${getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
+        const serializedQuery: string = Utils.serializeObjToQuery(originalQuery) ? `?${Utils.serializeObjToQuery(originalQuery)}&` : '?';
+        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
         try {
             const deletions: PaginateResult<PaginateDocument<IDeletion, {}, PaginateOptions>> = await DeletionService.getDeletions(filters, paginationOptions);
@@ -173,7 +131,7 @@ class DeletionRouter {
     }
 
     static async createDeletion(ctx: Context): Promise<void> {
-        const requestorUser: User = getUser(ctx);
+        const requestorUser: IUser = Utils.getUser(ctx);
         const newDeletionData: Partial<IDeletion> = pick(
             ctx.request.body,
             [
@@ -263,26 +221,10 @@ class DeletionRouter {
     }
 }
 
-
-const isAdmin: (ctx: Context, next: Next) => Promise<any> = async (ctx: Context, next: Next): Promise<any> => {
-    const loggedUser: User = getUser(ctx);
-
-    if (!loggedUser || Object.keys(loggedUser).length === 0) {
-        ctx.throw(401, 'Unauthorized');
-        return;
-    }
-    if (loggedUser.role !== 'ADMIN') {
-        ctx.throw(403, 'Not authorized');
-        return;
-    }
-    await next();
-};
-
-
-deletionRouter.get('/', getDeletionsConfig, isAdmin, DeletionRouter.getDeletions);
-deletionRouter.get('/:id', isAdmin, DeletionRouter.getDeletionById);
-deletionRouter.post('/', createDeletionConfig, isAdmin, DeletionRouter.createDeletion);
-deletionRouter.patch('/:id', updateDeletionConfig, isAdmin, DeletionRouter.updateDeletion);
-deletionRouter.delete('/:id', isAdmin, DeletionRouter.deleteDeletion);
+deletionRouter.get('/', getDeletionsConfig, Utils.isAdmin, DeletionRouter.getDeletions);
+deletionRouter.get('/:id', Utils.isAdmin, DeletionRouter.getDeletionById);
+deletionRouter.post('/', createDeletionConfig, Utils.isAdmin, DeletionRouter.createDeletion);
+deletionRouter.patch('/:id', updateDeletionConfig, Utils.isAdmin, DeletionRouter.updateDeletion);
+deletionRouter.delete('/:id', Utils.isAdmin, DeletionRouter.deleteDeletion);
 
 export default deletionRouter;
