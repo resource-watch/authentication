@@ -5,6 +5,7 @@ import jwt, { Options } from 'koa-jwt';
 import logger from 'logger';
 import Settings from 'services/settings.service';
 import AuthRouter from 'routes/auth.router';
+import DeletionRouter from 'routes/deletion.router';
 import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
@@ -76,6 +77,7 @@ export function loadRoutes(app: Application): void {
     // Load routes
     logger.debug('Loading routes...');
     app.use(AuthRouter.routes());
+    app.use(DeletionRouter.middleware());
     app.use(OktaTwitterProvider.routes());
 
     logger.debug('Loaded routes correctly!');

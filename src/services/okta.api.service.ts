@@ -22,7 +22,7 @@ export default class OktaApiService {
         };
     }
 
-    static async getOktaUserListPaginatedResult(search: string, limit: string, after: string, before: string): Promise<{ data: OktaUser[], cursor: string }> {
+    static async getOktaUserListPaginatedResult(search: string, limit: number, after: string, before: string): Promise<{ data: OktaUser[], cursor: string }> {
         const response: AxiosResponse = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
             headers: OktaApiService.oktaRequestHeaders(),
             params: {

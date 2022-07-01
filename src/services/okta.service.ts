@@ -57,21 +57,30 @@ export default class OktaService {
         );
     }
 
-    static async getUserListForOffsetPagination(apps: string[], query: Record<string, string>): Promise<{
+    static async getUserListForOffsetPagination(apps: string[], query: Record<string, any>): Promise<{
         data: IUser[],
         cursor: string,
     }> {
         logger.info('[OktaService] Getting user list using "offset" pagination strategy');
         let iterator: number = 1;
         let users: OktaUser[] = [];
-        const pageNumber: string = query['page[number]'] || '1';
         let pageAfterCursor: string = null;
 
-        while (iterator <= parseInt(pageNumber, 10)) {
+        let pageNumber: number = 1;
+        let limit: number = 10;
+
+        if (query.page) {
+            // tslint:disable-next-line:variable-name
+            const { number, size } = (query.page as Record<string, any>);
+            pageNumber = query.page && number ? parseInt(number, 10) : 1;
+            limit = query.page && size ? parseInt(size, 10) : 10;
+        }
+
+        while (iterator <= pageNumber) {
 
             const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
                 OktaService.getOktaSearchCriteria({ ...query, apps }),
-                query['page[size]'] ? query['page[size]'] : '10',
+                limit,
                 pageAfterCursor,
                 undefined,
             );
@@ -87,17 +96,27 @@ export default class OktaService {
         };
     }
 
-    static async getUserListForCursorPagination(apps: string[], query: Record<string, string>): Promise<{
+    static async getUserListForCursorPagination(apps: string[], query: Record<string, any>): Promise<{
         data: IUser[],
         cursor: string,
     }> {
         logger.info('[OktaService] Getting user list using "cursor" pagination strategy');
 
+        let size: number = 10;
+        let after: string = null;
+        let before: string = null;
+
+        if (query.page) {
+            size = query.page && query.page.size ? parseInt(query.page.size, 10) : 10;
+            after = query.page && query.page.after ? query.page.after : null;
+            before = query.page && query.page.before ? query.page.before : null;
+        }
+
         const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
             OktaService.getOktaSearchCriteria({ ...query, apps }),
-            query['page[size]'] ? query['page[size]'] : '10',
-            query['page[after]'],
-            query['page[before]'],
+            size,
+            after,
+            before,
         );
 
         return {
@@ -121,7 +140,7 @@ export default class OktaService {
         while (shouldFetchMore) {
             const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
                 OktaService.getOktaSearchCriteria({ id: ids }),
-                '200',
+                200,
                 pageAfterCursor || undefined,
                 undefined,
             );
@@ -151,7 +170,7 @@ export default class OktaService {
         while (shouldFetchMore) {
             const { data, cursor } = await OktaApiService.getOktaUserListPaginatedResult(
                 OktaService.getOktaSearchCriteria({ role }),
-                '200',
+                200,
                 pageAfterCursor || undefined,
                 undefined,
             );

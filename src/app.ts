@@ -13,20 +13,56 @@ import koaSimpleHealthCheck from 'koa-simple-healthcheck';
 import session from 'koa-generic-session';
 import redisStore from 'koa-redis';
 import views from 'koa-views';
-
+import mongoose, { CallbackError, ConnectOptions } from 'mongoose';
+import koaQs from 'koa-qs';
 import logger from 'logger';
 import { loadRoutes } from 'loader';
 import ErrorSerializer from 'serializers/errorSerializer';
+import sleep from 'sleep';
 
 interface IInit {
     server: Server;
     app: Koa;
 }
 
+const mongooseOptions: ConnectOptions = {
+    readPreference: 'secondaryPreferred', // Has MongoDB prefer secondary servers for read operations.
+    appName: 'authorization', // Displays the app name in MongoDB logs, for ease of debug
+    serverSelectionTimeoutMS: 10000, // Number of milliseconds the underlying MongoDB driver has to pick a server
+};
+
+const mongoUri: string =
+    process.env.MONGO_URI ||
+    `mongodb://${config.get('mongodb.host')}:${config.get(
+        'mongodb.port',
+    )}/${config.get('mongodb.database')}`;
+
+let retries: number = 10;
+
 const init: () => Promise<IInit> = async (): Promise<IInit> => {
-    return new Promise((resolve) => {
+    return new Promise((resolve: (value: IInit | PromiseLike<IInit>) => void,
+                        reject: (reason?: any) => void
+    ) => {
+        function onDbReady(mongoConnectionError: CallbackError): void {
+                if (mongoConnectionError) {
+                    if (retries >= 0) {
+                        retries--;
+                        logger.error(
+                            `Failed to connect to MongoDB uri ${mongoUri}, retrying...`,
+                        );
+                        logger.debug(mongoConnectionError);
+                        sleep.sleep(5);
+                        mongoose.connect(mongoUri, mongooseOptions, onDbReady);
+                    } else {
+                        logger.error('MongoURI', mongoUri);
+                        logger.error(mongoConnectionError);
+                        reject(new Error(mongoConnectionError.message));
+                    }
+                }
+
         const app: Koa = new Koa();
 
+        koaQs(app, 'extended');
         app.use(koaBody({
             multipart: true,
             jsonLimit: '50mb',
@@ -88,13 +124,20 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
         app.use(koaLogger());
         loadRoutes(app);
 
-        const port: string = process.env.PORT || '9000';
+        const port: string = config.get('server.port') || '9000';
 
         const server: Server = app.listen(port);
 
         logger.info('Server started in ', port);
         resolve({ app, server });
-    });
+        }
+
+            logger.info(`Connecting to MongoDB URL ${mongoUri}`);
+
+            mongoose.connect(mongoUri, mongooseOptions, onDbReady);
+        },
+    );
 };
+
 
 export { init };

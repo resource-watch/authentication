@@ -18,8 +18,10 @@
     },
     "sessionKey": "authorization-key"
   },
-  "service": {
-    "name": "Authorization"
+  "mongodb": {
+    "database": "authorization",
+    "host": "localhost",
+    "port": 27017
   },
   "application": {
     "name": "RW API",

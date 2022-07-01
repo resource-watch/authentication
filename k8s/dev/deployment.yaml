@@ -28,267 +28,267 @@ spec:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-            - matchExpressions:
-              - key: type
-                operator: In
-                values:
-                - core
+              - matchExpressions:
+                  - key: type
+                    operator: In
+                    values:
+                      - core
       containers:
-      - args:
-        - start
-        env:
-        - name: PORT
-          value: "9000"
-        - name: LOGGER_TYPE
-          value: console
-        - name: LOGGER_LEVEL
-          value: debug
-        - name: NODE_ENV
-          value: dev
-        - name: NODE_PATH
-          value: app/src
-        - name: PUBLIC_URL
-          value: https://aws-dev.resourcewatch.org
-        - name: APP_NAME
-          value: RW API
-        - name: APP_LOGO
-          value: http://www.wri.org/sites/all/themes/wri/images/logo.png
-        - name: APP_COLOR
-          value: '#f1b319'
-        - name: OKTA_API_URL
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_API_URL
-              name: authorization
-        - name: OKTA_API_KEY
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_API_KEY
-              name: authorization
-        - name: OKTA_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_CLIENT_ID
-              name: authorization
-        - name: OKTA_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_CLIENT_SECRET
-              name: authorization
-        - name: OKTA_GFW_FACEBOOK_IDP
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_GFW_FACEBOOK_IDP
-              name: authorization
-        - name: OKTA_GFW_GOOGLE_IDP
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_GFW_GOOGLE_IDP
-              name: authorization
-        - name: OKTA_GFW_APPLE_IDP
-          valueFrom:
-            secretKeyRef:
-              key: OKTA_GFW_APPLE_IDP
-              name: authorization
-        - name: CT_REGISTER_MODE
-          valueFrom:
-            secretKeyRef:
-              key: CT_REGISTER_MODE
-              name: authorization
-        - name: MICROSERVICE_TOKEN
-          valueFrom:
-            secretKeyRef:
-              key: MICROSERVICE_TOKEN
-              name: authorization
-        - name: LOCAL_URL
-          value: 'http://authorization.core.svc.cluster.local'
-        - name: GATEWAY_URL
-          valueFrom:
-            secretKeyRef:
-              key: GATEWAY_URL
-              name: authorization
-        - name: REDIS_URL
-          valueFrom:
-            secretKeyRef:
-              key: REDIS_URL
-              name: authorization
-        - name: SESSION_KEY
-          valueFrom:
-            secretKeyRef:
-              key: SESSION_KEY
-              name: authorization
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: JWT_SECRET
-              name: authorization
-        - name: GFW_APPLE_TEAM_ID
-          valueFrom:
-            secretKeyRef:
-              key: GFW_APPLE_TEAM_ID
-              name: authorization
-        - name: GFW_APPLE_KEY_ID
-          valueFrom:
-            secretKeyRef:
-              key: GFW_APPLE_KEY_ID
-              name: authorization
-        - name: GFW_APPLE_SERVICE_ID
-          valueFrom:
-            secretKeyRef:
-              key: GFW_APPLE_SERVICE_ID
-              name: authorization
-        - name: GFW_APPLE_AUTH_KEY
-          valueFrom:
-            secretKeyRef:
-              key: GFW_APPLE_AUTH_KEY
-              name: authorization
-        - name: GFW_TWITTER_CONSUMER_KEY
-          valueFrom:
-            secretKeyRef:
-              key: GFW_TWITTER_CONSUMER_KEY
-              name: authorization
-        - name: GFW_TWITTER_CONSUMER_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: GFW_TWITTER_CONSUMER_SECRET
-              name: authorization
-        - name: GFW_FACEBOOK_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: GFW_FACEBOOK_CLIENT_ID
-              name: authorization
-        - name: GFW_FACEBOOK_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: GFW_FACEBOOK_CLIENT_SECRET
-              name: authorization
-        - name: GFW_GOOGLE_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: GFW_GOOGLE_CLIENT_ID
-              name: authorization
-        - name: GFW_GOOGLE_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: GFW_GOOGLE_CLIENT_SECRET
-              name: authorization
-        - name: RW_TWITTER_CONSUMER_KEY
-          valueFrom:
-            secretKeyRef:
-              key: RW_TWITTER_CONSUMER_KEY
-              name: authorization
-        - name: RW_TWITTER_CONSUMER_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: RW_TWITTER_CONSUMER_SECRET
-              name: authorization
-        - name: RW_FACEBOOK_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: RW_FACEBOOK_CLIENT_ID
-              name: authorization
-        - name: RW_FACEBOOK_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: RW_FACEBOOK_CLIENT_SECRET
-              name: authorization
-        - name: RW_GOOGLE_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: RW_GOOGLE_CLIENT_ID
-              name: authorization
-        - name: RW_GOOGLE_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: RW_GOOGLE_CLIENT_SECRET
-              name: authorization
-        - name: PREP_TWITTER_CONSUMER_KEY
-          valueFrom:
-            secretKeyRef:
-              key: PREP_TWITTER_CONSUMER_KEY
-              name: authorization
-        - name: PREP_TWITTER_CONSUMER_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: PREP_TWITTER_CONSUMER_SECRET
-              name: authorization
-        - name: PREP_FACEBOOK_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: PREP_FACEBOOK_CLIENT_ID
-              name: authorization
-        - name: PREP_FACEBOOK_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: PREP_FACEBOOK_CLIENT_SECRET
-              name: authorization
-        - name: PREP_GOOGLE_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              key: PREP_GOOGLE_CLIENT_ID
-              name: authorization
-        - name: PREP_GOOGLE_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              key: PREP_GOOGLE_CLIENT_SECRET
-              name: authorization
-        - name: FASTLY_ENABLED
-          valueFrom:
-            secretKeyRef:
-              key: FASTLY_ENABLED
-              name: authorization
-        - name: FASTLY_APIKEY
-          valueFrom:
-            secretKeyRef:
-              key: FASTLY_APIKEY
-              name: authorization
-              optional: true
-        - name: FASTLY_SERVICEID
-          valueFrom:
-            secretKeyRef:
-              key: FASTLY_SERVICEID
-              name: authorization
-              optional: true
-        image: gfwdockerhub/authorization
-        imagePullPolicy: Always
-        livenessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /healthcheck
-            port: 9000
-            scheme: HTTP
-          initialDelaySeconds: 30
-          periodSeconds: 15
-          successThreshold: 1
-          timeoutSeconds: 5
-        name: authorization
-        ports:
-        - containerPort: 9000
-          protocol: TCP
-        readinessProbe:
-          failureThreshold: 3
-          httpGet:
-            path: /healthcheck
-            port: 9000
-            scheme: HTTP
-          initialDelaySeconds: 30
-          periodSeconds: 15
-          successThreshold: 1
-          timeoutSeconds: 5
-        resources:
-          limits:
-            cpu: "1"
-            memory: 512M
-          requests:
-            cpu: 350m
-            memory: 256M
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
+        - args:
+            - start
+          env:
+            - name: PORT
+              value: "9000"
+            - name: LOGGER_TYPE
+              value: console
+            - name: LOGGER_LEVEL
+              value: debug
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  key: AUTHORIZATION_MONGO_URI
+                  name: authorization
+            - name: NODE_ENV
+              value: dev
+            - name: NODE_PATH
+              value: app/src
+            - name: PUBLIC_URL
+              value: https://aws-dev.resourcewatch.org
+            - name: APP_NAME
+              value: RW API
+            - name: APP_LOGO
+              value: http://www.wri.org/sites/all/themes/wri/images/logo.png
+            - name: APP_COLOR
+              value: '#f1b319'
+            - name: OKTA_API_URL
+              valueFrom:
+                secretKeyRef:
+                  key: OKTA_API_URL
+                  name: authorization
+            - name: OKTA_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: OKTA_API_KEY
+                  name: authorization
+            - name: OKTA_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: OKTA_CLIENT_ID
+                  name: authorization
+            - name: OKTA_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: OKTA_CLIENT_SECRET
+                  name: authorization
+            - name: OKTA_GFW_FACEBOOK_IDP
+              valueFrom:
+                secretKeyRef:
+                  key: OKTA_GFW_FACEBOOK_IDP
+                  name: authorization
+            - name: OKTA_GFW_GOOGLE_IDP
+              valueFrom:
+                secretKeyRef:
+                  key: OKTA_GFW_GOOGLE_IDP
+                  name: authorization
+            - name: OKTA_GFW_APPLE_IDP
+              valueFrom:
+                secretKeyRef:
+                  key: OKTA_GFW_APPLE_IDP
+                  name: authorization
+            - name: MICROSERVICE_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  key: MICROSERVICE_TOKEN
+                  name: authorization
+            - name: LOCAL_URL
+              value: 'http://authorization.core.svc.cluster.local'
+            - name: GATEWAY_URL
+              valueFrom:
+                secretKeyRef:
+                  key: GATEWAY_URL
+                  name: authorization
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
+                  key: REDIS_URL
+                  name: authorization
+            - name: SESSION_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: SESSION_KEY
+                  name: authorization
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: JWT_SECRET
+                  name: authorization
+            - name: GFW_APPLE_TEAM_ID
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_APPLE_TEAM_ID
+                  name: authorization
+            - name: GFW_APPLE_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_APPLE_KEY_ID
+                  name: authorization
+            - name: GFW_APPLE_SERVICE_ID
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_APPLE_SERVICE_ID
+                  name: authorization
+            - name: GFW_APPLE_AUTH_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_APPLE_AUTH_KEY
+                  name: authorization
+            - name: GFW_TWITTER_CONSUMER_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_TWITTER_CONSUMER_KEY
+                  name: authorization
+            - name: GFW_TWITTER_CONSUMER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_TWITTER_CONSUMER_SECRET
+                  name: authorization
+            - name: GFW_FACEBOOK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_FACEBOOK_CLIENT_ID
+                  name: authorization
+            - name: GFW_FACEBOOK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_FACEBOOK_CLIENT_SECRET
+                  name: authorization
+            - name: GFW_GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_GOOGLE_CLIENT_ID
+                  name: authorization
+            - name: GFW_GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: GFW_GOOGLE_CLIENT_SECRET
+                  name: authorization
+            - name: RW_TWITTER_CONSUMER_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: RW_TWITTER_CONSUMER_KEY
+                  name: authorization
+            - name: RW_TWITTER_CONSUMER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: RW_TWITTER_CONSUMER_SECRET
+                  name: authorization
+            - name: RW_FACEBOOK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: RW_FACEBOOK_CLIENT_ID
+                  name: authorization
+            - name: RW_FACEBOOK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: RW_FACEBOOK_CLIENT_SECRET
+                  name: authorization
+            - name: RW_GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: RW_GOOGLE_CLIENT_ID
+                  name: authorization
+            - name: RW_GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: RW_GOOGLE_CLIENT_SECRET
+                  name: authorization
+            - name: PREP_TWITTER_CONSUMER_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: PREP_TWITTER_CONSUMER_KEY
+                  name: authorization
+            - name: PREP_TWITTER_CONSUMER_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: PREP_TWITTER_CONSUMER_SECRET
+                  name: authorization
+            - name: PREP_FACEBOOK_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: PREP_FACEBOOK_CLIENT_ID
+                  name: authorization
+            - name: PREP_FACEBOOK_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: PREP_FACEBOOK_CLIENT_SECRET
+                  name: authorization
+            - name: PREP_GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  key: PREP_GOOGLE_CLIENT_ID
+                  name: authorization
+            - name: PREP_GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  key: PREP_GOOGLE_CLIENT_SECRET
+                  name: authorization
+            - name: FASTLY_ENABLED
+              valueFrom:
+                secretKeyRef:
+                  key: FASTLY_ENABLED
+                  name: authorization
+            - name: FASTLY_APIKEY
+              valueFrom:
+                secretKeyRef:
+                  key: FASTLY_APIKEY
+                  name: authorization
+                  optional: true
+            - name: FASTLY_SERVICEID
+              valueFrom:
+                secretKeyRef:
+                  key: FASTLY_SERVICEID
+                  name: authorization
+                  optional: true
+          image: gfwdockerhub/authorization
+          imagePullPolicy: Always
+          livenessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthcheck
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          name: authorization
+          ports:
+            - containerPort: 9000
+              protocol: TCP
+          readinessProbe:
+            failureThreshold: 3
+            httpGet:
+              path: /healthcheck
+              port: 9000
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 15
+            successThreshold: 1
+            timeoutSeconds: 5
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512M
+            requests:
+              cpu: 350m
+              memory: 256M
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
       dnsPolicy: ClusterFirst
       imagePullSecrets:
         - name: regcred
       restartPolicy: Always
       schedulerName: default-scheduler
-      securityContext: {}
+      securityContext: { }
       terminationGracePeriodSeconds: 30
-status: {}
+status: { }

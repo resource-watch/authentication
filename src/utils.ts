@@ -3,8 +3,26 @@ import logger from 'logger';
 import Settings from 'services/settings.service';
 import { IUser } from 'services/okta.interfaces';
 import { URL } from 'url';
+import { PaginateOptions } from 'mongoose';
 
 export default class Utils {
+
+    static getPaginationParameters(ctx: Context): PaginateOptions {
+        let page: number = 1;
+        let limit: number = 10;
+
+        if (ctx.query.page) {
+            // tslint:disable-next-line:variable-name
+            const { number, size } = (ctx.query.page as Record<string, any>);
+            page = number ? parseInt(number, 10) : 1;
+            limit = size ? parseInt(size, 10) : 10;
+        }
+
+        return {
+            page,
+            limit
+        };
+    }
 
     static getUser(ctx: Context): IUser {
         // @ts-ignore
