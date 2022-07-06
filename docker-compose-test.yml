@@ -25,6 +25,7 @@ services:
     command: test
     depends_on:
       - redis
+      - mongo
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
 
@@ -36,7 +37,6 @@ services:
     restart: always
 
   mongo:
-    image: mongo:3.4
-    command: --smallfiles
+    image: mongo:3.6
     ports:
       - "27017"
