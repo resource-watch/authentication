@@ -114,7 +114,7 @@ router.patch('/user/me', Utils.isLogged, OktaProvider.updateMe);
 // @ts-ignore
 router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.updateUser);
 // @ts-ignore
-router.delete('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.deleteUser);
+router.delete('/user/:id', Utils.isLogged, Utils.isAdminOrSameUserToDelete, OktaProvider.deleteUser);
 
 router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
