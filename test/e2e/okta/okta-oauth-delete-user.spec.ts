@@ -10,7 +10,8 @@ import {
     mockOktaDeleteUser,
     mockOktaGetUserByEmail,
     mockOktaSuccessfulLogin,
-    mockValidJWT
+    mockValidJWT,
+    mockMicroserviceJWT,
 } from './okta.mocks';
 import CacheService from 'services/cache.service';
 import Should = Chai.Should;
@@ -88,6 +89,28 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
 
     it('Deleting a existing user while logged in as an ADMIN should return 200 OK with the deleted user data', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        const user: OktaUser = getMockOktaUser();
+
+        mockGetUserById(user, 2);
+        mockOktaDeleteUser(user);
+        mockGetUserByOktaId(user.id, user, 1);
+        mockOktaDeleteUser(user);
+
+        const response: request.Response = await requester
+            .delete(`/auth/user/${user.profile.legacyId}`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.be.an('object');
+        response.body.data.should.have.property('id').and.eql(user.profile.legacyId);
+
+        const databaseDeletion: IDeletion = await DeletionModel.findOne({ userId: user.profile.legacyId });
+        chai.expect(databaseDeletion).to.not.be.null;
+    });
+
+    it('Deleting a existing user while logged in as a MICROSERVICE should return 200 OK with the deleted user data', async () => {
+        const token: string = mockMicroserviceJWT();
         const user: OktaUser = getMockOktaUser();
 
         mockGetUserById(user, 2);

@@ -5,7 +5,7 @@ import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
 import { assertOktaTokenInfo } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import {getMockOktaUser, mockGetUserByIdNotFound, mockOktaListUsers, mockValidJWT} from './okta.mocks';
+import {getMockOktaUser, mockGetUserByIdNotFound, mockMicroserviceJWT, mockOktaListUsers, mockValidJWT} from './okta.mocks';
 
 chai.should();
 
@@ -54,6 +54,18 @@ describe('[OKTA] GET users by id', () => {
 
     it('Get user with id of a user that exists returns the requested user (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        const user: OktaUser = getMockOktaUser();
+        mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
+
+        const response: request.Response = await requester
+            .get(`/auth/user/${user.profile.legacyId}`)
+            .set('Authorization', `Bearer ${token}`);
+
+        assertOktaTokenInfo(response, user);
+    });
+
+    it('Get user with id of a user that exists as MICROSERVICE returns the requested user (happy case)', async () => {
+        const token: string = mockMicroserviceJWT();
         const user: OktaUser = getMockOktaUser();
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 

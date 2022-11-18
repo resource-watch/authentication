@@ -73,7 +73,7 @@ export default class Utils {
         }
     }
 
-    static async isAdminOrSameUserToDelete(ctx: Context, next: Next): Promise<void> {
+    static async isAdminOrMicroserviceOrSameUserToDelete(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin or same user to delete');
         const user: IUser = Utils.getUser(ctx);
         const userIdToDelete: string = ctx.params.id;
@@ -82,7 +82,7 @@ export default class Utils {
             ctx.throw(401, 'Not authenticated');
             return;
         }
-        if (user.role === 'ADMIN' || user.id === userIdToDelete) {
+        if (user.role === 'ADMIN' || user.id === 'microservice' || user.id === userIdToDelete) {
             await next();
         } else {
             logger.info('Not admin nor same user to be deleted');
@@ -99,6 +99,22 @@ export default class Utils {
             return;
         }
         if (user.id === 'microservice') {
+            await next();
+        } else {
+            logger.info('Not admin');
+            ctx.throw(403, 'Not authorized');
+        }
+    }
+
+    static async isAdminOrMicroservice(ctx: Context, next: Next): Promise<void> {
+        logger.info('Checking if user is a microservice');
+        const user: IUser = Utils.getUser(ctx);
+        if (!user) {
+            logger.info('Not authenticated');
+            ctx.throw(401, 'Not authenticated');
+            return;
+        }
+        if (user.role === 'ADMIN' || user.id === 'microservice') {
             await next();
         } else {
             logger.info('Not admin');

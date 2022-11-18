@@ -109,7 +109,7 @@ router.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
 router.get('/user/me', Utils.isLogged, OktaProvider.getCurrentUser);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-router.get('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.getUserById);
+router.get('/user/:id', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserById);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
@@ -125,7 +125,7 @@ router.patch('/user/me', Utils.isLogged, OktaProvider.updateMe);
 router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.updateUser);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-router.delete('/user/:id', Utils.isLogged, Utils.isAdminOrSameUserToDelete, OktaProvider.deleteUser);
+router.delete('/user/:id', Utils.isLogged, Utils.isAdminOrMicroserviceOrSameUserToDelete, OktaProvider.deleteUser);
 
 router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
