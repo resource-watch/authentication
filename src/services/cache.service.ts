@@ -15,8 +15,8 @@ class CacheService {
 
     async get(key: string): Promise<OktaUser> {
         logger.info(`[CacheService] Getting key ${key} from cache...`);
-        return new Promise((resolve, reject) => {
-            this.client.get(key, (err, res) => {
+        return new Promise((resolve: (value: (PromiseLike<OktaUser> | OktaUser)) => void, reject: (reason?: any) => void) => {
+            this.client.get(key, (err: Error, res: string) => {
                 if (err) {
                     logger.error(err);
                     reject(err);
@@ -28,8 +28,8 @@ class CacheService {
 
     async set(key: string, value: OktaUser): Promise<any> {
         logger.info(`[CacheService] Setting key ${key} in cache...`);
-        return new Promise((resolve, reject) => {
-            this.client.set(key, JSON.stringify(value), 'EX', config.get('redis.defaultTTL'), (err, res) => {
+        return new Promise((resolve: (value: (PromiseLike<any> | any)) => void, reject: (reason?: any) => void) => {
+            this.client.set(key, JSON.stringify(value), 'EX', config.get('redis.defaultTTL'), (err: Error, res: "OK") => {
                 if (err) {
                     logger.error(err);
                     reject(err);
@@ -41,8 +41,8 @@ class CacheService {
 
     async invalidate(user: OktaUser): Promise<void> {
         logger.info(`[CacheService] Deleting key okta-user-${user.profile.legacyId} in cache...`);
-        return new Promise((resolve, reject) => {
-            this.client.del(`okta-user-${user.profile.legacyId}`, (err) => {
+        return new Promise((resolve: (value: (PromiseLike<void> | void)) => void, reject: (reason?: any) => void) => {
+            this.client.del(`okta-user-${user.profile.legacyId}`, (err: Error) => {
                 if (err) {
                     logger.error(err);
                     reject(err);
@@ -54,8 +54,8 @@ class CacheService {
 
     async clear(): Promise<any> {
         logger.info(`[CacheService] Clearing cache...`);
-        return new Promise((resolve, reject) => {
-            this.client.flushall((err, res) => {
+        return new Promise((resolve: (value: (PromiseLike<any> | any)) => void, reject: (reason?: any) => void) => {
+            this.client.flushall((err: Error, res: string) => {
                 if (err) {
                     logger.error(err);
                     reject(err);

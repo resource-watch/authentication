@@ -4,6 +4,7 @@ import passport from 'koa-passport';
 import logger from 'logger';
 import Utils from 'utils';
 import Settings, {IThirdPartyAuth} from 'services/settings.service';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import {Strategy as GoogleTokenStrategy} from 'passport-google-token';
 import {OktaOAuthProvider, OktaUser, IUser} from 'services/okta.interfaces';
@@ -55,11 +56,11 @@ export class OktaGoogleProvider {
     }
 
     static registerStrategies(): void {
-        passport.serializeUser((user, done) => {
+        passport.serializeUser((user: Express.User, done: (err: any, id?: any) => void) => {
             done(null, user);
         });
 
-        passport.deserializeUser((user, done) => {
+        passport.deserializeUser((user: any, done: (err: any, user?: (Express.User | false | null)) => void) => {
             done(null, user);
         });
 

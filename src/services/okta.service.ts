@@ -147,7 +147,7 @@ export default class OktaService {
 
             pageAfterCursor = cursor;
 
-            data.forEach(user => users.push(OktaService.convertOktaUserToIUser(user)));
+            data.forEach((user: OktaUser) => users.push(OktaService.convertOktaUserToIUser(user)));
             pageAfterCursor = cursor;
             shouldFetchMore = !!cursor && data.length === 200;
         }
@@ -177,7 +177,7 @@ export default class OktaService {
 
             pageAfterCursor = cursor;
 
-            data.forEach(user => userIds.push(user.profile.legacyId));
+            data.forEach((user: OktaUser) => userIds.push(user.profile.legacyId));
             pageAfterCursor = cursor;
             shouldFetchMore = !!cursor && data.length === 200;
         }
@@ -431,7 +431,7 @@ export default class OktaService {
 
         const searchCriteria: string[] = [];
         Object.keys(query)
-            .filter((param) => ['id', 'name', 'provider', 'providerId', 'email', 'role', 'apps'].includes(param))
+            .filter((param: string) => ['id', 'name', 'provider', 'providerId', 'email', 'role', 'apps'].includes(param))
             .forEach((field: string) => {
                 if (query[field]) {
                     if (Array.isArray(query[field])) {
@@ -442,7 +442,7 @@ export default class OktaService {
                 }
             });
 
-        const finalSearchCriteria: string = searchCriteria.filter(el => el !== '').join(' and ');
+        const finalSearchCriteria: string = searchCriteria.filter((el: string) => el !== '').join(' and ');
         logger.debug('[OktaService] finalSearchCriteria: ', finalSearchCriteria);
         return finalSearchCriteria;
     }
@@ -450,7 +450,6 @@ export default class OktaService {
     static convertOktaUserToIUser(user: OktaUser): IUser {
         return {
             id: user.profile.legacyId,
-            // @ts-ignore
             _id: user.profile.legacyId,
             email: user.profile.email,
             name: user.profile.displayName,
@@ -496,6 +495,6 @@ export default class OktaService {
             return '';
         }
 
-        return `(${array.map(item => `(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${item}")`).join(' or ')})`;
+        return `(${array.map((item: string) => `(${OktaService.getOktaProfileFieldName(field)} ${OktaService.getOktaFieldOperator(field)} "${item}")`).join(' or ')})`;
     }
 }

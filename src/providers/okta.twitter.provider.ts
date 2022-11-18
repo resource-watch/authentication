@@ -1,12 +1,12 @@
 import Router from 'koa-router';
 import logger from 'logger';
 import passport from 'koa-passport';
-import Settings, {IApplication, ISettings, IThirdPartyAuth} from 'services/settings.service';
-import {Context, Next} from 'koa';
+import Settings, { IApplication, ISettings, IThirdPartyAuth } from 'services/settings.service';
+import { Context, Next } from 'koa';
 import OktaService from 'services/okta.service';
-import {OktaOAuthProvider, OktaUser, IUser} from 'services/okta.interfaces';
-import {IStrategyOption, Strategy as TwitterStrategy} from 'passport-twitter';
-import {Strategy} from 'passport';
+import { OktaOAuthProvider, OktaUser, IUser } from 'services/okta.interfaces';
+import { IStrategyOption, Strategy as TwitterStrategy } from 'passport-twitter';
+import { Strategy } from 'passport';
 import UserNotFoundError from 'errors/userNotFound.error';
 
 async function registerUserBasicTwitter(
@@ -61,8 +61,12 @@ async function registerUserBasicTwitter(
 }
 
 export function registerOktaTwitterStrategies(): void {
-    passport.serializeUser((user, done) => { done(null, user); });
-    passport.deserializeUser((user, done) => { done(null, user); });
+    passport.serializeUser((user: Express.User, done: (err: any, id?: any) => void) => {
+        done(null, user);
+    });
+    passport.deserializeUser((user: Express.User, done: (err: any, user?: (Express.User | false | null)) => void) => {
+        done(null, user);
+    });
 
     if (Settings.getSettings().thirdParty) {
         logger.info('[OktaTwitterProvider] Loading Twitter auth');
@@ -119,14 +123,19 @@ class OktaTwitterProvider {
 
     static async twitter(ctx: Context, next: Next): Promise<void> {
         const app: string = getOriginApp(ctx, Settings.getSettings());
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         await passport.authenticate(`twitter:${app}`)(ctx, next);
     }
 
     static async twitterCallbackAuthentication(ctx: Context, next: Next): Promise<void> {
         const app: string = getOriginApp(ctx, Settings.getSettings());
-        // @ts-ignore
-        await passport.authenticate(`twitter:${app}`, { failureRedirect: '/auth/twitter/fail', failureFlash: true })(ctx, next);
+        await passport.authenticate(`twitter:${app}`, {
+            failureRedirect: '/auth/twitter/fail',
+            failureFlash: true
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+        })(ctx, next);
     }
 
     static async redirectToMigrate(ctx: Context): Promise<void> {
@@ -222,7 +231,7 @@ class OktaTwitterProvider {
         logger.info('Not authenticated');
         const app: string = getOriginApp(ctx, Settings.getSettings());
 
-        const error:string = ctx.flash('error');
+        const error: string = ctx.flash('error');
 
         return ctx.render('start', {
             error,
@@ -244,9 +253,11 @@ async function loadApplicationGeneralConfig(ctx: Context, next: Next): Promise<v
     await next();
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/', OktaTwitterProvider.redirectStart);
 router.get('/start', loadApplicationGeneralConfig, OktaTwitterProvider.startMigration);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/auth', OktaTwitterProvider.twitter);
 router.get('/callback', OktaTwitterProvider.twitterCallbackAuthentication, OktaTwitterProvider.redirectToMigrate);

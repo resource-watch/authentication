@@ -12,11 +12,11 @@ import OktaProvider from 'providers/okta.provider';
 export class OktaFacebookProvider {
 
     static registerStrategies(): void {
-        passport.serializeUser((user, done) => {
+        passport.serializeUser((user: Express.User, done: (err: any, id?: any) => void) => {
             done(null, user);
         });
 
-        passport.deserializeUser((user, done) => {
+        passport.deserializeUser((user: any, done: (err: any, user?: (Express.User | false | null)) => void) => {
             done(null, user);
         });
 

@@ -1,9 +1,10 @@
 import { Context, Next } from 'koa';
 import logger from 'logger';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import Verifier from 'apple-signin-verify-token';
 import { RouterContext } from 'koa-router';
-import UserSerializer from '../serializers/user.serializer';
+import UserSerializer from 'serializers/user.serializer';
 import OktaService from 'services/okta.service';
 import { OktaOAuthProvider, OktaUser, IUser } from 'services/okta.interfaces';
 import OktaProvider from 'providers/okta.provider';
@@ -48,6 +49,7 @@ export class OktaAppleProvider {
             logger.info('[OktaAppleProvider] Returning user');
 
             // This places the user data in the ctx object as Passport would
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             ctx.req.user = UserSerializer.serializeElement(user);
             ctx.status = 200;

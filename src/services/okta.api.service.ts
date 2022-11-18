@@ -10,8 +10,8 @@ import {
     OktaUpdateUserPayload,
     OktaUpdateUserProtectedFieldsPayload,
     OktaUser,
-} from './okta.interfaces';
-import logger from '../logger';
+} from 'services/okta.interfaces';
+import logger from 'logger';
 
 export default class OktaApiService {
     private static oktaRequestHeaders(): AxiosRequestHeaders {

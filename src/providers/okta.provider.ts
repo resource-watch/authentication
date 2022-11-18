@@ -20,10 +20,9 @@ import {
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 import { sleep } from 'sleep';
-import PasswordRecoveryNotAllowedError from '../errors/passwordRecoveryNotAllowed.error';
-import { IDeletion } from '../models/deletion';
-import DeletionService from '../services/deletion.service';
-import { PaginateOptions } from 'mongoose';
+import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.error';
+import { IDeletion } from 'models/deletion';
+import DeletionService from 'services/deletion.service';
 
 export class OktaProvider {
 
@@ -74,6 +73,7 @@ export class OktaProvider {
                 ctx.status = 200;
                 ctx.body = UserSerializer.serialize(user);
                 logger.info('[OktaProvider] - Generating token');
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 ctx.body.data.token = OktaService.createToken(user);
             } else {
@@ -166,6 +166,7 @@ export class OktaProvider {
                 } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
                 ctx.body = UserSerializer.serialize(data);
 
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 ctx.body.links = {
                     self: `${link}page[before]=${cursor}&page[size]=${limit}`,
@@ -180,6 +181,7 @@ export class OktaProvider {
                 ctx.body = UserSerializer.serialize(data);
                 const nPage: number = page;
 
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
                 ctx.body.links = {
                     self: `${link}page[number]=${page}&page[size]=${limit}`,
