@@ -104,7 +104,7 @@ class DeletionRouter {
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
         try {
-            const deletions: PaginateResult<PaginateDocument<IDeletion, {}, PaginateOptions>> = await DeletionService.getDeletions(filters, paginationOptions);
+            const deletions: PaginateResult<PaginateDocument<IDeletion, unknown, PaginateOptions>> = await DeletionService.getDeletions(filters, paginationOptions);
             ctx.body = DeletionSerializer.serializeList(deletions, link);
         } catch (err) {
             logger.error(err);

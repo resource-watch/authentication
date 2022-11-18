@@ -84,40 +84,52 @@ router.post('/apple/callback', OktaAppleProvider.appleCallback, OktaProvider.upd
 router.get('/apple/token', OktaAppleProvider.appleToken, OktaProvider.generateJWT);
 
 router.get('/', setCallbackUrl, OktaProvider.redirectLogin);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.loginView);
 router.post('/login', OktaProvider.localCallback);
 router.get('/fail', loadApplicationGeneralConfig, OktaProvider.failAuth);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/check-logged', OktaProvider.checkLogged);
 router.get('/success', loadApplicationGeneralConfig, OktaProvider.success);
 router.get('/logout', setCallbackUrlOnlyWithQueryParam, OktaProvider.logout);
 router.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.post('/sign-up', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.signUp);
 router.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.post('/reset-password', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.sendResetMail);
 router.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
 router.get('/user/me', Utils.isLogged, OktaProvider.getCurrentUser);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.getUserById);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, OktaProvider.getIdsByRole);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, OktaProvider.createUser);
 router.patch('/user/me', Utils.isLogged, OktaProvider.updateMe);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.updateUser);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.delete('/user/:id', Utils.isLogged, Utils.isAdminOrSameUserToDelete, OktaProvider.deleteUser);
 
 router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 router.get('/sign-up-redirect', OktaProvider.signUpRedirect);
 

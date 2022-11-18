@@ -25,10 +25,8 @@ export default class DeletionService {
         return deletion;
     }
 
-    static async getDeletions(query: FilterQuery<IDeletion>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IDeletion, {}, PaginateOptions>>> {
-        const deletions: PaginateResult<PaginateDocument<IDeletion, {}, PaginateOptions>> = await DeletionModel.paginate(query, paginationOptions);
-
-
+    static async getDeletions(query: FilterQuery<IDeletion>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IDeletion, unknown, PaginateOptions>>> {
+        const deletions: PaginateResult<PaginateDocument<IDeletion, unknown, PaginateOptions>> = await DeletionModel.paginate(query, paginationOptions);
         return deletions;
     }
 

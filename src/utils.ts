@@ -25,6 +25,7 @@ export default class Utils {
     }
 
     static getUser(ctx: Context): IUser {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore
         return ctx.req.user || ctx.state.user || ctx.state.microservice;
     }
@@ -118,7 +119,7 @@ export default class Utils {
     }
 
     static serializeObjToQuery(obj: Record<string, any>): string {
-        return Object.keys(obj).reduce((a, k) => {
+        return Object.keys(obj).reduce((a: any[], k: string) => {
             a.push(`${k}=${encodeURIComponent(obj[k])}`);
             return a;
         }, []).join('&');

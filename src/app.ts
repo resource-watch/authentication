@@ -3,11 +3,14 @@ import { Server } from 'http';
 import Koa from 'koa';
 import koaBody from 'koa-body';
 import koaLogger from 'koa-logger';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import flash from 'koa-connect-flash';
 import { RWAPIMicroservice } from 'rw-api-microservice-node';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import cors from '@koa/cors';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import koaSimpleHealthCheck from 'koa-simple-healthcheck';
 import session from 'koa-generic-session';
@@ -74,6 +77,7 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
         app.keys = [config.get('server.sessionKey')];
 
         app.use(session({
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
             store: redisStore({
                 url: config.get('redis.url'),

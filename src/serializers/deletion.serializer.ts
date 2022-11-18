@@ -51,7 +51,7 @@ export interface SerializedDeletionResponse {
 
 class DeletionSerializer {
 
-    static serializeList(data: PaginateResult<PaginateDocument<IDeletion, {}, PaginateOptions>>, link: string): SerializedDeletionResponse {
+    static serializeList(data: PaginateResult<PaginateDocument<IDeletion, unknown, PaginateOptions>>, link: string): SerializedDeletionResponse {
         const serializedData: SerializedDeletionResponse = deletionSerializer.serialize(data.docs);
 
         serializedData.links = {

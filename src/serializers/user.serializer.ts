@@ -26,7 +26,7 @@ export default class UserSerializer {
         }
 
         if (data && Array.isArray(data)) {
-            result.data = data.map((e) => UserSerializer.serializeElement(e));
+            result.data = data.map((e: IUser) => UserSerializer.serializeElement(e));
         } else {
             result.data = UserSerializer.serializeElement(data as IUser);
         }
