@@ -117,7 +117,7 @@ export default class Utils {
         if (user.role === 'ADMIN' || user.id === 'microservice') {
             await next();
         } else {
-            logger.info('Not admin');
+            logger.info('Not admin nor microservice');
             ctx.throw(403, 'Not authorized');
         }
     }
