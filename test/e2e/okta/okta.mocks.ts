@@ -168,8 +168,7 @@ export const mockValidJWT: (override?: Partial<JWTPayload>, mockGetUser?: boolea
 };
 
 export const mockMicroserviceJWT: () => string = () => {
-    const tokenPayload: JWTPayload = generateRandomTokenPayload({ id: 'microservice', role: 'MICROSERVICE' });
-    return createTokenForUser(tokenPayload);
+    return createTokenForUser({ id: 'microservice', createdAt: new Date() });
 };
 
 export const mockOktaCreateUser: (user: OktaUser, payload: OktaCreateUserPayload) => void = (user, payload) => {
