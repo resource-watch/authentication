@@ -1,6 +1,6 @@
 import nock from 'nock';
 import config from 'config';
-import faker from 'faker';
+import { faker } from '@faker-js/faker';
 import { isEqual } from 'lodash';
 
 import {
