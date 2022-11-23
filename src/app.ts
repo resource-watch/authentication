@@ -65,6 +65,8 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
 
                 const app: Koa = new Koa();
 
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
                 koaQs(app, 'extended');
                 app.use(koaBody({
                     multipart: true,

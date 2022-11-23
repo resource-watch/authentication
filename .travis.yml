@@ -4,7 +4,7 @@ services:
   - redis
   - mongodb
 node_js:
-  - "16.15"
+  - "16.18"
 cache:
   directories:
   - "node_modules"
