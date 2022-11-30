@@ -6,6 +6,7 @@ import logger from 'logger';
 import Settings from 'services/settings.service';
 import AuthRouter from 'routes/auth.router';
 import DeletionRouter from 'routes/deletion.router';
+import ApplicationRouter from 'routes/application.router';
 import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
@@ -78,6 +79,7 @@ export function loadRoutes(app: Application): void {
     logger.debug('Loading routes...');
     app.use(AuthRouter.routes());
     app.use(DeletionRouter.middleware());
+    app.use(ApplicationRouter.middleware());
     app.use(OktaTwitterProvider.routes());
 
     logger.debug('Loaded routes correctly!');

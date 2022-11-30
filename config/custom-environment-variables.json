@@ -35,6 +35,11 @@
     "googleIdP": "OKTA_GFW_GOOGLE_IDP",
     "appleIdP":"OKTA_GFW_APPLE_IDP"
   },
+  "aws": {
+    "region": "AWS_REGION",
+    "accessKeyId": "AWS_ACCESS_KEY_ID",
+    "secretAccessKey": "AWS_SECRET_ACCESS_KEY"
+  },
   "settings": {
     "thirdParty": {
       "rw": {

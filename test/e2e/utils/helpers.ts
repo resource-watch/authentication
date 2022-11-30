@@ -4,9 +4,11 @@ import nock from 'nock';
 import Sinon, { SinonSandbox } from 'sinon';
 
 import { OktaUser, IUser } from 'services/okta.interfaces';
-import mongoose from 'mongoose';
+import mongoose, { HydratedDocument } from 'mongoose';
 import { IDeletion } from '../../../src/models/deletion';
 import { IRequestUser } from './test.constants';
+import ApplicationModel, { IApplication } from "../../../src/models/application";
+import { faker } from "@faker-js/faker";
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
@@ -83,4 +85,13 @@ export const createDeletion: (anotherData?: Partial<IDeletion>) => Partial<IDele
         status: `pending`,
         ...anotherData
     };
+};
+
+export const createApplication: (anotherData?: Partial<IApplication>) => Promise<HydratedDocument<IApplication>> = (anotherData: Partial<IApplication> = {}) => {
+    return new ApplicationModel({
+        name: new mongoose.Types.ObjectId().toString(),
+        apiKeyId: faker.internet.password(10, false, /[a-zA-Z0-9]/),
+        apiKeyValue: faker.datatype.uuid(),
+        ...anotherData
+    }).save();
 };

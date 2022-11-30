@@ -7,6 +7,9 @@
     "url": "https://wri-admin.okta.com",
     "apiKey": "testApiKey"
   },
+  "aws": {
+    "region": "us-east-1"
+  },
   "settings": {
     "defaultApp": "rw",
     "thirdParty": {
