@@ -40,6 +40,11 @@
     "facebookIdP": null,
     "appleIdP": null
   },
+  "aws": {
+    "region": null,
+    "accessKeyId": null,
+    "secretAccessKey": null
+  },
   "settings": {
     "defaultApp": "gfw",
     "thirdParty": {

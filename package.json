@@ -107,6 +107,7 @@
     "tsconfig-paths": "^4.1.0"
   },
   "dependencies": {
+    "@aws-sdk/client-api-gateway": "^3.218.0",
     "@koa/cors": "^4.0.0",
     "apple-signin-verify-token": "^0.1.4",
     "bunyan": "^1.8.15",
