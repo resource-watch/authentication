@@ -1,8 +1,13 @@
 dist: focal
 language: node_js
+addons:
+  apt:
+    sources:
+      - sourceline: 'deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse'
+    packages:
+      - mongodb-org
 services:
   - redis
-  - mongodb
 node_js:
   - "16.18"
 cache:
@@ -30,6 +35,9 @@ env:
     - FASTLY_ENABLED=false
     - OKTA_API_KEY=example
     - MONGO_HOST=127.0.0.1
+before_install:
+  - sudo systemctl restart mongod.service
+  - sleep 10
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
   - chmod +x ./cc-test-reporter
