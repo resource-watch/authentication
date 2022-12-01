@@ -8,7 +8,9 @@
     "apiKey": "testApiKey"
   },
   "aws": {
-    "region": "us-east-1"
+    "region": "us-east-1",
+    "accessKeyId": "accessKeyId",
+    "secretAccessKey": "secretAccessKey"
   },
   "settings": {
     "defaultApp": "rw",
