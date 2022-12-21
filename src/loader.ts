@@ -11,6 +11,7 @@ import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
 import OktaTwitterProvider, { registerOktaTwitterStrategies } from 'providers/okta.twitter.provider';
+import OrganizationRouter from "routes/organization.router";
 
 export function loadRoutes(app: Application): void {
     logger.debug('Loading OAuth middleware...');
@@ -80,6 +81,7 @@ export function loadRoutes(app: Application): void {
     app.use(AuthRouter.routes());
     app.use(DeletionRouter.middleware());
     app.use(ApplicationRouter.middleware());
+    app.use(OrganizationRouter.middleware());
     app.use(OktaTwitterProvider.routes());
 
     logger.debug('Loaded routes correctly!');

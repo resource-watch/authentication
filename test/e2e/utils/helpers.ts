@@ -9,6 +9,7 @@ import { IDeletion } from '../../../src/models/deletion';
 import { IRequestUser } from './test.constants';
 import ApplicationModel, { IApplication } from "../../../src/models/application";
 import { faker } from "@faker-js/faker";
+import OrganizationModel, { IOrganization } from "../../../src/models/organization";
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
@@ -92,6 +93,13 @@ export const createApplication: (anotherData?: Partial<IApplication>) => Promise
         name: new mongoose.Types.ObjectId().toString(),
         apiKeyId: faker.internet.password(10, false, /[a-zA-Z0-9]/),
         apiKeyValue: faker.datatype.uuid(),
+        ...anotherData
+    }).save();
+};
+
+export const createOrganization: (anotherData?: Partial<IOrganization>) => Promise<HydratedDocument<IOrganization>> = (anotherData: Partial<IOrganization> = {}) => {
+    return new OrganizationModel({
+        name: new mongoose.Types.ObjectId().toString(),
         ...anotherData
     }).save();
 };

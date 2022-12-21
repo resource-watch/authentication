@@ -4,20 +4,15 @@ import paginate from 'mongoose-paginate-v2';
 import { IOrganization } from 'models/organization';
 import { IUser } from "services/okta.interfaces";
 
-export interface IApplication extends Document {
-    name: string;
-    apiKeyId: string;
-    apiKeyValue: string;
+export interface IOrganizationUser extends Document {
     organization: IOrganization;
     user: IUser;
+    role: string;
     createdAt: Date;
     updatedAt: Date;
 }
 
-export const Application: ISchema<IApplication> = new Schema<IApplication>({
-    name: { type: String, trim: true, required: true },
-    apiKeyId: { type: String, trim: true, required: true },
-    apiKeyValue: { type: String, trim: true, required: true },
+export const OrganizationUser: ISchema<IOrganizationUser> = new Schema<IOrganizationUser>({
     organization: {
         type: Schema.Types.ObjectId,
         ref: "Organization"
@@ -26,15 +21,16 @@ export const Application: ISchema<IApplication> = new Schema<IApplication>({
         type: Schema.Types.ObjectId,
         ref: "User"
     },
+    role: { type: String, trim: true, required: true },
     createdAt: { type: Date, required: true, default: Date.now },
     updatedAt: { type: Date, required: true, default: Date.now }
 });
 
-Application.plugin(paginate);
+OrganizationUser.plugin(paginate);
 
-interface ApplicationDocument extends Document, IApplication {
+interface OrganizationUserDocument extends Document, IOrganizationUser {
 }
 
-const ApplicationModel: PaginateModel<ApplicationDocument> = model<ApplicationDocument, PaginateModel<ApplicationDocument>>('Application', Application);
+const OrganizationUserModel: PaginateModel<OrganizationUserDocument> = model<OrganizationUserDocument, PaginateModel<OrganizationUserDocument>>('OrganizationUser', OrganizationUser);
 
-export default ApplicationModel;
+export default OrganizationUserModel;
