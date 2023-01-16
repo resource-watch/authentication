@@ -1,7 +1,7 @@
 import { Context } from 'koa';
 import router, { Router } from 'koa-joi-router';
 import logger from 'logger';
-import { IOrganization } from 'models/organization';
+import { CreateOrganizationsDto, IOrganization } from 'models/organization';
 import mongoose from 'mongoose';
 import OrganizationSerializer from 'serializers/organization.serializer';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
@@ -33,7 +33,8 @@ const createOrganizationValidation: Record<string, any> = {
         loggedUser: Joi.any().optional(),
     },
     body: {
-        name: Joi.string().required()
+        name: Joi.string().required(),
+        applications: Joi.array().items(Joi.string()).optional()
     }
 };
 
@@ -47,7 +48,8 @@ const updateOrganizationValidation: Record<string, any> = {
     },
     body: {
         name: Joi.string().optional(),
-        regenApiKey: Joi.boolean().optional()
+        regenApiKey: Joi.boolean().optional(),
+        applications: Joi.array().items(Joi.string()).optional()
     }
 };
 
@@ -93,10 +95,11 @@ class OrganizationRouter {
     }
 
     static async createOrganization(ctx: Context): Promise<void> {
-        const newOrganizationData: Partial<IOrganization> = pick(
+        const newOrganizationData: Partial<CreateOrganizationsDto> = pick(
             ctx.request.body,
             [
                 'name',
+                'applications'
             ]
         );
 
@@ -111,6 +114,7 @@ class OrganizationRouter {
             ctx.request.body,
             [
                 'name',
+                'applications'
             ]
         );
 

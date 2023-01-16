@@ -1,5 +1,6 @@
 import { Serializer } from 'jsonapi-serializer';
-import { IOrganization } from 'models/organization';
+import organization, { IOrganization } from 'models/organization';
+import { IApplication } from 'models/application';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 
 const organizationSerializer: Serializer = new Serializer('organization', {
@@ -9,8 +10,15 @@ const organizationSerializer: Serializer = new Serializer('organization', {
         'createdAt',
         'updatedAt',
     ],
-
-    keyForAttribute: 'camelCase'
+    id: '_id',
+    keyForAttribute: 'camelCase',
+    transform: ((organization: IOrganization): Record<string, any> => ({
+        ...organization.toObject(),
+        applications: organization.applications.map((application: IApplication) => ({
+            id: application._id.toString(),
+            name: application.name
+        }))
+    }))
 });
 
 export interface SerializedOrganizationResponse {

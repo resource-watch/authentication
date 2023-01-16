@@ -32,9 +32,9 @@ const createApplicationValidation: Record<string, any> = {
     query: {
         loggedUser: Joi.any().optional(),
     },
-    body: {
+    body: Joi.object({
         name: Joi.string().required()
-    }
+    }).oxor('user', 'organization')
 };
 
 const updateApplicationValidation: Record<string, any> = {
@@ -47,6 +47,8 @@ const updateApplicationValidation: Record<string, any> = {
     },
     body: {
         name: Joi.string().optional(),
+        user: Joi.string().optional(),
+        organization: Joi.string().optional(),
         regenApiKey: Joi.boolean().optional()
     }
 };
@@ -66,7 +68,7 @@ class ApplicationRouter {
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
         try {
-            const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationService.getApplications(filters, paginationOptions);
+            const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationService.getPaginatedApplications(filters, paginationOptions);
             ctx.body = ApplicationSerializer.serializeList(applications, link);
         } catch (err) {
             logger.error(err);

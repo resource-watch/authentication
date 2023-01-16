@@ -1,15 +1,12 @@
 import config from 'config';
 import JWT from 'jsonwebtoken';
-import nock from 'nock';
 import Sinon, { SinonSandbox } from 'sinon';
-
-import { OktaUser, IUser } from 'services/okta.interfaces';
-import mongoose, { HydratedDocument } from 'mongoose';
-import { IDeletion } from '../../../src/models/deletion';
-import { IRequestUser } from './test.constants';
-import ApplicationModel, { IApplication } from "../../../src/models/application";
 import { faker } from "@faker-js/faker";
-import OrganizationModel, { IOrganization } from "../../../src/models/organization";
+import mongoose, { HydratedDocument } from 'mongoose';
+import { OktaUser, IUser } from 'services/okta.interfaces';
+import { IDeletion } from 'models/deletion';
+import ApplicationModel, { IApplication } from "models/application";
+import OrganizationModel, { IOrganization } from "models/organization";
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
@@ -71,12 +68,6 @@ export const assertOktaTokenInfo: (response: ChaiHttp.Response, user: OktaUser) 
     response.body.should.have.property('updatedAt');
 };
 
-export const mockGetUserFromToken: (userProfile: IRequestUser) => void = (userProfile: IRequestUser) => {
-    nock(process.env.GATEWAY_URL, { reqheaders: { authorization: 'Bearer abcd' } })
-        .get('/auth/user/me')
-        .reply(200, userProfile);
-};
-
 export const createDeletion: (anotherData?: Partial<IDeletion>) => Partial<IDeletion> & { requestorUserId: string; userId: string; status: string } = (anotherData: Partial<IDeletion> = {}) => {
     const uuid: string = new mongoose.Types.ObjectId().toString();
 
@@ -90,7 +81,7 @@ export const createDeletion: (anotherData?: Partial<IDeletion>) => Partial<IDele
 
 export const createApplication: (anotherData?: Partial<IApplication>) => Promise<HydratedDocument<IApplication>> = (anotherData: Partial<IApplication> = {}) => {
     return new ApplicationModel({
-        name: new mongoose.Types.ObjectId().toString(),
+        name: faker.internet.domainWord(),
         apiKeyId: faker.internet.password(10, false, /[a-zA-Z0-9]/),
         apiKeyValue: faker.datatype.uuid(),
         ...anotherData
