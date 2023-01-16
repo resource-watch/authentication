@@ -1,10 +1,12 @@
 import nock from 'nock';
 import chai from 'chai';
-import OrganizationModel, { IOrganization } from 'models/organization';
+import OrganizationModel, { CreateOrganizationsDto, IOrganization } from 'models/organization';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
+import { createApplication } from "../utils/helpers";
+import ApplicationModel, { IApplication } from "models/application";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -14,7 +16,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const sendCreateOrganizationRequest: (token: string, organization?: Partial<IOrganization>) => Promise<request.Response> = async (token: string, organization: Partial<IOrganization> = {}) => requester
+const sendCreateOrganizationRequest: (token: string, organization?: Partial<CreateOrganizationsDto>) => Promise<request.Response> = async (token: string, organization: Partial<CreateOrganizationsDto> = {}) => requester
     .post(`/api/v1/organization`)
     .set('Authorization', `Bearer ${token}`)
     .send({ ...organization });
@@ -85,7 +87,36 @@ describe('Create organization tests', () => {
         new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
     });
 
+    describe('with associated applications', () => {
+        it('Create an organization with associated application should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testApplication: IApplication = await createApplication();
+
+            const response: request.Response = await sendCreateOrganizationRequest(token, {
+                name: "my organization",
+                applications: [testApplication.id]
+            });
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name,
+            }]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+        });
+    })
+
     afterEach(async () => {
+        await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {

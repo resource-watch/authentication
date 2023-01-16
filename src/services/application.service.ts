@@ -2,7 +2,7 @@ import ApplicationModel, { IApplication } from 'models/application';
 import { FilterQuery, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import APIGatewayAWSService from "services/apigateway.aws.service";
-import { CreateApiKeyCommandOutput, UpdateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
+import { CreateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<IApplication>): Promise<IApplication> {
@@ -45,7 +45,11 @@ export default class ApplicationService {
         return application;
     }
 
-    static async getApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>>> {
+    static async getApplications(query: FilterQuery<IApplication>): Promise<IApplication[]> {
+        return ApplicationModel.find(query);
+    }
+
+    static async getPaginatedApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>>> {
         const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationModel.paginate(query, paginationOptions);
         return applications;
     }
