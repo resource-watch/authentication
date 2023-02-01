@@ -1,5 +1,5 @@
 import nock from 'nock';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import OrganizationModel, { IOrganization } from 'models/organization';
 import { getTestAgent } from '../utils/test-server';
 import { createApplication, createOrganization } from '../utils/helpers';
@@ -108,6 +108,8 @@ describe('Delete organization tests', () => {
             const organization: HydratedDocument<IOrganization> = await createOrganization({
                 applications:[testApplication.id]
             });
+            testApplication.organization = organization;
+            await testApplication.save();
 
             const response: request.Response = await requester
                 .delete(`/api/v1/organization/${organization._id.toString()}`)
@@ -128,6 +130,9 @@ describe('Delete organization tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(organization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(organization.updatedAt);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(testApplication.id).populate('organization');
+            expect(databaseApplication.organization).to.equal(null);
         });
     })
 

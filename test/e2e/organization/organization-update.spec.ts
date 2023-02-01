@@ -1,5 +1,5 @@
 import nock from 'nock';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import OrganizationModel, { IOrganization } from 'models/organization';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
@@ -138,7 +138,6 @@ describe('Update organization tests', () => {
             .set('Authorization', `Bearer ${token}`)
             .send({
                 name: 'new organization name',
-                regenApiKey: true
             });
 
         response.status.should.equal(200);
@@ -158,18 +157,59 @@ describe('Update organization tests', () => {
     });
 
     describe('with associated applications', () => {
-        it('Update an organization and setting application should be successful', async () => {
+        it('Update an organization without setting applications should be successful and not modify the associated applications', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
 
-            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            const organization: HydratedDocument<IOrganization> = await createOrganization({
+                applications: [testApplication.id]
+            });
+
+            testApplication.organization = organization;
+            await testApplication.save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     name: 'new organization name',
-                    regenApiKey: true,
+                });
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name,
+            }]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
+            databaseApplication.organization.id.should.equal(response.body.data.id);
+        });
+
+        it('Update an organization and setting application should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testApplication: IApplication = await createApplication();
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            testApplication.organization = organization;
+            await testApplication.save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
                     applications: [testApplication.id]
                 });
 
@@ -189,6 +229,9 @@ describe('Update organization tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
+            databaseApplication.organization.id.should.equal(response.body.data.id);
         });
 
         it('Update an organization and removing applications should be successful', async () => {
@@ -198,13 +241,14 @@ describe('Update organization tests', () => {
             const organization: HydratedDocument<IOrganization> = await createOrganization({
                 applications: testApplication.id
             });
+            testApplication.organization = organization;
+            await testApplication.save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     name: 'new organization name',
-                    regenApiKey: true,
                     applications: []
                 });
 
@@ -221,6 +265,9 @@ describe('Update organization tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(testApplication.id).populate('organization');
+            expect(databaseApplication.organization).to.equal(null);
         });
 
         it('Update an organization and overwriting existing applications should be successful', async () => {
@@ -232,12 +279,14 @@ describe('Update organization tests', () => {
                 applications: testApplicationOne.id
             });
 
+            testApplicationOne.organization = organization;
+            await testApplicationOne.save();
+
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     name: 'new organization name',
-                    regenApiKey: true,
                     applications: [testApplicationOne.id, testApplicationTwo.id]
                 });
 
@@ -263,6 +312,12 @@ describe('Update organization tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            const databaseApplicationOne: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
+            databaseApplicationOne.organization.id.should.equal(response.body.data.id);
+
+            const databaseApplicationTwo: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[1].id).populate('organization');
+            databaseApplicationTwo.organization.id.should.equal(response.body.data.id);
         });
     })
 
