@@ -8,7 +8,7 @@ import request from 'superagent';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { mockDeleteAWSAPIGatewayAPIKey } from "./aws.mocks";
-import { IOrganization } from "../../../src/models/organization";
+import OrganizationModel, { IOrganization } from "../../../src/models/organization";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -111,6 +111,8 @@ describe('Delete application tests', () => {
             const application: HydratedDocument<IApplication> = await createApplication({
                 organization: testOrganization.id
             });
+            testOrganization.applications.push(application.id);
+            await testOrganization.save();
 
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
 
@@ -133,11 +135,15 @@ describe('Delete application tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(testOrganization.id).populate('applications');
+            databaseOrganization.applications.map((application:IApplication) => application.id).should.eql([]);
         });
     })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

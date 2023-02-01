@@ -168,6 +168,50 @@ describe('Update application tests', () => {
     });
 
     describe('with associated organization', () => {
+        it('Update an application without setting organization should be successful and not modify the associated organizations', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testOrganization: IOrganization = await createOrganization();
+
+            const application: HydratedDocument<IApplication> = await createApplication({
+                organization: testOrganization.id
+            });
+
+            testOrganization.applications.push(application.id);
+            await testOrganization.save();
+
+            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    regenApiKey: true,
+                });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue).and.not.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('organization').and.eql({
+                id: testOrganization.id,
+                name: testOrganization.name,
+            });
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.attributes.organization.id).populate('applications');
+            databaseOrganization.applications.map((application:IApplication) => application.id).should.eql([response.body.data.id]);
+        });
+
         it('Update an application and setting organization should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testOrganization: IOrganization = await createOrganization();
@@ -203,6 +247,9 @@ describe('Update application tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.attributes.organization.id).populate('applications');
+            databaseOrganization.applications.map((application:IApplication) => application.id).should.eql([response.body.data.id]);
         });
 
         it('Update an application and removing organization should be successful', async () => {
@@ -212,6 +259,9 @@ describe('Update application tests', () => {
             const application: HydratedDocument<IApplication> = await createApplication({
                 organization: testOrganization.id
             });
+
+            testOrganization.applications.push(application.id);
+            await testOrganization.save();
 
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
@@ -239,6 +289,9 @@ describe('Update application tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(testOrganization.id).populate('applications');
+            databaseOrganization.applications.map((application:IApplication) => application.id).should.eql([]);
         });
 
         it('Update an application and overwriting existing organization should be successful', async () => {
@@ -249,6 +302,9 @@ describe('Update application tests', () => {
             const application: HydratedDocument<IApplication> = await createApplication({
                 organization: testOrganizationOne.id
             });
+
+            testOrganizationOne.applications.push(application.id);
+            await testOrganizationOne.save();
 
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
@@ -281,11 +337,18 @@ describe('Update application tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            const databaseOrganizationOne: IOrganization = await OrganizationModel.findById(testOrganizationOne.id).populate('applications');
+            databaseOrganizationOne.applications.map((application:IApplication) => application.id).should.eql([]);
+
+            const databaseOrganizationTwo: IOrganization = await OrganizationModel.findById(testOrganizationTwo.id).populate('applications');
+            databaseOrganizationTwo.applications.map((application:IApplication) => application.id).should.eql([response.body.data.id]);
         });
     })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
