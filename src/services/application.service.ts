@@ -5,6 +5,7 @@ import APIGatewayAWSService from "services/apigateway.aws.service";
 import { CreateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
 import OrganizationService from "services/organization.service";
 import { IOrganization } from "models/organization";
+import { pick } from "lodash";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<CreateApplicationsDto>): Promise<IApplication> {
@@ -21,13 +22,21 @@ export default class ApplicationService {
             application.organization = organization;
         }
 
-        return application.save();
+        const savedApplication: IApplication = await application.save();
+
+        if (applicationData.organization) {
+            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+            organization.applications.push(savedApplication);
+            await organization.save()
+        }
+
+        return savedApplication;
     }
 
     static async updateApplication(id: string, applicationData: Partial<UpdateApplicationsDto>, regenApiKey: boolean): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
 
-        application.set(applicationData);
+        application.set(pick(applicationData, ['name']));
         application.updatedAt = new Date();
 
         if (regenApiKey) {
@@ -41,18 +50,48 @@ export default class ApplicationService {
             await APIGatewayAWSService.updateApiKey(application.apiKeyId, applicationData.name);
         }
 
-        if (applicationData.organization) {
-            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
-            application.organization = organization;
+        if ('organization' in applicationData) {
+            if (application.organization) {
+                const currentOrganization: IOrganization = await OrganizationService.getOrganizationById(application.organization.id)
+                currentOrganization.applications = currentOrganization.applications.filter((orgApplication: IApplication) => {
+                    return orgApplication.id !== application.id;
+                });
+                await currentOrganization.save();
+            }
+
+            if (applicationData.organization !== null) {
+                const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+                application.organization = organization;
+             } else {
+                application.organization = null;
+            }
+
         }
 
-        return application.save();
+        const savedApplication: IApplication = await application.save();
+
+        if (applicationData.organization) {
+            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+            organization.applications.push(savedApplication);
+            await organization.save()
+        }
+
+        return savedApplication;
     }
 
     static async deleteApplication(id: string): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
 
         await APIGatewayAWSService.deleteApiKey(application.apiKeyId);
+
+        if (application.organization) {
+            const organization: IOrganization = await OrganizationService.getOrganizationById(application.organization.id)
+            organization.applications = organization.applications.filter((orgApplication: IApplication) => {
+                return orgApplication.id !== application.id;
+            });
+            await organization.save();
+        }
+
         await application.remove();
 
         return application;
@@ -63,7 +102,10 @@ export default class ApplicationService {
     }
 
     static async getPaginatedApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>>> {
-        const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationModel.paginate(query, { ...paginationOptions, populate: ['organization'] });
+        const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationModel.paginate(query, {
+            ...paginationOptions,
+            populate: ['organization']
+        });
         return applications;
     }
 

@@ -9,7 +9,7 @@ import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
-import { IApplication } from "../../../src/models/application";
+import ApplicationModel, { IApplication } from "../../../src/models/application";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -176,6 +176,7 @@ describe('Get organizations tests', () => {
     })
 
     afterEach(async () => {
+        await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {

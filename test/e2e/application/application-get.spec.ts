@@ -9,7 +9,7 @@ import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
-import { IOrganization } from "../../../src/models/organization";
+import OrganizationModel, { IOrganization } from "../../../src/models/organization";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -177,6 +177,7 @@ describe('Get applications tests', () => {
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

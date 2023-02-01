@@ -118,11 +118,15 @@ describe('Create application tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.attributes.organization.id).populate('applications');
+            databaseOrganization.applications.map((application:IApplication) => application.id).should.eql([response.body.data.id]);
         });
     })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

@@ -141,6 +141,7 @@ describe('Get application by id tests', () => {
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
