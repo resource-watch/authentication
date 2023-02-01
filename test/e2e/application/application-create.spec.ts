@@ -6,6 +6,8 @@ import { getTestAgent } from '../utils/test-server';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { mockCreateAWSAPIGatewayAPIKey } from "./aws.mocks";
+import { createApplication, createOrganization } from "../utils/helpers";
+import OrganizationModel, { IOrganization } from "../../../src/models/organization";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -87,6 +89,37 @@ describe('Create application tests', () => {
         response.body.data.attributes.should.have.property('updatedAt');
         new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
     });
+
+    describe('with associated organization', () => {
+        it('Create an application with associated organization should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const apiKey = mockCreateAWSAPIGatewayAPIKey();
+
+            const testOrganization: IOrganization = await createOrganization();
+
+            const response: request.Response = await sendCreateApplicationRequest(token, {
+                name: "my application",
+                organization: testOrganization.id
+            });
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('organization').and.eql({
+                id: testOrganization.id,
+                name: testOrganization.name,
+            });
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+    })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();

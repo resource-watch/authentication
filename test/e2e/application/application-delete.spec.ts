@@ -2,12 +2,13 @@ import nock from 'nock';
 import chai from 'chai';
 import ApplicationModel, { IApplication } from 'models/application';
 import { getTestAgent } from '../utils/test-server';
-import { createApplication } from '../utils/helpers';
+import { createApplication, createOrganization } from '../utils/helpers';
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { mockDeleteAWSAPIGatewayAPIKey } from "./aws.mocks";
+import { IOrganization } from "../../../src/models/organization";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -101,6 +102,39 @@ describe('Delete application tests', () => {
         response.body.data.attributes.should.have.property('updatedAt');
         new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
     });
+
+    describe('with associated organizations', () => {
+        it('Delete a application with associated organization should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testOrganization: IOrganization = await createOrganization();
+
+            const application: HydratedDocument<IApplication> = await createApplication({
+                organization: testOrganization.id
+            });
+
+            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+
+            const response: request.Response = await requester
+                .delete(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(200);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('organization').and.eql({
+                id: testOrganization.id,
+                name: testOrganization.name,
+            });
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+    })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();

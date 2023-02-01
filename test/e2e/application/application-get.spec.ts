@@ -3,12 +3,13 @@ import chai from 'chai';
 import config from 'config';
 import ApplicationModel, { IApplication } from 'models/application';
 import { getTestAgent } from '../utils/test-server';
-import { createApplication } from '../utils/helpers';
+import { createApplication, createOrganization } from '../utils/helpers';
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
+import { IOrganization } from "../../../src/models/organization";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -142,6 +143,36 @@ describe('Get applications tests', () => {
             response.body.errors[0].should.have.property('status').and.equal(400);
             response.body.errors[0].should.have.property('detail').and.equal('"page.size" must be less than or equal to 100');
         });
+
+        describe('with associated organizations', () => {
+            it('Get applications with associated organizations should be successful', async () => {
+                const token: string = mockValidJWT({ role: 'ADMIN' });
+                const testOrganization: IOrganization = await createOrganization();
+
+                const application: HydratedDocument<IApplication> = await createApplication({
+                    organization: testOrganization.id
+                });
+
+                const response: request.Response = await requester
+                    .get(`/api/v1/application`)
+                    .set('Authorization', `Bearer ${token}`);
+
+                response.status.should.equal(200);
+                response.body.should.have.property('data').and.be.an('array').and.length(1);
+                response.body.data[0].should.have.property('type').and.equal('applications');
+                response.body.data[0].should.have.property('id').and.equal(application._id.toString());
+                response.body.data[0].should.have.property('attributes').and.be.an('object');
+                response.body.data[0].attributes.should.have.property('name').and.equal(application.name);
+                response.body.data[0].attributes.should.have.property('organization').and.eql({
+                    id: testOrganization.id,
+                    name: testOrganization.name,
+                });
+                response.body.data[0].attributes.should.have.property('createdAt');
+                new Date(response.body.data[0].attributes.createdAt).should.equalDate(application.createdAt);
+                response.body.data[0].attributes.should.have.property('updatedAt');
+                new Date(response.body.data[0].attributes.updatedAt).should.equalDate(application.updatedAt);
+            });
+        })
     });
 
     afterEach(async () => {
