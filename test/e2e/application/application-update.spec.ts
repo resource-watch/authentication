@@ -3,7 +3,7 @@ import chai from 'chai';
 import ApplicationModel, { IApplication } from 'models/application';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
-import { createApplication } from '../utils/helpers';
+import { createApplication, createOrganization } from '../utils/helpers';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import mongoose, { HydratedDocument } from 'mongoose';
@@ -12,6 +12,7 @@ import {
     mockDeleteAWSAPIGatewayAPIKey,
     mockUpdateAWSAPIGatewayAPIKey
 } from "./aws.mocks";
+import OrganizationModel, { IOrganization } from "../../../src/models/organization";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -165,6 +166,123 @@ describe('Update application tests', () => {
         response.body.data.attributes.should.have.property('updatedAt');
         new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
     });
+
+    describe('with associated organization', () => {
+        it('Update an application and setting organization should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testOrganization: IOrganization = await createOrganization();
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    regenApiKey: true,
+                    organization: testOrganization.id
+                });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue).and.not.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('organization').and.eql({
+                id: testOrganization.id,
+                name: testOrganization.name,
+            });
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+
+        it('Update an application and removing organization should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testOrganization: IOrganization = await createOrganization();
+
+            const application: HydratedDocument<IApplication> = await createApplication({
+                organization: testOrganization.id
+            });
+
+            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    regenApiKey: true,
+                    organization: null
+                });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue).and.not.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('organization').and.eql(null);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+
+        it('Update an application and overwriting existing organization should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testOrganizationOne: IOrganization = await createOrganization();
+            const testOrganizationTwo: IOrganization = await createOrganization();
+
+            const application: HydratedDocument<IApplication> = await createApplication({
+                organization: testOrganizationOne.id
+            });
+
+            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    regenApiKey: true,
+                    organization: testOrganizationTwo.id
+                });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue).and.not.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('organization').and.eql(
+                {
+                    id: testOrganizationTwo.id,
+                    name: testOrganizationTwo.name,
+                }
+            );
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+    })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();

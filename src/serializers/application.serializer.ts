@@ -5,12 +5,20 @@ import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 const applicationSerializer: Serializer = new Serializer('application', {
     attributes: [
         'name',
+        'organization',
         'apiKeyValue',
         'createdAt',
         'updatedAt',
     ],
-
-    keyForAttribute: 'camelCase'
+    id: '_id',
+    keyForAttribute: 'camelCase',
+    transform: ((application: IApplication): Record<string, any> => ({
+        ...application.toObject(),
+        organization: application.organization ? {
+            id: application.organization._id.toString(),
+            name: application.organization.name
+        } : null
+    }))
 });
 
 export interface SerializedApplicationResponse {

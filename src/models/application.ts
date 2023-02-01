@@ -14,6 +14,13 @@ export interface IApplication extends Document {
     updatedAt: Date;
 }
 
+export type CreateApplicationsDto = {
+    name: string;
+    organization: string;
+}
+
+export type UpdateApplicationsDto = CreateApplicationsDto;
+
 export const Application: ISchema<IApplication> = new Schema<IApplication>({
     name: { type: String, trim: true, required: true },
     apiKeyId: { type: String, trim: true, required: true },

@@ -1,11 +1,13 @@
-import ApplicationModel, { IApplication } from 'models/application';
+import ApplicationModel, { CreateApplicationsDto, IApplication, UpdateApplicationsDto } from 'models/application';
 import { FilterQuery, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import APIGatewayAWSService from "services/apigateway.aws.service";
 import { CreateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
+import OrganizationService from "services/organization.service";
+import { IOrganization } from "models/organization";
 
 export default class ApplicationService {
-    static async createApplication(applicationData: Partial<IApplication>): Promise<IApplication> {
+    static async createApplication(applicationData: Partial<CreateApplicationsDto>): Promise<IApplication> {
         const apiKeyResponse: CreateApiKeyCommandOutput = await APIGatewayAWSService.createApiKey(applicationData.name);
 
         const application: Partial<IApplication> = new ApplicationModel({
@@ -13,10 +15,16 @@ export default class ApplicationService {
             apiKeyId: apiKeyResponse.id,
             apiKeyValue: apiKeyResponse.value,
         });
+
+        if (applicationData.organization) {
+            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+            application.organization = organization;
+        }
+
         return application.save();
     }
 
-    static async updateApplication(id: string, applicationData: Partial<IApplication>, regenApiKey: boolean): Promise<IApplication> {
+    static async updateApplication(id: string, applicationData: Partial<UpdateApplicationsDto>, regenApiKey: boolean): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
 
         application.set(applicationData);
@@ -31,6 +39,11 @@ export default class ApplicationService {
             });
         } else if (applicationData.name) {
             await APIGatewayAWSService.updateApiKey(application.apiKeyId, applicationData.name);
+        }
+
+        if (applicationData.organization) {
+            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+            application.organization = organization;
         }
 
         return application.save();
@@ -50,20 +63,12 @@ export default class ApplicationService {
     }
 
     static async getPaginatedApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>>> {
-        const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationModel.paginate(query, paginationOptions);
+        const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationModel.paginate(query, { ...paginationOptions, populate: ['organization'] });
         return applications;
     }
 
     static async getApplicationById(id: string): Promise<IApplication> {
-        const application: IApplication = await ApplicationModel.findById(id.toString());
-        if (!application) {
-            throw new ApplicationNotFoundError();
-        }
-        return application;
-    }
-
-    static async getApplication(id: string): Promise<IApplication> {
-        const application: IApplication = await ApplicationModel.findById(id);
+        const application: IApplication = await ApplicationModel.findById(id.toString()).populate('organization');
         if (!application) {
             throw new ApplicationNotFoundError();
         }

@@ -1,8 +1,8 @@
 import { Context } from 'koa';
-import router, { Config, Router } from 'koa-joi-router';
+import router, { Router } from 'koa-joi-router';
 import logger from 'logger';
 import ApplicationService from 'services/application.service';
-import { IApplication } from 'models/application';
+import { CreateApplicationsDto, IApplication, UpdateApplicationsDto } from 'models/application';
 import mongoose from 'mongoose';
 import ApplicationSerializer from 'serializers/application.serializer';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
@@ -33,7 +33,9 @@ const createApplicationValidation: Record<string, any> = {
         loggedUser: Joi.any().optional(),
     },
     body: Joi.object({
-        name: Joi.string().required()
+        name: Joi.string().required(),
+        organization: Joi.string().optional(),
+        user: Joi.string().optional()
     }).oxor('user', 'organization')
 };
 
@@ -45,12 +47,12 @@ const updateApplicationValidation: Record<string, any> = {
     params: {
         id: Joi.string().required(),
     },
-    body: {
+    body: Joi.object({
         name: Joi.string().optional(),
+        organization: Joi.alternatives().try(Joi.allow(null), Joi.string()),
         user: Joi.string().optional(),
-        organization: Joi.string().optional(),
         regenApiKey: Joi.boolean().optional()
-    }
+    }).oxor('user', 'organization')
 };
 
 class ApplicationRouter {
@@ -95,10 +97,11 @@ class ApplicationRouter {
     }
 
     static async createApplication(ctx: Context): Promise<void> {
-        const newApplicationData: Partial<IApplication> = pick(
+        const newApplicationData: Partial<CreateApplicationsDto> = pick(
             ctx.request.body,
             [
                 'name',
+                'organization'
             ]
         );
 
@@ -109,10 +112,11 @@ class ApplicationRouter {
     static async updateApplication(ctx: Context): Promise<void> {
         const { id } = ctx.params;
 
-        const newApplicationData: Partial<IApplication> = pick(
+        const newApplicationData: Partial<UpdateApplicationsDto> = pick(
             ctx.request.body,
             [
                 'name',
+                'organization'
             ]
         );
 
