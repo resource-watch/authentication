@@ -48,7 +48,6 @@ const updateOrganizationValidation: Record<string, any> = {
     },
     body: {
         name: Joi.string().optional(),
-        regenApiKey: Joi.boolean().optional(),
         applications: Joi.array().items(Joi.string()).optional()
     }
 };

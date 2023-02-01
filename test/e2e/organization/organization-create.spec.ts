@@ -112,6 +112,9 @@ describe('Create organization tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
+            databaseApplication.organization.id.should.equal(response.body.data.id);
         });
     })
 
