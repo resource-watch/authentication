@@ -1,3 +1,5 @@
+import { IApplicationId } from "models/application";
+
 export interface IUser {
     id: string;
     _id?: string;
@@ -13,6 +15,7 @@ export interface IUser {
     updatedAt: Date;
     extraUserData: { apps: string[]; };
     userToken?: string;
+    applications?: IApplicationId[];
 }
 
 export interface OktaOAuthTokenPayload {
@@ -42,6 +45,7 @@ export interface OktaUserProfile {
     origin?: string;
     providerId?: string;
     photo?: string;
+    applications?: string[]
 }
 
 export interface OktaUser {
@@ -78,6 +82,7 @@ export interface OktaUpdateUserPayload {
     photo?: string;
     role?: string;
     apps?: string[];
+    applications?: IApplicationId[];
 }
 
 export interface OktaUpdateUserProtectedFieldsPayload {

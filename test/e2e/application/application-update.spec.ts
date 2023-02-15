@@ -282,7 +282,7 @@ describe('Update application tests', () => {
             response.body.data.should.have.property('type').and.equal('applications');
             response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
             response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name).and.equal('new application name');
             response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue).and.not.equal(application.apiKeyValue);
             response.body.data.attributes.should.have.property('organization').and.eql(null);
             response.body.data.attributes.should.have.property('createdAt');
