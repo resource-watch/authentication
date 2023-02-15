@@ -21,10 +21,13 @@ import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 import { sleep } from 'sleep';
 import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.error';
-import { DELETION_STATUS, DELETION_STATUS_DONE, DELETION_STATUS_PENDING, IDeletion } from 'models/deletion';
+import { DELETION_STATUS_DONE, DELETION_STATUS_PENDING, IDeletion } from 'models/deletion';
 import DeletionService from 'services/deletion.service';
 import GetUserResourcesService from 'services/get-user-resources.service';
 import DeleteUserResourcesService from "services/delete-user-resources.service";
+import { IApplication } from "models/application";
+import ApplicationService from "services/application.service";
+import { UserModelStub } from "models/user.model.stub";
 
 export class OktaProvider {
 
@@ -276,18 +279,38 @@ export class OktaProvider {
     }
 
     private static async performUpdateRequest(ctx: Context, id: string): Promise<void> {
-        const user: IUser = Utils.getUser(ctx);
+        const requestUser: IUser = Utils.getUser(ctx);
         const { body } = ctx.request;
+
+        if ('applications' in body) {
+            const applications: IApplication[] = await ApplicationService.getApplications({ _id: { $in: body.applications } })
+            applications.map((application: IApplication) => {
+                return application.clearAssociations();
+            })
+        }
 
         const updateData: OktaUpdateUserPayload = {
             ...body.name && { displayName: body.name },
             ...body.photo && { photo: body.photo },
-            ...user.role === 'ADMIN' && body.role && { role: body.role },
-            ...user.role === 'ADMIN' && body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps },
+            ...requestUser.role === 'ADMIN' && body.role && { role: body.role },
+            ...requestUser.role === 'ADMIN' && body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps },
+            ...('applications' in body) && { applications: body.applications },
         };
 
         try {
             const updatedUser: IUser = await OktaService.updateUser(id, updateData);
+            if ('applications' in updateData) {
+                await UserModelStub.clearAssociations(updatedUser.id);
+                // await ApplicationModel.removeLinksToUser(user);
+                if (updateData.applications !== null) {
+                    const applications: IApplication[] = await ApplicationService.getApplications({ _id: { $in: updateData.applications } })
+                    await Promise.all(applications.map(async (application: IApplication) => {
+                        await application.clearAssociations();
+                        return application.associateWithUser(updatedUser);
+                    }))
+                }
+            }
+
             ctx.body = UserSerializer.serialize(updatedUser);
         } catch (err) {
             if (err instanceof UserNotFoundError) {

@@ -458,6 +458,7 @@ export default class OktaService {
             providerId: user.profile.providerId,
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
+            applications: user.profile.applications || [],
             createdAt: new Date(user.created),
             updatedAt: new Date(user.lastUpdated)
         };

@@ -109,7 +109,7 @@ class OrganizationRouter {
     static async updateOrganization(ctx: Context): Promise<void> {
         const { id } = ctx.params;
 
-        const newOrganizationData: Partial<IOrganization> = pick(
+        const newOrganizationData: Partial<CreateOrganizationsDto> = pick(
             ctx.request.body,
             [
                 'name',

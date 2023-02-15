@@ -259,7 +259,7 @@ describe('Update organization tests', () => {
             response.body.data.should.have.property('type').and.equal('organizations');
             response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
             response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name).and.equal('new organization name');
             response.body.data.attributes.should.have.property('applications').and.eql([]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);

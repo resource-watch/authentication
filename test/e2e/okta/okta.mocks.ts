@@ -2,7 +2,7 @@ import nock from 'nock';
 import config from 'config';
 import { faker } from '@faker-js/faker';
 import { isEqual } from 'lodash';
-
+import mongoose from 'mongoose';
 import {
     JWTPayload,
     OktaCreateUserPayload,
@@ -30,7 +30,7 @@ export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser 
         'passwordChanged': null,
         'type': { 'id': faker.datatype.uuid() },
         'profile': {
-            legacyId: faker.datatype.uuid(),
+            legacyId: new mongoose.Types.ObjectId().toString(),
             login: email,
             email,
             role: 'USER',

@@ -1,4 +1,9 @@
-import ApplicationModel, { CreateApplicationsDto, IApplication, UpdateApplicationsDto } from 'models/application';
+import ApplicationModel, {
+    CreateApplicationsDto,
+    IApplication,
+    IApplicationId,
+    UpdateApplicationsDto
+} from 'models/application';
 import { FilterQuery, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import APIGatewayAWSService from "services/apigateway.aws.service";
@@ -17,24 +22,20 @@ export default class ApplicationService {
             apiKeyValue: apiKeyResponse.value,
         });
 
-        if (applicationData.organization) {
-            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
-            application.organization = organization;
+        if ('organization' in applicationData && applicationData.organization !== null) {
+            const currentOrganization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+            await application.associateWithOrganization(currentOrganization);
         }
 
-        const savedApplication: IApplication = await application.save();
-
-        if (applicationData.organization) {
-            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
-            organization.applications.push(savedApplication);
-            await organization.save()
-        }
-
-        return savedApplication;
+        return application.save();
     }
 
-    static async updateApplication(id: string, applicationData: Partial<UpdateApplicationsDto>, regenApiKey: boolean): Promise<IApplication> {
+    static async updateApplication(id: IApplicationId, applicationData: Partial<UpdateApplicationsDto>, regenApiKey: boolean): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
+
+        if ('organization' in applicationData || 'user' in applicationData) {
+            await application.clearAssociations();
+        }
 
         application.set(pick(applicationData, ['name']));
         application.updatedAt = new Date();
@@ -50,51 +51,27 @@ export default class ApplicationService {
             await APIGatewayAWSService.updateApiKey(application.apiKeyId, applicationData.name);
         }
 
-        if ('organization' in applicationData) {
-            if (application.organization) {
-                const currentOrganization: IOrganization = await OrganizationService.getOrganizationById(application.organization.id)
-                currentOrganization.applications = currentOrganization.applications.filter((orgApplication: IApplication) => {
-                    return orgApplication.id !== application.id;
-                });
-                await currentOrganization.save();
-            }
-
-            if (applicationData.organization !== null) {
-                const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
-                application.organization = organization;
-             } else {
-                application.organization = null;
-            }
-
+        if ('organization' in applicationData && applicationData.organization !== null) {
+            const currentOrganization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+            await application.associateWithOrganization(currentOrganization);
         }
 
-        const savedApplication: IApplication = await application.save();
-
-        if (applicationData.organization) {
-            const organization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
-            organization.applications.push(savedApplication);
-            await organization.save()
-        }
-
-        return savedApplication;
+        return application.save();
     }
 
     static async deleteApplication(id: string): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
 
+        const returnApplication:IApplication = ApplicationModel.hydrate(application.toObject())
+        returnApplication.organization = application.organization;
+
         await APIGatewayAWSService.deleteApiKey(application.apiKeyId);
 
-        if (application.organization) {
-            const organization: IOrganization = await OrganizationService.getOrganizationById(application.organization.id)
-            organization.applications = organization.applications.filter((orgApplication: IApplication) => {
-                return orgApplication.id !== application.id;
-            });
-            await organization.save();
-        }
+        await application.clearAssociations();
 
         await application.remove();
 
-        return application;
+        return returnApplication;
     }
 
     static async getApplications(query: FilterQuery<IApplication>): Promise<IApplication[]> {
@@ -109,7 +86,7 @@ export default class ApplicationService {
         return applications;
     }
 
-    static async getApplicationById(id: string): Promise<IApplication> {
+    static async getApplicationById(id: IApplicationId): Promise<IApplication> {
         const application: IApplication = await ApplicationModel.findById(id.toString()).populate('organization');
         if (!application) {
             throw new ApplicationNotFoundError();
