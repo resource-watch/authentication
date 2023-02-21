@@ -101,7 +101,8 @@ class ApplicationRouter {
             ctx.request.body,
             [
                 'name',
-                'organization'
+                'organization',
+                'user'
             ]
         );
 

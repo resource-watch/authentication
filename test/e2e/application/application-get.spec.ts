@@ -7,12 +7,13 @@ import { createApplication, createOrganization } from '../utils/helpers';
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
-import { mockValidJWT } from '../okta/okta.mocks';
+import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
-import OrganizationModel, { IOrganization } from "../../../src/models/organization";
-import OrganizationApplicationModel from "../../../src/models/organization-application";
-import OrganizationUserModel from "../../../src/models/organization-user";
-import ApplicationUserModel from "../../../src/models/application-user";
+import OrganizationModel, { IOrganization } from "models/organization";
+import OrganizationApplicationModel from "models/organization-application";
+import OrganizationUserModel from "models/organization-user";
+import ApplicationUserModel from "models/application-user";
+import { OktaUser } from "services/okta.interfaces";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -83,9 +84,8 @@ describe('Get applications tests', () => {
 
     describe('Pagination', () => {
         it('Get paginated applications should return a 200 and the paginated application data - Different pages', async () => {
-            const applications: HydratedDocument<IApplication>[] = [];
             for (let i: number = 0; i < 25; i++) {
-                applications.push(await createApplication());
+                await createApplication();
             }
 
             const token: string = mockValidJWT({ role: 'ADMIN' });
@@ -171,6 +171,45 @@ describe('Get applications tests', () => {
                 response.body.data[0].attributes.should.have.property('organization').and.eql({
                     id: testOrganization.id,
                     name: testOrganization.name,
+                });
+                response.body.data[0].attributes.should.have.property('createdAt');
+                new Date(response.body.data[0].attributes.createdAt).should.equalDate(testApplication.createdAt);
+                response.body.data[0].attributes.should.have.property('updatedAt');
+                new Date(response.body.data[0].attributes.updatedAt).should.equalDate(testApplication.updatedAt);
+            });
+        })
+
+        describe('with associated users', () => {
+            it('Get applications with associated users should be successful', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                mockGetUserById(user);
+                const testApplication: IApplication = await createApplication();
+
+                await new ApplicationUserModel({
+                    userId: user.profile.legacyId,
+                    application: testApplication._id.toString()
+                }).save();
+
+                const response: request.Response = await requester
+                    .get(`/api/v1/application`)
+                    .set('Authorization', `Bearer ${token}`);
+
+                response.status.should.equal(200);
+                response.body.should.have.property('data').and.be.an('array').and.length(1);
+                response.body.data[0].should.have.property('type').and.equal('applications');
+                response.body.data[0].should.have.property('id').and.equal(testApplication._id.toString());
+                response.body.data[0].should.have.property('attributes').and.be.an('object');
+                response.body.data[0].attributes.should.have.property('name').and.equal(testApplication.name);
+                response.body.data[0].attributes.should.have.property('user').and.eql({
+                    id: user.profile.legacyId,
+                    name: user.profile.displayName,
                 });
                 response.body.data[0].attributes.should.have.property('createdAt');
                 new Date(response.body.data[0].attributes.createdAt).should.equalDate(testApplication.createdAt);

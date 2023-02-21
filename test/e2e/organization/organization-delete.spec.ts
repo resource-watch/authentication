@@ -7,10 +7,10 @@ import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
-import ApplicationModel, { IApplication } from "../../../src/models/application";
-import OrganizationApplicationModel from "../../../src/models/organization-application";
-import OrganizationUserModel from "../../../src/models/organization-user";
-import ApplicationUserModel from "../../../src/models/application-user";
+import ApplicationModel, { IApplication } from "models/application";
+import OrganizationApplicationModel from "models/organization-application";
+import OrganizationUserModel from "models/organization-user";
+import ApplicationUserModel from "models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);

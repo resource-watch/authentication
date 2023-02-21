@@ -7,10 +7,10 @@ import { getTestAgent } from '../utils/test-server';
 import { createApplication, createOrganization } from '../utils/helpers';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
-import ApplicationModel, { IApplication } from "../../../src/models/application";
-import OrganizationApplicationModel from "../../../src/models/organization-application";
-import OrganizationUserModel from "../../../src/models/organization-user";
-import ApplicationUserModel from "../../../src/models/application-user";
+import ApplicationModel, { IApplication } from "models/application";
+import OrganizationApplicationModel from "models/organization-application";
+import OrganizationUserModel from "models/organization-user";
+import ApplicationUserModel from "models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);

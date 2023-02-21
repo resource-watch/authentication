@@ -1,16 +1,17 @@
 import nock from 'nock';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import ApplicationModel, { IApplication } from 'models/application';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
 import request from 'superagent';
-import { mockValidJWT } from '../okta/okta.mocks';
+import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.mocks';
 import { mockCreateAWSAPIGatewayAPIKey } from "./aws.mocks";
-import { createOrganization } from "../utils/helpers";
-import OrganizationModel, { IOrganization } from "../../../src/models/organization";
-import OrganizationApplicationModel, { IOrganizationApplication } from "../../../src/models/organization-application";
-import OrganizationUserModel from "../../../src/models/organization-user";
-import ApplicationUserModel from "../../../src/models/application-user";
+import { assertConnection, assertNoConnection, createApplication, createOrganization } from "../utils/helpers";
+import OrganizationModel, { IOrganization } from "models/organization";
+import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
+import OrganizationUserModel from "models/organization-user";
+import ApplicationUserModel from "models/application-user";
+import { OktaUser } from "services/okta.interfaces";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -94,16 +95,20 @@ describe('Create application tests', () => {
     });
 
     describe('with associated organization', () => {
-        it('Create an application with associated organization should be successful', async () => {
+        it('Create an application and setting an existing organization should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            const apiKey = mockCreateAWSAPIGatewayAPIKey();
-
             const testOrganization: IOrganization = await createOrganization();
 
-            const response: request.Response = await sendCreateApplicationRequest(token, {
-                name: "my application",
-                organization: testOrganization.id
-            });
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .post(`/api/v1/application`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    organization: testOrganization.id
+                });
+
             response.status.should.equal(200);
 
             const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
@@ -112,20 +117,158 @@ describe('Create application tests', () => {
             response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
             response.body.data.should.have.property('attributes').and.be.an('object');
             response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue);
             response.body.data.attributes.should.have.property('organization').and.eql({
                 id: testOrganization.id,
                 name: testOrganization.name,
             });
-            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
 
-            const databaseOrganizationApplications: IOrganizationApplication[] = await OrganizationApplicationModel.find({
-                organization: response.body.data.attributes.organization.id
-            }).populate('application');
-            databaseOrganizationApplications.map((organizationApplication: IOrganizationApplication) => organizationApplication.application.id).should.eql([response.body.data.id]);
+            await assertConnection({ organization: testOrganization, applicationId: response.body.data.id });
+        });
+
+        it('Create an application and associating it to an existing organization with links to other applications should be successful and not affect previous application links', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testOrganization: IOrganization = await createOrganization();
+
+            const preexistingApplication: IApplication = await createApplication();
+
+            await new OrganizationApplicationModel({
+                organization: testOrganization._id.toString(),
+                application: preexistingApplication._id.toString()
+            }).save();
+
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .post(`/api/v1/application`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    organization: testOrganization.id
+                });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue);
+            response.body.data.attributes.should.have.property('organization').and.eql(
+                {
+                    id: testOrganization.id,
+                    name: testOrganization.name,
+                }
+            );
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            await assertConnection({ organization: testOrganization, applicationId: response.body.data.id })
+            await assertConnection({ organization: testOrganization, application: preexistingApplication })
+        });
+    })
+
+    describe('with associated user', () => {
+        it('Create an application and setting an existing user should be successful', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            mockGetUserById(testUser, 2);
+
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .post(`/api/v1/application`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    user: testUser.profile.legacyId
+                });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue);
+            response.body.data.attributes.should.have.property('user').and.eql({
+                id: testUser.profile.legacyId,
+                name: testUser.profile.displayName,
+            });
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            await assertConnection({ user: testUser, applicationId: response.body.data.id });
+        });
+
+        it('Create an application and associating it to an existing user with links to other applications should be successful and not affect previous application links', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            mockGetUserById(testUser, 2);
+
+            const preexistingApplication: IApplication = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: testUser.profile.legacyId,
+                application: preexistingApplication._id.toString()
+            }).save();
+
+            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
+
+            const response: request.Response = await requester
+                .post(`/api/v1/application`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name',
+                    user: testUser.profile.legacyId
+                });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue);
+            response.body.data.attributes.should.have.property('user').and.eql(
+                {
+                    id: testUser.profile.legacyId,
+                    name: testUser.profile.displayName,
+                }
+            );
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            await assertConnection({ user: testUser, applicationId: response.body.data.id })
+            await assertConnection({ user: testUser, application: preexistingApplication })
         });
     })
 

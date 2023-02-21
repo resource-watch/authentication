@@ -29,6 +29,11 @@ export default class ApplicationService {
             await application.associateWithOrganization(currentOrganization);
         }
 
+        if ('user' in applicationData && applicationData.user !== null) {
+            const user: IUser = await OktaService.getUserById(applicationData.user as IUserLegacyId);
+            await application.associateWithUser(user);
+        }
+
         return application.save();
     }
 
