@@ -2,16 +2,16 @@ import nock from 'nock';
 import chai, { expect } from 'chai';
 import ApplicationModel, { IApplication } from 'models/application';
 import { getTestAgent } from '../utils/test-server';
-import { createApplication, createOrganization } from '../utils/helpers';
+import { assertNoConnection, createApplication, createOrganization } from '../utils/helpers';
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { mockDeleteAWSAPIGatewayAPIKey } from "./aws.mocks";
-import OrganizationModel, { IOrganization } from "../../../src/models/organization";
-import OrganizationApplicationModel, { IOrganizationApplication } from "../../../src/models/organization-application";
-import OrganizationUserModel, { OrganizationUser } from "../../../src/models/organization-user";
-import ApplicationUserModel from "../../../src/models/application-user";
+import OrganizationModel, { IOrganization } from "models/organization";
+import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
+import OrganizationUserModel from "models/organization-user";
+import ApplicationUserModel from "models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -139,8 +139,7 @@ describe('Delete application tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(testApplication.updatedAt);
 
-            const databaseOrganizationApplication: IOrganizationApplication[] = await OrganizationApplicationModel.findOne({ organization: testOrganization._id.toString() });
-            expect(databaseOrganizationApplication).to.equal(null);
+            await assertNoConnection({ organization: testOrganization, application: testApplication });
         });
     })
 

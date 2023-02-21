@@ -32,6 +32,7 @@ export interface IApplication extends Document<IApplicationId>, IApplicationMeth
 export type CreateApplicationsDto = {
     name: string;
     organization: string;
+    user: string;
 }
 
 export type UpdateApplicationsDto = CreateApplicationsDto;
