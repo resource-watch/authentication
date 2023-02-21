@@ -2,11 +2,15 @@ import config from 'config';
 import JWT from 'jsonwebtoken';
 import Sinon, { SinonSandbox } from 'sinon';
 import { faker } from "@faker-js/faker";
-import mongoose, { HydratedDocument } from 'mongoose';
-import { OktaUser, IUser } from 'services/okta.interfaces';
+import mongoose, { Document, HydratedDocument } from 'mongoose';
+import { OktaUser, IUser, IUserLegacyId, IUserId } from 'services/okta.interfaces';
 import { IDeletion } from 'models/deletion';
-import ApplicationModel, { IApplication } from "models/application";
-import OrganizationModel, { IOrganization } from "models/organization";
+import ApplicationModel, { IApplication, IApplicationId } from "models/application";
+import OrganizationModel, { IOrganization, IOrganizationId } from "models/organization";
+import OrganizationUserModel, { Role } from "../../../src/models/organization-user";
+import OrganizationApplicationModel from "../../../src/models/organization-application";
+import ApplicationUserModel from "../../../src/models/application-user";
+import { expect } from "chai";
 
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
@@ -68,7 +72,7 @@ export const assertOktaTokenInfo: (response: ChaiHttp.Response, user: OktaUser) 
     response.body.should.have.property('updatedAt');
 };
 
-export const createDeletion: (anotherData?: Partial<IDeletion>) => Partial<IDeletion> & { requestorUserId: string; userId: string; status: string } = (anotherData: Partial<IDeletion> = {}) => {
+export const createDeletion: (anotherData?: Partial<IDeletion>) => Partial<IDeletion> & { requestorUserId: IUserLegacyId; userId: IUserLegacyId; status: string } = (anotherData: Partial<IDeletion> = {}) => {
     const uuid: string = new mongoose.Types.ObjectId().toString();
 
     return {
@@ -94,3 +98,82 @@ export const createOrganization: (anotherData?: Partial<IOrganization>) => Promi
         ...anotherData
     }).save();
 };
+
+export type AssertConnectionArgs = {
+    organization?: IOrganization,
+    user?: OktaUser
+    application?: IApplication
+    organizationId?: IOrganizationId,
+    applicationId?: IApplicationId,
+    userId?: IUserLegacyId,
+    role?: Role,
+}
+
+export const assertNoConnection: (args: AssertConnectionArgs) => Promise<any[]> = async (args: AssertConnectionArgs) => {
+    const returnValue = await getConnection(args);
+    expect(returnValue).to.be.a('array').and.length(0);
+    return returnValue;
+};
+
+export const assertConnection: (args: AssertConnectionArgs) => Promise<any[]> = async (args: AssertConnectionArgs) => {
+    const returnValue = await getConnection(args);
+    expect(returnValue).to.be.a('array').and.length.gte(1);
+    return returnValue;
+};
+
+const getConnection: (args: AssertConnectionArgs) => Promise<any[]> = async (args: AssertConnectionArgs) => {
+    if (Object.keys(args).length > 3 || Object.keys(args).length === 0) {
+        throw new Error('Asserting Organization/Application/User connection require 1 or 2 arguments')
+    }
+
+    let applicationId: IApplicationId;
+    let organizationId: IOrganizationId;
+    let userId: IUserLegacyId;
+
+    if ('application' in args) {
+        applicationId = args.application ? args.application._id.toString() : null;
+    }
+    if ('applicationId' in args) {
+        applicationId = args.applicationId;
+    }
+
+    if ('organization' in args) {
+        organizationId = args.organization ? args.organization._id.toString() : null;
+    }
+    if ('organizationId' in args) {
+        organizationId = args.organizationId;
+    }
+
+    if ('user' in args) {
+        userId = args.user ? args.user.profile.legacyId : null;
+    }
+    if ('userId' in args) {
+        userId = args.userId;
+    }
+
+    let returnValue: any;
+
+    const query: Record<string, any> = {};
+    if (typeof organizationId !== "undefined") {
+        query.organization = organizationId;
+    }
+    if (typeof applicationId !== "undefined") {
+        query.application = applicationId;
+    }
+    if (typeof userId !== "undefined") {
+        query.userId = userId;
+    }
+
+    if (typeof organizationId !== "undefined" && typeof applicationId !== "undefined") {
+        returnValue = OrganizationApplicationModel.find(query);
+    } else if (typeof organizationId !== "undefined" && typeof userId !== "undefined") {
+        if ('role' in args) {
+            query.role = args.role;
+        }
+        returnValue = OrganizationUserModel.find(query);
+    } else if (typeof applicationId !== "undefined" && typeof userId !== "undefined") {
+        returnValue = ApplicationUserModel.find(query);
+    }
+
+    return returnValue;
+}

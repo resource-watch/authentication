@@ -1,20 +1,29 @@
 import { IUser } from 'services/okta.interfaces';
+import { IApplication } from "models/application";
 
 export default class UserSerializer {
 
-    static serializeElement(el: IUser): Record<string, any> {
+    static serializeElement(user: IUser): Record<string, any> {
         return {
-            id: el.id,
-            _id: el.id,
-            email: el.email,
-            name: el.name,
-            photo: el.photo,
-            createdAt: el.createdAt ? el.createdAt.toISOString() : null,
-            updatedAt: el.updatedAt ? el.updatedAt.toISOString() : null,
-            role: el.role,
-            provider: el.provider,
-            extraUserData: el.extraUserData,
-            applications: el.applications
+            id: user.id,
+            _id: user.id,
+            email: user.email,
+            name: user.name,
+            photo: user.photo,
+            createdAt: user.createdAt ? user.createdAt.toISOString() : null,
+            updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+            role: user.role,
+            provider: user.provider,
+            extraUserData: user.extraUserData,
+            organization: user.organization ? {
+                id: user.organization.organization._id.toString(),
+                name: user.organization.organization.name,
+                role: user.organization.role,
+            } : null,
+            applications: user.applications ? user.applications.map((application: IApplication) => ({
+                id: application._id.toString(),
+                name: application.name,
+            })) : [],
         };
     }
 

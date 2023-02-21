@@ -8,6 +8,9 @@ import { createApplication, createOrganization } from '../utils/helpers';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import OrganizationModel, { IOrganization } from "../../../src/models/organization";
+import OrganizationApplicationModel from "../../../src/models/organization-application";
+import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -111,13 +114,15 @@ describe('Get application by id tests', () => {
         it('Get application by id with associated organization should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testOrganization: IOrganization = await createOrganization();
+            const testApplication: IApplication = await createApplication();
 
-            const application: HydratedDocument<IApplication> = await createApplication({
-                organization: testOrganization.id
-            });
+            await new OrganizationApplicationModel({
+                application: testApplication,
+                organization: testOrganization
+            }).save();
 
             const response: request.Response = await requester
-                .get(`/api/v1/application/${application._id.toString()}`)
+                .get(`/api/v1/application/${testApplication._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -142,6 +147,9 @@ describe('Get application by id tests', () => {
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

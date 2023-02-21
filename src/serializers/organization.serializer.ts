@@ -1,12 +1,14 @@
 import { Serializer } from 'jsonapi-serializer';
-import organization, { IOrganization } from 'models/organization';
-import { IApplication } from 'models/application';
+import { IOrganization } from 'models/organization';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
+import { IApplication } from "models/application";
+import { IUser } from "services/okta.interfaces";
 
 const organizationSerializer: Serializer = new Serializer('organization', {
     attributes: [
         'name',
         'applications',
+        'users',
         'createdAt',
         'updatedAt',
     ],
@@ -14,10 +16,14 @@ const organizationSerializer: Serializer = new Serializer('organization', {
     keyForAttribute: 'camelCase',
     transform: ((organization: IOrganization): Record<string, any> => ({
         ...organization.toObject(),
-        applications: organization.applications.map((application: IApplication) => ({
+        applications: organization.applications ? organization.applications.map((application: IApplication) => ({
             id: application._id.toString(),
             name: application.name
-        }))
+        })) : [],
+        users: organization.users ? organization.users.map((user: IUser) => ({
+            id: user.id.toString(),
+            name: user.name
+        })) : []
     }))
 });
 

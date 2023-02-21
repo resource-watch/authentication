@@ -6,8 +6,11 @@ import { getTestAgent } from '../utils/test-server';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { mockCreateAWSAPIGatewayAPIKey } from "./aws.mocks";
-import { createApplication, createOrganization } from "../utils/helpers";
+import { createOrganization } from "../utils/helpers";
 import OrganizationModel, { IOrganization } from "../../../src/models/organization";
+import OrganizationApplicationModel, { IOrganizationApplication } from "../../../src/models/organization-application";
+import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -119,14 +122,19 @@ describe('Create application tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
 
-            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.attributes.organization.id).populate('applications');
-            databaseOrganization.applications.map((application:IApplication) => application.id).should.eql([response.body.data.id]);
+            const databaseOrganizationApplications: IOrganizationApplication[] = await OrganizationApplicationModel.find({
+                organization: response.body.data.attributes.organization.id
+            }).populate('application');
+            databaseOrganizationApplications.map((organizationApplication: IOrganizationApplication) => organizationApplication.application.id).should.eql([response.body.data.id]);
         });
     })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

@@ -1,8 +1,13 @@
-import { IApplicationId } from "models/application";
+import { Id } from "types";
+import { IApplication } from "models/application";
+import { IOrganizationUser } from "models/organization-user";
+
+export type IUserId = Id<IUser>;
+export type IUserLegacyId = Id<OktaUserProfile>;
 
 export interface IUser {
-    id: string;
-    _id?: string;
+    id: IUserLegacyId;
+    _id?: IUserLegacyId;
     name?: string;
     photo?: string;
     provider: string;
@@ -15,7 +20,8 @@ export interface IUser {
     updatedAt: Date;
     extraUserData: { apps: string[]; };
     userToken?: string;
-    applications?: IApplicationId[];
+    applications?: IApplication[];
+    organization?: IOrganizationUser;
 }
 
 export interface OktaOAuthTokenPayload {
@@ -23,7 +29,7 @@ export interface OktaOAuthTokenPayload {
 }
 
 export interface JWTPayload {
-    id: string;
+    id: IUserLegacyId;
     email: string;
     role: string;
     extraUserData: {
@@ -38,7 +44,7 @@ export interface OktaUserProfile {
     displayName: string;
     mobilePhone?: string;
     secondEmail?: string;
-    legacyId: string;
+    legacyId: IUserLegacyId;
     role: string;
     provider: string;
     apps: string[];
@@ -49,7 +55,7 @@ export interface OktaUserProfile {
 }
 
 export interface OktaUser {
-    id: string;
+    id: IUserId;
     status: string;
     created: string;
     activated: string;
@@ -74,7 +80,7 @@ export interface OktaCreateUserPayload {
     apps?: string[];
     photo?: string;
     providerId?: string;
-    legacyId?: string;
+    legacyId?: IUserLegacyId;
 }
 
 export interface OktaUpdateUserPayload {
@@ -82,11 +88,10 @@ export interface OktaUpdateUserPayload {
     photo?: string;
     role?: string;
     apps?: string[];
-    applications?: IApplicationId[];
 }
 
 export interface OktaUpdateUserProtectedFieldsPayload {
-    legacyId?: string;
+    legacyId?: IUserLegacyId;
     email?: string;
     displayName?: string;
     provider?: string;

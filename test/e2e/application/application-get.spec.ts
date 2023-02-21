@@ -10,6 +10,9 @@ import { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
 import OrganizationModel, { IOrganization } from "../../../src/models/organization";
+import OrganizationApplicationModel from "../../../src/models/organization-application";
+import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -148,10 +151,12 @@ describe('Get applications tests', () => {
             it('Get applications with associated organizations should be successful', async () => {
                 const token: string = mockValidJWT({ role: 'ADMIN' });
                 const testOrganization: IOrganization = await createOrganization();
+                const testApplication: IApplication = await createApplication();
 
-                const application: HydratedDocument<IApplication> = await createApplication({
-                    organization: testOrganization.id
-                });
+                await new OrganizationApplicationModel({
+                    organization: testOrganization._id.toString(),
+                    application: testApplication._id.toString()
+                }).save();
 
                 const response: request.Response = await requester
                     .get(`/api/v1/application`)
@@ -160,17 +165,17 @@ describe('Get applications tests', () => {
                 response.status.should.equal(200);
                 response.body.should.have.property('data').and.be.an('array').and.length(1);
                 response.body.data[0].should.have.property('type').and.equal('applications');
-                response.body.data[0].should.have.property('id').and.equal(application._id.toString());
+                response.body.data[0].should.have.property('id').and.equal(testApplication._id.toString());
                 response.body.data[0].should.have.property('attributes').and.be.an('object');
-                response.body.data[0].attributes.should.have.property('name').and.equal(application.name);
+                response.body.data[0].attributes.should.have.property('name').and.equal(testApplication.name);
                 response.body.data[0].attributes.should.have.property('organization').and.eql({
                     id: testOrganization.id,
                     name: testOrganization.name,
                 });
                 response.body.data[0].attributes.should.have.property('createdAt');
-                new Date(response.body.data[0].attributes.createdAt).should.equalDate(application.createdAt);
+                new Date(response.body.data[0].attributes.createdAt).should.equalDate(testApplication.createdAt);
                 response.body.data[0].attributes.should.have.property('updatedAt');
-                new Date(response.body.data[0].attributes.updatedAt).should.equalDate(application.updatedAt);
+                new Date(response.body.data[0].attributes.updatedAt).should.equalDate(testApplication.updatedAt);
             });
         })
     });
@@ -178,6 +183,9 @@ describe('Get applications tests', () => {
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

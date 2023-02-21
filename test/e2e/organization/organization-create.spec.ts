@@ -5,8 +5,11 @@ import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
-import { createApplication } from "../utils/helpers";
+import { assertConnection, createApplication } from "../utils/helpers";
 import ApplicationModel, { IApplication } from "models/application";
+import OrganizationApplicationModel from "../../../src/models/organization-application";
+import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -113,14 +116,16 @@ describe('Create organization tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
 
-            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
-            databaseApplication.organization.id.should.equal(response.body.data.id);
+            await assertConnection({application: testApplication, organization: databaseOrganization});
         });
     })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

@@ -3,11 +3,14 @@ import chai, { expect } from 'chai';
 import OrganizationModel, { IOrganization } from 'models/organization';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
-import { createApplication, createOrganization } from '../utils/helpers';
+import { assertConnection, assertNoConnection, createApplication, createOrganization } from '../utils/helpers';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import mongoose, { HydratedDocument } from 'mongoose';
 import ApplicationModel, { IApplication } from "../../../src/models/application";
+import OrganizationApplicationModel from "../../../src/models/organization-application";
+import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -161,12 +164,8 @@ describe('Update organization tests', () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
 
-            const organization: HydratedDocument<IOrganization> = await createOrganization({
-                applications: [testApplication.id]
-            });
-
-            testApplication.organization = organization;
-            await testApplication.save();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationApplicationModel({ application: testApplication, organization }).save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -192,18 +191,13 @@ describe('Update organization tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
 
-            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
-            databaseApplication.organization.id.should.equal(response.body.data.id);
+            await assertConnection({ application: testApplication, organization });
         });
 
         it('Update an organization and setting application should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
-
             const organization: HydratedDocument<IOrganization> = await createOrganization();
-
-            testApplication.organization = organization;
-            await testApplication.save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -230,19 +224,15 @@ describe('Update organization tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
 
-            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
-            databaseApplication.organization.id.should.equal(response.body.data.id);
+            await assertConnection({ application: testApplication, organization });
         });
 
         it('Update an organization and removing applications should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
 
-            const organization: HydratedDocument<IOrganization> = await createOrganization({
-                applications: testApplication.id
-            });
-            testApplication.organization = organization;
-            await testApplication.save();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationApplicationModel({ application: testApplication, organization }).save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -266,8 +256,7 @@ describe('Update organization tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
 
-            const databaseApplication: IApplication = await ApplicationModel.findById(testApplication.id).populate('organization');
-            expect(databaseApplication.organization).to.equal(null);
+            await assertNoConnection({ application: testApplication, organization });
         });
 
         it('Update an organization and overwriting existing applications should be successful', async () => {
@@ -275,12 +264,8 @@ describe('Update organization tests', () => {
             const testApplicationOne: IApplication = await createApplication();
             const testApplicationTwo: IApplication = await createApplication();
 
-            const organization: HydratedDocument<IOrganization> = await createOrganization({
-                applications: testApplicationOne.id
-            });
-
-            testApplicationOne.organization = organization;
-            await testApplicationOne.save();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationApplicationModel({ application: testApplicationOne, organization }).save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -313,17 +298,17 @@ describe('Update organization tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
 
-            const databaseApplicationOne: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[0].id).populate('organization');
-            databaseApplicationOne.organization.id.should.equal(response.body.data.id);
-
-            const databaseApplicationTwo: IApplication = await ApplicationModel.findById(response.body.data.attributes.applications[1].id).populate('organization');
-            databaseApplicationTwo.organization.id.should.equal(response.body.data.id);
+            await assertConnection({ application: testApplicationOne, organization });
+            await assertConnection({ application: testApplicationTwo, organization });
         });
     })
 
     afterEach(async () => {
-        await OrganizationModel.deleteMany({}).exec();
         await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

@@ -1,6 +1,7 @@
 import DeletionModel, { IDeletion } from 'models/deletion';
 import { FilterQuery, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import DeletionNotFoundError from 'errors/deletionNotFound.error';
+import { IUserLegacyId } from "services/okta.interfaces";
 
 export default class DeletionService {
     static async createDeletion(deletionData: Partial<IDeletion>): Promise<IDeletion> {
@@ -38,7 +39,7 @@ export default class DeletionService {
         return deletion;
     }
 
-    static async getDeletionByUserId(userId: string): Promise<IDeletion> {
+    static async getDeletionByUserId(userId: IUserLegacyId): Promise<IDeletion> {
         const deletion: IDeletion = await DeletionModel.findOne({ userId });
         if (!deletion) {
             throw new DeletionNotFoundError();

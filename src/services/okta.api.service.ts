@@ -4,6 +4,7 @@ import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
 
 import {
+    IUserId,
     OktaCreateUserPayload,
     OktaOAuthTokenPayload,
     OktaSuccessfulLoginResponse,
@@ -65,7 +66,7 @@ export default class OktaApiService {
         return data;
     }
 
-    static async getOktaUserById(oktaId: string): Promise<OktaUser> {
+    static async getOktaUserById(oktaId: IUserId): Promise<OktaUser> {
         const { data }: { data: OktaUser } = await axios.get(
             `${config.get('okta.url')}/api/v1/users/${oktaId}`,
             { headers: OktaApiService.oktaRequestHeaders() }
@@ -82,7 +83,7 @@ export default class OktaApiService {
         );
     }
 
-    static async postUserActivate(oktaId: string, sendEmail: boolean = true): Promise<void> {
+    static async postUserActivate(oktaId: IUserId, sendEmail: boolean = true): Promise<void> {
         return axios.post(
             `${config.get('okta.url')}/api/v1/users/${oktaId}/lifecycle/activate?sendEmail=${sendEmail}`,
             {},
@@ -150,7 +151,7 @@ export default class OktaApiService {
     }
 
     static async postUserByOktaId(
-        oktaId: string,
+        oktaId: IUserId,
         payload: OktaUpdateUserPayload | OktaUpdateUserProtectedFieldsPayload
     ): Promise<OktaUser> {
         const { data }: { data: OktaUser } = await axios.post(
@@ -162,7 +163,7 @@ export default class OktaApiService {
         return data;
     }
 
-    static async postUserProtectedFieldsByOktaId(oktaId: string, payload: OktaUpdateUserProtectedFieldsPayload): Promise<OktaUser> {
+    static async postUserProtectedFieldsByOktaId(oktaId: IUserId, payload: OktaUpdateUserProtectedFieldsPayload): Promise<OktaUser> {
         const postRequestBody: Record<string, any> = { profile: payload };
 
         if (payload.password) {
@@ -179,7 +180,7 @@ export default class OktaApiService {
         return data;
     }
 
-    static async deleteUserByOktaId(oktaId: string): Promise<void> {
+    static async deleteUserByOktaId(oktaId: IUserId): Promise<void> {
         logger.info(`[OktaApiService] Deleting user with Okta ID ${oktaId}`);
         return axios.delete(
             `${config.get('okta.url')}/api/v1/users/${oktaId}`,
@@ -187,7 +188,7 @@ export default class OktaApiService {
         );
     }
 
-    static async deleteUserSession(oktaId: string): Promise<void> {
+    static async deleteUserSession(oktaId: IUserId): Promise<void> {
         logger.info(`[OktaApiService] Deleting user sessions with Okta ID ${oktaId}`);
         return axios.delete(
             `${config.get('okta.url')}/api/v1/users/${oktaId}/sessions`,

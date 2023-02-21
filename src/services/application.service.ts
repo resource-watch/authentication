@@ -11,6 +11,8 @@ import { CreateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
 import OrganizationService from "services/organization.service";
 import { IOrganization } from "models/organization";
 import { pick } from "lodash";
+import { IUser, IUserLegacyId } from "services/okta.interfaces";
+import OktaService from "services/okta.service";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<CreateApplicationsDto>): Promise<IApplication> {
@@ -56,14 +58,18 @@ export default class ApplicationService {
             await application.associateWithOrganization(currentOrganization);
         }
 
+        if ('user' in applicationData && applicationData.user !== null) {
+            const user: IUser = await OktaService.getUserById(applicationData.user as IUserLegacyId);
+            await application.associateWithUser(user);
+        }
+
         return application.save();
     }
 
     static async deleteApplication(id: string): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
 
-        const returnApplication:IApplication = ApplicationModel.hydrate(application.toObject())
-        returnApplication.organization = application.organization;
+        const returnApplication: IApplication = await ApplicationModel.hydrate(application.toObject()).hydrate();
 
         await APIGatewayAWSService.deleteApiKey(application.apiKeyId);
 
@@ -81,13 +87,18 @@ export default class ApplicationService {
     static async getPaginatedApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>>> {
         const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationModel.paginate(query, {
             ...paginationOptions,
-            populate: ['organization']
+            populate: ['organization', 'user']
         });
+
+        applications.docs = await Promise.all(applications.docs.map((application: IApplication) => {
+            return application.hydrate();
+        }));
+
         return applications;
     }
 
     static async getApplicationById(id: IApplicationId): Promise<IApplication> {
-        const application: IApplication = await ApplicationModel.findById(id.toString()).populate('organization');
+        const application: IApplication = await ApplicationModel.findById(id.toString());
         if (!application) {
             throw new ApplicationNotFoundError();
         }

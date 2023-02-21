@@ -13,7 +13,7 @@ export default class OrganizationService {
         ));
 
         if ('applications' in organizationData && Array.isArray(organizationData.applications) && organizationData.applications.length > 0) {
-            await organization.associateWithApplications(organizationData.applications)
+            await organization.associateWithApplicationIds(organizationData.applications)
         }
 
         return organization.save();
@@ -22,16 +22,23 @@ export default class OrganizationService {
     static async updateOrganization(id: IOrganizationId, organizationData: Partial<CreateOrganizationsDto>): Promise<IOrganization> {
         const organization: IOrganization = await OrganizationService.getOrganizationById(id);
 
-        if ('applications' in organizationData || 'user' in organizationData) {
-            await organization.clearAssociations();
+        if ('applications' in organizationData) {
+            await organization.clearApplicationAssociations();
+        }
+        if ('users' in organizationData) {
+            await organization.clearUserAssociations();
         }
 
         organization.set(pick(organizationData, ['name']));
         organization.updatedAt = new Date();
 
         if ('applications' in organizationData && Array.isArray(organizationData.applications) && organizationData.applications.length > 0) {
-            await organization.associateWithApplications(organizationData.applications)
+            await organization.associateWithApplicationIds(organizationData.applications)
         }
+
+        // if ('users' in organizationData && Array.isArray(organizationData.users) && organizationData.users.length > 0) {
+        //     await organization.associateWithUsers(organizationData.users)
+        // }
 
         return organization.save();
     }
@@ -39,8 +46,7 @@ export default class OrganizationService {
     static async deleteOrganization(id: IOrganizationId): Promise<IOrganization> {
         const organization: IOrganization = await OrganizationService.getOrganizationById(id);
 
-        const returnOrganization: IOrganization = OrganizationModel.hydrate(organization.toObject())
-        returnOrganization.applications = organization.applications;
+        const returnOrganization: IOrganization = await OrganizationModel.hydrate(organization.toObject()).hydrate();
 
         await organization.clearAssociations();
 
@@ -50,11 +56,20 @@ export default class OrganizationService {
     }
 
     static async getOrganizations(query: FilterQuery<IOrganization>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IOrganization, unknown, PaginateOptions>>> {
-        return OrganizationModel.paginate(query, { ...paginationOptions, populate: ['applications'] });
+        const organizations: PaginateResult<PaginateDocument<IOrganization, unknown, PaginateOptions>> = await OrganizationModel.paginate(query, {
+            ...paginationOptions,
+            populate: ['applications', 'users']
+        });
+
+        organizations.docs = await Promise.all(organizations.docs.map((organization: IOrganization) => {
+            return organization.hydrate();
+        }));
+
+        return organizations;
     }
 
     static async getOrganizationById(id: IOrganizationId): Promise<IOrganization> {
-        const organization: IOrganization = await OrganizationModel.findById(id.toString()).populate('applications');
+        const organization: IOrganization = await OrganizationModel.findById(id.toString());
         if (!organization) {
             throw new OrganizationNotFoundError();
         }

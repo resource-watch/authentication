@@ -6,6 +6,7 @@ const applicationSerializer: Serializer = new Serializer('application', {
     attributes: [
         'name',
         'organization',
+        'user',
         'apiKeyValue',
         'createdAt',
         'updatedAt',
@@ -17,6 +18,10 @@ const applicationSerializer: Serializer = new Serializer('application', {
         organization: application.organization ? {
             id: application.organization._id.toString(),
             name: application.organization.name
+        } : null,
+        user: application.user ? {
+            id: application.user._id.toString(),
+            name: application.user.name
         } : null
     }))
 });

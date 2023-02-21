@@ -1,8 +1,6 @@
-import { IUser } from "services/okta.interfaces";
-import OktaService from "services/okta.service";
-import ApplicationModel, { IApplication, IApplicationId } from "models/application";
-import UserNotFoundError from "errors/userNotFound.error";
+import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OrganizationUserModel from "models/organization-user";
+import ApplicationUserModel, { IApplicationUser } from "models/application-user";
 
 /**
  * This is not a real model.
@@ -12,52 +10,46 @@ import OrganizationUserModel from "models/organization-user";
  *
  */
 export class UserModelStub {
-    static async clearAssociations(userId: string): Promise<IUser> {
-        let user: IUser;
-        try {
-            user = await OktaService.getUserById(userId)
-        } catch (error) {
-            if (error instanceof UserNotFoundError) {
-                return user;
-            } else {
-                throw error
-            }
-        }
-
-        if (user.applications) {
-            await Promise.all(user.applications.map(async (applicationId: IApplicationId) => {
-                    const application: IApplication = await ApplicationModel.findById(applicationId);
-                    return application.clearAssociations();
-                })
-            );
-            await ApplicationModel.removeLinksToUser(user);
-        }
-
-        await OrganizationUserModel.deleteMany({ user: user.id });
-
-        return OktaService.updateUser(userId, { applications: [] });
+    static async clearAssociations(userId: IUserLegacyId): Promise<void> {
+        await ApplicationUserModel.deleteMany({ userId: userId })
+        await OrganizationUserModel.deleteMany({ userId: userId })
+    }
+    static async clearApplicationAssociations(userId: IUserLegacyId): Promise<void> {
+        await ApplicationUserModel.deleteMany({ userId: userId })
+    }
+    static async clearOrganizationAssociations(userId: IUserLegacyId): Promise<void> {
+        await OrganizationUserModel.deleteMany({ userId: userId })
     }
 
-    static async removeApplicationLinkForUser(userId: string, applicationId?: IApplicationId): Promise<IUser> {
-        let user: IUser;
-        try {
-            user = await OktaService.getUserById(userId);
-        } catch (error) {
-            if (error instanceof UserNotFoundError) {
-                return user;
-            } else {
-                throw error
-            }
-        }
+    static async hydrate(user: IUser): Promise<IUser> {
+        const applicationUsers: IApplicationUser[] = await ApplicationUserModel.find({ userId: user.id }).populate('application');
+        user.applications = applicationUsers ? applicationUsers.map((applicationUser: IApplicationUser) => applicationUser.application) : null;
 
-        if (!applicationId) {
-            return OktaService.updateUser(userId, { applications: [] });
-        } else {
-            return OktaService.updateUser(userId, {
-                applications: user.applications.filter((userApplicationId: IApplicationId) => {
-                    return userApplicationId !== applicationId;
-                })
-            });
-        }
+        user.organization = await OrganizationUserModel.findOne({ userId: user.id }).populate('organization');
+
+        return user;
     }
+
+    // static async removeApplicationLinkForUser(userId: string, applicationId?: IApplicationId): Promise<IUser> {
+    //     let user: IUser;
+    //     try {
+    //         user = await OktaService.getUserById(userId);
+    //     } catch (error) {
+    //         if (error instanceof UserNotFoundError) {
+    //             return user;
+    //         } else {
+    //             throw error
+    //         }
+    //     }
+    //
+    //     if (!applicationId) {
+    //         return OktaService.updateUser(userId, { applications: [] });
+    //     } else {
+    //         return OktaService.updateUser(userId, {
+    //             applications: user.applications.filter((userApplicationId: IApplicationId) => {
+    //                 return userApplicationId !== applicationId;
+    //             })
+    //         });
+    //     }
+    // }
 }

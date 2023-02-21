@@ -8,6 +8,9 @@ import { createApplication, createOrganization } from '../utils/helpers';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import ApplicationModel, { IApplication } from "../../../src/models/application";
+import OrganizationApplicationModel from "../../../src/models/organization-application";
+import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -112,9 +115,8 @@ describe('Get organization by id tests', () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
 
-            const organization: HydratedDocument<IOrganization> = await createOrganization({
-                applications:[testApplication.id]
-            });
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationApplicationModel({ organization, application: testApplication }).save()
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization/${organization._id.toString()}`)
@@ -140,8 +142,11 @@ describe('Get organization by id tests', () => {
     })
 
     afterEach(async () => {
-        await OrganizationModel.deleteMany({}).exec();
         await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

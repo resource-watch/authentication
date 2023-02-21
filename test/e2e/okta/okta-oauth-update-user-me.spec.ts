@@ -45,7 +45,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             extraUserData: { apps: user.profile.apps },
         });
 
-        mockGetUserById(user);
+        mockGetUserById(user, 2);
         mockOktaUpdateUser(user, {});
 
         const response: request.Response = await requester
@@ -71,7 +71,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             extraUserData: { apps: user.profile.apps },
         });
 
-        mockGetUserById(user);
+        mockGetUserById(user, 2);
         mockOktaUpdateUser(user, {
             displayName: 'changed name',
             photo: 'http://www.changed-photo.com',
@@ -119,7 +119,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             extraUserData: { apps: user.profile.apps },
         });
 
-        mockGetUserById(user);
+        mockGetUserById(user, 2);
         mockOktaUpdateUser(user, {
             displayName: 'changed name',
             photo: 'http://www.changed-photo.com',
@@ -169,7 +169,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             extraUserData: { apps: user.profile.apps },
         }, false);
 
-        mockGetUserById(user);
+        mockGetUserById(user, 2);
         mockOktaUpdateUser(user, { displayName: 'changed name' });
 
         // Assert value does not exist in cache before
