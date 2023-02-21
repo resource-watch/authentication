@@ -3,13 +3,16 @@ import chai from 'chai';
 import config from 'config';
 import OrganizationModel, { IOrganization } from 'models/organization';
 import { getTestAgent } from '../utils/test-server';
-import { createApplication, createOrganization } from '../utils/helpers';
+import { assertConnection, createApplication, createOrganization } from '../utils/helpers';
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
 import ApplicationModel, { IApplication } from "../../../src/models/application";
+import OrganizationApplicationModel from "../../../src/models/organization-application";
+import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -71,7 +74,7 @@ describe('Get organizations tests', () => {
         response.body.data[0].should.have.property('id').and.equal(organization._id.toString());
         response.body.data[0].should.have.property('attributes').and.be.an('object');
         response.body.data[0].attributes.should.have.property('name').and.equal(organization.name);
-        response.body.data[0].attributes.should.have.property('applications').and.eql(organization.applications);
+        response.body.data[0].attributes.should.have.property('applications').and.eql([]);
         response.body.data[0].attributes.should.have.property('createdAt');
         new Date(response.body.data[0].attributes.createdAt).should.equalDate(organization.createdAt);
         response.body.data[0].attributes.should.have.property('updatedAt');
@@ -149,10 +152,12 @@ describe('Get organizations tests', () => {
         it('Get organizations with associated applications should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
+            const testOrganization: IOrganization = await createOrganization();
 
-            const organization: HydratedDocument<IOrganization> = await createOrganization({
-                applications:[testApplication.id]
-            });
+            await new OrganizationApplicationModel({
+                organization: testOrganization,
+                application: testApplication
+            }).save();
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization`)
@@ -161,23 +166,28 @@ describe('Get organizations tests', () => {
             response.status.should.equal(200);
             response.body.should.have.property('data').and.be.an('array').and.length(1);
             response.body.data[0].should.have.property('type').and.equal('organizations');
-            response.body.data[0].should.have.property('id').and.equal(organization._id.toString());
+            response.body.data[0].should.have.property('id').and.equal(testOrganization._id.toString());
             response.body.data[0].should.have.property('attributes').and.be.an('object');
-            response.body.data[0].attributes.should.have.property('name').and.equal(organization.name);
+            response.body.data[0].attributes.should.have.property('name').and.equal(testOrganization.name);
             response.body.data[0].attributes.should.have.property('applications').and.eql([{
                 id: testApplication.id,
                 name: testApplication.name,
             }]);
             response.body.data[0].attributes.should.have.property('createdAt');
-            new Date(response.body.data[0].attributes.createdAt).should.equalDate(organization.createdAt);
+            new Date(response.body.data[0].attributes.createdAt).should.equalDate(testOrganization.createdAt);
             response.body.data[0].attributes.should.have.property('updatedAt');
-            new Date(response.body.data[0].attributes.updatedAt).should.equalDate(organization.updatedAt);
+            new Date(response.body.data[0].attributes.updatedAt).should.equalDate(testOrganization.updatedAt);
+
+            await assertConnection({ organization: testOrganization, application: testApplication });
         });
     })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

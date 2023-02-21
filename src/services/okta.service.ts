@@ -1,9 +1,8 @@
 import config from 'config';
 import logger from 'logger';
 import { difference, isEqual } from 'lodash';
-
 import {
-    IUser,
+    IUser, IUserId, IUserLegacyId,
     JWTPayload,
     OktaCreateUserPayload,
     OktaOAuthProvider,
@@ -125,7 +124,7 @@ export default class OktaService {
         };
     }
 
-    static async getUserById(id: string): Promise<IUser> {
+    static async getUserById(id: IUserLegacyId): Promise<IUser> {
         return OktaService.convertOktaUserToIUser(await OktaService.getOktaUserById(id));
     }
 
@@ -158,12 +157,12 @@ export default class OktaService {
     /**
      * @deprecated This is a performance nightmare as it needs to load all of Okta's DB
      */
-    static async getIdsByRole(role: string): Promise<string[]> {
+    static async getIdsByRole(role: string): Promise<IUserLegacyId[]> {
         if (!['SUPERADMIN', 'ADMIN', 'MANAGER', 'USER'].includes(role)) {
             throw new UnprocessableEntityError(`Invalid role ${role} provided`);
         }
 
-        const userIds: string[] = [];
+        const userIds: IUserLegacyId[] = [];
         let shouldFetchMore: boolean = true;
         let pageAfterCursor: string;
 
@@ -263,7 +262,7 @@ export default class OktaService {
         return user;
     }
 
-    static async updateApplicationsForUser(id: string, newApps: string[]): Promise<IUser> {
+    static async updateApplicationsForUser(id: IUserLegacyId, newApps: string[]): Promise<IUser> {
         logger.info('[OktaService] Searching user with id ', id, newApps);
         let oktaUser: OktaUser = await OktaService.getOktaUserById(id);
 
@@ -274,7 +273,7 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(oktaUser);
     }
 
-    static async getOktaUserById(id: string): Promise<OktaUser> {
+    static async getOktaUserById(id: IUserLegacyId): Promise<OktaUser> {
         const [user] = await OktaService.searchOktaUsers({ limit: 1, id });
         if (!user) {
             throw new UserNotFoundError();
@@ -315,28 +314,28 @@ export default class OktaService {
         return OktaService.convertOktaUserToIUser(newUser);
     }
 
-    static async updateUser(id: string, payload: OktaUpdateUserPayload): Promise<IUser> {
+    static async updateUser(id: IUserLegacyId, payload: OktaUpdateUserPayload): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
         const updatedUser: OktaUser = await OktaApiService.postUserByOktaId(user.id, payload);
         await CacheService.invalidate(user);
         return OktaService.convertOktaUserToIUser(updatedUser);
     }
 
-    static async updateUserProtectedFields(oktaId: string, payload: OktaUpdateUserProtectedFieldsPayload): Promise<OktaUser> {
+    static async updateUserProtectedFields(oktaId: IUserId, payload: OktaUpdateUserProtectedFieldsPayload): Promise<OktaUser> {
         logger.debug(`[OktaService - updateUserProtectedFields] Updating user protected fields for oktaId ${oktaId}`);
         const user: OktaUser = await OktaApiService.postUserByOktaId(oktaId, payload);
         await CacheService.invalidate(user);
         return user;
     }
 
-    static async deleteUser(id: string): Promise<IUser> {
+    static async deleteUser(id: IUserLegacyId): Promise<IUser> {
         const user: OktaUser = await OktaService.getOktaUserById(id);
         await OktaService.deleteUserByOktaId(user.id);
         await CacheService.invalidate(user);
         return OktaService.convertOktaUserToIUser(user);
     }
 
-    static async deleteUserByOktaId(id: string): Promise<void> {
+    static async deleteUserByOktaId(id: IUserId): Promise<void> {
         await OktaApiService.deleteUserByOktaId(id);
         try {
             await OktaApiService.getOktaUserById(id);
@@ -458,7 +457,6 @@ export default class OktaService {
             providerId: user.profile.providerId,
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
-            applications: user.profile.applications || [],
             createdAt: new Date(user.created),
             updatedAt: new Date(user.lastUpdated)
         };

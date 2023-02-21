@@ -15,7 +15,7 @@ import {
     OktaUpdateUserPayload,
     OktaUser,
     PaginationStrategyOption,
-    IUser
+    IUser, IUserLegacyId
 } from 'services/okta.interfaces';
 import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
@@ -27,6 +27,11 @@ import GetUserResourcesService from 'services/get-user-resources.service';
 import DeleteUserResourcesService from "services/delete-user-resources.service";
 import { IApplication } from "models/application";
 import ApplicationService from "services/application.service";
+import { IOrganization, IOrganizationId } from "models/organization";
+import OrganizationService from "services/organization.service";
+import ApplicationUserModel from "models/application-user";
+import OrganizationApplicationModel from "models/organization-application";
+import OrganizationUserModel from "models/organization-user";
 import { UserModelStub } from "models/user.model.stub";
 
 export class OktaProvider {
@@ -76,7 +81,7 @@ export class OktaProvider {
 
             if (ctx.request.type === 'application/json') {
                 ctx.status = 200;
-                ctx.body = UserSerializer.serialize(user);
+                ctx.body = await UserSerializer.serialize(user);
                 logger.info('[OktaProvider] - Generating token');
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
@@ -169,7 +174,7 @@ export class OktaProvider {
                     data,
                     cursor
                 } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
-                ctx.body = UserSerializer.serialize(data);
+                ctx.body = await UserSerializer.serialize(data);
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
@@ -183,7 +188,7 @@ export class OktaProvider {
 
             default: {
                 const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
-                ctx.body = UserSerializer.serialize(data);
+                ctx.body = await UserSerializer.serialize(data);
                 const nPage: number = page;
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -274,11 +279,11 @@ export class OktaProvider {
      */
     static async getIdsByRole(ctx: Context): Promise<void> {
         logger.info(`[OktaProvider] - Get ids by role: ${ctx.params.role}`);
-        const data: string[] = await OktaService.getIdsByRole(ctx.params.role);
+        const data: IUserLegacyId[] = await OktaService.getIdsByRole(ctx.params.role);
         ctx.body = { data };
     }
 
-    private static async performUpdateRequest(ctx: Context, id: string): Promise<void> {
+    private static async performUpdateRequest(ctx: Context, id: IUserLegacyId): Promise<void> {
         const requestUser: IUser = Utils.getUser(ctx);
         const { body } = ctx.request;
 
@@ -293,17 +298,16 @@ export class OktaProvider {
             ...body.name && { displayName: body.name },
             ...body.photo && { photo: body.photo },
             ...requestUser.role === 'ADMIN' && body.role && { role: body.role },
-            ...requestUser.role === 'ADMIN' && body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps },
-            ...('applications' in body) && { applications: body.applications },
+            ...requestUser.role === 'ADMIN' && body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps }
         };
 
         try {
-            const updatedUser: IUser = await OktaService.updateUser(id, updateData);
-            if ('applications' in updateData) {
-                await UserModelStub.clearAssociations(updatedUser.id);
-                // await ApplicationModel.removeLinksToUser(user);
-                if (updateData.applications !== null) {
-                    const applications: IApplication[] = await ApplicationService.getApplications({ _id: { $in: updateData.applications } })
+            let updatedUser: IUser = await OktaService.getUserById(id);
+            if ('applications' in body) {
+                await ApplicationUserModel.deleteMany({ user: updatedUser.id });
+                await OrganizationApplicationModel.deleteMany({ user: updatedUser.id });
+                if (body.applications !== null) {
+                    const applications: IApplication[] = await ApplicationService.getApplications({ _id: { $in: body.applications } })
                     await Promise.all(applications.map(async (application: IApplication) => {
                         await application.clearAssociations();
                         return application.associateWithUser(updatedUser);
@@ -311,7 +315,17 @@ export class OktaProvider {
                 }
             }
 
-            ctx.body = UserSerializer.serialize(updatedUser);
+            if ('organization' in body && body.organization && 'id' in body.organization && 'role' in body.organization) {
+                await OrganizationUserModel.deleteMany({ user: updatedUser.id });
+                if (body.organization !== null) {
+                    const organization: IOrganization = await OrganizationService.getOrganizationById(body.organization.id as IOrganizationId);
+                    await organization.associateWithUserId(updatedUser.id, body.organization.role);
+                }
+            }
+
+            updatedUser = await OktaService.updateUser(id, updateData);
+
+            ctx.body = await UserSerializer.serialize(await UserModelStub.hydrate(updatedUser));
         } catch (err) {
             if (err instanceof UserNotFoundError) {
                 ctx.throw(404, 'User not found');
@@ -544,7 +558,7 @@ export class OktaProvider {
 
             if (ctx.request.type === 'application/json') {
                 ctx.response.type = 'application/json';
-                ctx.body = UserSerializer.serialize(newUser);
+                ctx.body = await UserSerializer.serialize(newUser);
             } else {
                 await ctx.render('sign-up-correct', {
                     generalConfig: ctx.state.generalConfig,

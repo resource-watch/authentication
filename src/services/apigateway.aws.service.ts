@@ -3,18 +3,14 @@ import {
     CreateApiKeyCommand,
     CreateApiKeyCommandInput,
     CreateApiKeyCommandOutput, DeleteApiKeyCommand, DeleteApiKeyCommandOutput,
-    GetApiKeyCommand,
-    GetApiKeyCommandOutput,
     PatchOperation,
     UpdateApiKeyCommand,
-    UpdateApiKeyCommandInput,
     UpdateApiKeyCommandOutput
 } from "@aws-sdk/client-api-gateway";
 import config = require('config');
 import MissingRegionError from "errors/missingRegion.error";
 import { APIGatewayClientConfig } from "@aws-sdk/client-api-gateway/dist-types/APIGatewayClient";
 import logger from 'logger';
-import { GetApiKeyCommandInput } from "@aws-sdk/client-api-gateway/dist-types/commands/GetApiKeyCommand";
 
 class APIGatewayAWSService {
     private static client: APIGatewayClient;

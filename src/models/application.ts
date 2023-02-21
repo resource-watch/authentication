@@ -1,12 +1,15 @@
 import type { Document, Schema as ISchema } from 'mongoose';
 import { model, Schema, PaginateModel, Model } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
-import OrganizationModel, { IOrganization, IOrganizationId } from 'models/organization';
+import { IOrganization } from 'models/organization';
 import { IUser } from "services/okta.interfaces";
-import { UserModelStub } from "models/user.model.stub";
 import { Id } from "types";
+import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
+import ApplicationUserModel, { IApplicationUser } from "models/application-user";
 
 interface IApplicationMethods {
+    hydrate(): Promise<(IApplication & Required<{ _id: IApplicationId }>)>
+
     clearAssociations(): Promise<IApplication>
 
     associateWithOrganization(organization: IOrganization): Promise<IApplication>
@@ -21,7 +24,7 @@ export interface IApplication extends Document<IApplicationId>, IApplicationMeth
     apiKeyId: string;
     apiKeyValue: string;
     organization?: IOrganization;
-    userId?: string;
+    user?: IUser;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -39,93 +42,65 @@ export const applicationSchema: ISchema<IApplication, ApplicationModel, IApplica
     name: { type: String, trim: true, required: true },
     apiKeyId: { type: String, trim: true, required: true },
     apiKeyValue: { type: String, trim: true, required: true },
-    organization: {
-        type: Schema.Types.ObjectId,
-        ref: "Organization"
-    },
-    userId: {
-        type: Schema.Types.String,
-        ref: "User"
-    },
     createdAt: { type: Date, required: true, default: Date.now },
     updatedAt: { type: Date, required: true, default: Date.now }
 }, {
+    virtuals: {
+        organization: {
+            options: {
+                ref: 'OrganizationApplication',
+                localField: '_id',
+                foreignField: 'application',
+                justOne: true
+            },
+        },
+        user: {
+            options: {
+                ref: 'ApplicationUser',
+                localField: '_id',
+                foreignField: 'application',
+                justOne: true
+            },
+        },
+    },
     methods: {
+        async hydrate(): Promise<(IApplication & Required<{ _id: IApplicationId }>)> {
+            const applicationUser: IApplicationUser = await ApplicationUserModel.findOne({ application: this._id.toString() });
+            this.user = applicationUser ? await applicationUser.getUser() : null;
+
+            const organizationApplication: IOrganizationApplication = await OrganizationApplicationModel.findOne({ application: this._id.toString() }).populate('organization');
+            this.organization = organizationApplication ? organizationApplication.organization : null;
+
+            return this;
+        },
         async clearAssociations(): Promise<IApplication> {
-            if (this.userId) {
-                await UserModelStub.removeApplicationLinkForUser(this.userId, this._id.toString());
-                this.userId = null;
-            }
+            await ApplicationUserModel.deleteMany({ application: this._id.toString() })
+            await OrganizationApplicationModel.deleteMany({ application: this._id.toString() })
 
-            if (this.organization) {
-                await OrganizationModel.removeLinksToApplications([this._id.toString()]);
-                this.organization = null;
-            }
-
-            return this.save();
+            return this;
         },
         async associateWithUser(user: IUser): Promise<IApplication> {
-            if (this.organization) {
-                await OrganizationModel.removeLinksToApplications([this._id.toString()]);
-                await ApplicationModel.removeLinksToOrganization(this.organization._id.toString());
-            }
+            await this.clearAssociations();
 
-            this.userId = user.id
+            await new ApplicationUserModel({ application: this._id.toString(), userId: user.id }).save();
 
-            return this.save();
+            return this;
         },
         async associateWithOrganization(organization: IOrganization): Promise<IApplication> {
-            await ApplicationModel.removeLinksToOrganization(organization.id);
-            await OrganizationModel.removeLinksToApplications([this]);
-            //TODO: remove on User's end
+            await this.clearAssociations();
 
-            this.organization = organization;
-            this.userId = null;
-            organization.applications.push(this);
-            await organization.save();
+            await new OrganizationApplicationModel({ application: this._id.toString(), organization }).save();
 
-            return this.save();
+            return this;
         },
-
     },
-    statics: {
-        async removeLinksToUser(user: IUser): Promise<any> {
-            if (!user) {
-                return [];
-            }
-
-            const applications: IApplication[] = await this.find({ user: user._id });
-            return Promise.all(applications.map((application: IApplication) => {
-                application.userId = null;
-                return application.save();
-            }));
-        },
-        async removeLinksToOrganization(organizationId: IOrganizationId): Promise<IApplication[]> {
-            if (!organizationId) {
-                return [];
-            }
-
-            const applications: IApplication[] = await this.find({ organization: organizationId });
-            return Promise.all(applications.map((application: IApplication) => {
-                application.organization = null;
-                return application.save();
-            }));
-        }
-    }
 });
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-interface ApplicationPaginateModel<T, TQueryHelpers = {}, TMethods = {}>
-    extends PaginateModel<T, TQueryHelpers, TMethods> {
-    removeLinksToUser: (user: IUser) => Promise<any>
-    removeLinksToOrganization: (organizationId: IOrganizationId) => Promise<IApplication[]>
-}
 
 applicationSchema.plugin(paginate);
 
 interface ApplicationDocument extends Document<IApplicationId>, IApplication, IApplicationMethods {
 }
 
-const ApplicationModel: ApplicationPaginateModel<ApplicationDocument, ApplicationModel, IApplicationMethods> = model<ApplicationDocument, ApplicationPaginateModel<ApplicationDocument, ApplicationModel, IApplicationMethods>>('Application', applicationSchema);
+const ApplicationModel: PaginateModel<ApplicationDocument, ApplicationModel, IApplicationMethods> = model<ApplicationDocument, PaginateModel<ApplicationDocument, ApplicationModel, IApplicationMethods>>('Application', applicationSchema);
 
 export default ApplicationModel;

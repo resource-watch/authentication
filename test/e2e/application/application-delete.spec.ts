@@ -1,5 +1,5 @@
 import nock from 'nock';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import ApplicationModel, { IApplication } from 'models/application';
 import { getTestAgent } from '../utils/test-server';
 import { createApplication, createOrganization } from '../utils/helpers';
@@ -9,6 +9,9 @@ import mongoose, { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { mockDeleteAWSAPIGatewayAPIKey } from "./aws.mocks";
 import OrganizationModel, { IOrganization } from "../../../src/models/organization";
+import OrganizationApplicationModel, { IOrganizationApplication } from "../../../src/models/organization-application";
+import OrganizationUserModel, { OrganizationUser } from "../../../src/models/organization-user";
+import ApplicationUserModel from "../../../src/models/application-user";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -107,43 +110,46 @@ describe('Delete application tests', () => {
         it('Delete a application with associated organization should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testOrganization: IOrganization = await createOrganization();
+            const testApplication: IApplication = await createApplication();
 
-            const application: HydratedDocument<IApplication> = await createApplication({
-                organization: testOrganization.id
-            });
-            testOrganization.applications.push(application.id);
-            await testOrganization.save();
+            await new OrganizationApplicationModel({
+                application: testApplication,
+                organization: testOrganization
+            }).save();
 
-            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+            mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
 
             const response: request.Response = await requester
-                .delete(`/api/v1/application/${application._id.toString()}`)
+                .delete(`/api/v1/application/${testApplication._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({});
 
             response.status.should.equal(200);
 
             response.body.data.should.have.property('type').and.equal('applications');
-            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('id').and.equal(testApplication._id.toString());
             response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('name').and.equal(testApplication.name);
             response.body.data.attributes.should.have.property('organization').and.eql({
                 id: testOrganization.id,
                 name: testOrganization.name,
             });
             response.body.data.attributes.should.have.property('createdAt');
-            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            new Date(response.body.data.attributes.createdAt).should.equalDate(testApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
-            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(testApplication.updatedAt);
 
-            const databaseOrganization: IOrganization = await OrganizationModel.findById(testOrganization.id).populate('applications');
-            databaseOrganization.applications.map((application:IApplication) => application.id).should.eql([]);
+            const databaseOrganizationApplication: IOrganizationApplication[] = await OrganizationApplicationModel.findOne({ organization: testOrganization._id.toString() });
+            expect(databaseOrganizationApplication).to.equal(null);
         });
     })
 
     afterEach(async () => {
         await ApplicationModel.deleteMany({}).exec();
         await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
 
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);

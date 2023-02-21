@@ -1,29 +1,41 @@
 import type { Document, Schema as ISchema } from 'mongoose';
-import { model, Schema, PaginateModel } from 'mongoose';
+import { model, Schema, PaginateModel, Model } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
 import { IOrganization } from 'models/organization';
-import { IUser } from "services/okta.interfaces";
+import { IUser, IUserLegacyId } from "services/okta.interfaces";
+import OktaService from "services/okta.service";
 
-export interface IOrganizationUser extends Document {
+export type Role = 'MEMBER' | 'ADMIN';
+
+interface IOrganizationUserMethods {
+    getUser(): Promise<IUser>
+}
+
+export interface IOrganizationUser extends Document, IOrganizationUserMethods {
     organization: IOrganization;
-    user: IUser;
-    role: string;
+    userId: IUserLegacyId;
+    role: Role;
     createdAt: Date;
     updatedAt: Date;
 }
 
-export const OrganizationUser: ISchema<IOrganizationUser> = new Schema<IOrganizationUser>({
+type OrganizationUserModel = Model<IOrganizationUser, any, IOrganizationUserMethods>;
+
+export const OrganizationUser: ISchema<IOrganizationUser, OrganizationUserModel, IOrganizationUserMethods> = new Schema<IOrganizationUser, OrganizationUserModel, IOrganizationUserMethods>({
     organization: {
         type: Schema.Types.ObjectId,
         ref: "Organization"
     },
-    user: {
-        type: Schema.Types.ObjectId,
-        ref: "User"
-    },
+    userId: { type: String, trim: true, required: true },
     role: { type: String, trim: true, required: true },
     createdAt: { type: Date, required: true, default: Date.now },
     updatedAt: { type: Date, required: true, default: Date.now }
+}, {
+    methods: {
+        async getUser(): Promise<IUser> {
+            return OktaService.convertOktaUserToIUser(await OktaService.getOktaUserById(this.userId));
+        },
+    }
 });
 
 OrganizationUser.plugin(paginate);

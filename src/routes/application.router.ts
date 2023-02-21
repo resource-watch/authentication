@@ -50,7 +50,7 @@ const updateApplicationValidation: Record<string, any> = {
     body: Joi.object({
         name: Joi.string().optional(),
         organization: Joi.alternatives().try(Joi.allow(null), Joi.string()),
-        user: Joi.string().optional(),
+        user: Joi.alternatives().try(Joi.allow(null), Joi.string()),
         regenApiKey: Joi.boolean().optional()
     }).oxor('user', 'organization')
 };
@@ -86,7 +86,7 @@ class ApplicationRouter {
             }
 
             const application: IApplication = await ApplicationService.getApplicationById(id);
-            ctx.body = ApplicationSerializer.serialize(application);
+            ctx.body = ApplicationSerializer.serialize(await application.hydrate());
         } catch (err) {
             if (err instanceof ApplicationNotFoundError) {
                 ctx.throw(404, err.message);
@@ -106,7 +106,7 @@ class ApplicationRouter {
         );
 
         const application: IApplication = await ApplicationService.createApplication(newApplicationData);
-        ctx.body = ApplicationSerializer.serialize(application);
+        ctx.body = ApplicationSerializer.serialize(await application.hydrate());
     }
 
     static async updateApplication(ctx: Context): Promise<void> {
@@ -116,13 +116,14 @@ class ApplicationRouter {
             ctx.request.body,
             [
                 'name',
-                'organization'
+                'organization',
+                'user'
             ]
         );
 
         try {
             const application: IApplication = await ApplicationService.updateApplication(id, newApplicationData, ctx.request.body.regenApiKey);
-            ctx.body = ApplicationSerializer.serialize(application);
+            ctx.body = ApplicationSerializer.serialize(await application.hydrate());
         } catch (error) {
             if (error instanceof ApplicationNotFoundError) {
                 ctx.throw(404, error.message);

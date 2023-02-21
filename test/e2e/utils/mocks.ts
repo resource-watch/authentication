@@ -1,10 +1,11 @@
 import nock from "nock";
+import { IUserLegacyId } from "services/okta.interfaces";
 
 export const mockGetResourcesCalls =
-    (userId: string) => {
+    (userId: IUserLegacyId) => {
         nock(process.env.GATEWAY_URL)
             .get('/v1/dataset')
-            .query({ userId: userId, env: "all" })
+            .query({ userId: (userId as string), env: "all" })
             .reply(200, {
                 data: [{
                     id: "2b793c7f-4470-4342-9989-cec1fb18f7cf",
@@ -69,7 +70,7 @@ export const mockGetResourcesCalls =
 
         nock(process.env.GATEWAY_URL)
             .get('/v1/layer')
-            .query({ userId: userId, env: "all" })
+            .query({ userId: (userId as string), env: "all" })
             .reply(200, {
                 data: [{
                     id: "c86d30eb-158f-4cbc-aca5-27db7a9ab92c",
@@ -131,7 +132,7 @@ export const mockGetResourcesCalls =
 
         nock(process.env.GATEWAY_URL)
             .get('/v1/widget')
-            .query({ userId: userId, env: "all" })
+            .query({ userId: (userId as string), env: "all" })
             .reply(200, {
                 data: [{
                     id: "0bf764d6-9bb8-4565-bd11-4d729d0fd004", type: "widget", attributes: {
@@ -197,7 +198,7 @@ export const mockGetResourcesCalls =
         nock(process.env.GATEWAY_URL)
             .get('/v1/collection')
             .query({
-                userId: userId,
+                userId: (userId as string),
                 env: "all",
                 application: "all"
             })
@@ -225,8 +226,8 @@ export const mockGetResourcesCalls =
             );
 
         nock(process.env.GATEWAY_URL)
-            .post('/v1/favourite/find-by-user', { application: "all", userId: userId })
-            .query({ userId: userId })
+            .post('/v1/favourite/find-by-user', { application: "all", userId: (userId as string) })
+            .query({ userId: (userId as string) })
             .reply(200, {
                 data: [{
                     id: "5a1c63f9de21ac1400dffa03",
@@ -397,7 +398,7 @@ export const mockGetResourcesCalls =
         nock(process.env.GATEWAY_URL)
             .get('/v1/dashboard')
             .query({
-                user: userId,
+                user: (userId as string),
                 env: "all"
             })
             .reply(200, {
@@ -461,7 +462,7 @@ export const mockGetResourcesCalls =
         nock(process.env.GATEWAY_URL)
             .get('/v1/topic')
             .query({
-                user: userId
+                user: (userId as string)
             })
             .reply(200, {
                 data: [{
@@ -489,7 +490,7 @@ export const mockGetResourcesCalls =
             });
     }
 
-export const mockDeleteResourcesCalls = (userId: string) => {
+export const mockDeleteResourcesCalls = (userId: IUserLegacyId) => {
     nock(process.env.GATEWAY_URL)
         .delete(`/v1/dataset/by-user/${userId}`)
         .reply(200, {

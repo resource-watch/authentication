@@ -83,7 +83,7 @@ class OrganizationRouter {
             }
 
             const organization: IOrganization = await OrganizationService.getOrganizationById(id);
-            ctx.body = OrganizationSerializer.serialize(organization);
+            ctx.body = OrganizationSerializer.serialize(await organization.hydrate());
         } catch (err) {
             if (err instanceof OrganizationNotFoundError) {
                 ctx.throw(404, err.message);
@@ -103,7 +103,7 @@ class OrganizationRouter {
         );
 
         const organization: IOrganization = await OrganizationService.createOrganization(newOrganizationData);
-        ctx.body = OrganizationSerializer.serialize(organization);
+        ctx.body = OrganizationSerializer.serialize(await organization.hydrate());
     }
 
     static async updateOrganization(ctx: Context): Promise<void> {
@@ -119,7 +119,7 @@ class OrganizationRouter {
 
         try {
             const organization: IOrganization = await OrganizationService.updateOrganization(id, newOrganizationData);
-            ctx.body = OrganizationSerializer.serialize(organization);
+            ctx.body = OrganizationSerializer.serialize(await organization.hydrate());
         } catch (error) {
             if (error instanceof OrganizationNotFoundError) {
                 ctx.throw(404, error.message);

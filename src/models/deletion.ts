@@ -1,6 +1,7 @@
 import type { Document, Schema as ISchema } from 'mongoose';
 import { model, Schema, PaginateModel } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
+import { IUserLegacyId } from "services/okta.interfaces";
 
 /**
  * Deletion statuses
@@ -14,8 +15,8 @@ export type DELETION_STATUS_TYPE = 'pending' | 'done';
 export const DELETION_STATUS: DELETION_STATUS_TYPE[] = [DELETION_STATUS_PENDING, DELETION_STATUS_DONE];
 
 export interface IDeletion extends Document {
-    userId: string;
-    requestorUserId: string;
+    userId: IUserLegacyId;
+    requestorUserId: IUserLegacyId;
     status: DELETION_STATUS_TYPE;
     datasetsDeleted?: boolean;
     layersDeleted?: boolean;
