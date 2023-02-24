@@ -256,12 +256,10 @@ describe('Create application tests', () => {
             response.body.data.should.have.property('attributes').and.be.an('object');
             response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
             response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue);
-            response.body.data.attributes.should.have.property('user').and.eql(
-                {
-                    id: testUser.profile.legacyId,
-                    name: testUser.profile.displayName,
-                }
-            );
+            response.body.data.attributes.should.have.property('user').and.eql({
+                id: testUser.profile.legacyId,
+                name: testUser.profile.displayName,
+            });
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');

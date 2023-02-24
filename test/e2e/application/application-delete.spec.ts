@@ -6,12 +6,13 @@ import { assertNoConnection, createApplication, createOrganization } from '../ut
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import mongoose, { HydratedDocument } from 'mongoose';
-import { mockValidJWT } from '../okta/okta.mocks';
+import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.mocks';
 import { mockDeleteAWSAPIGatewayAPIKey } from "./aws.mocks";
 import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
+import { OktaUser } from "../../../src/services/okta.interfaces";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -106,7 +107,7 @@ describe('Delete application tests', () => {
         new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
     });
 
-    describe('with associated organizations', () => {
+    describe('with associated organization', () => {
         it('Delete a application with associated organization should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testOrganization: IOrganization = await createOrganization();
@@ -139,7 +140,51 @@ describe('Delete application tests', () => {
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(testApplication.updatedAt);
 
-            await assertNoConnection({ organization: testOrganization, application: testApplication });
+            await assertNoConnection({ organization: null, application: testApplication });
+        });
+    })
+
+    describe('with associated user', () => {
+        it('Delete a application with associated user should be successful', async () => {
+            const testApplication: IApplication = await createApplication();
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            mockGetUserById(testUser);
+
+            await new ApplicationUserModel({
+                application: testApplication,
+                userId: testUser.profile.legacyId,
+            }).save();
+
+            mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
+
+            const response: request.Response = await requester
+                .delete(`/api/v1/application/${testApplication._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(200);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(testApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(testApplication.name);
+            response.body.data.attributes.should.have.property('user').and.eql({
+                id: testUser.profile.legacyId,
+                name: testUser.profile.displayName,
+            });
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(testApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(testApplication.updatedAt);
+
+            await assertNoConnection({ user: null, application: testApplication });
         });
     })
 
