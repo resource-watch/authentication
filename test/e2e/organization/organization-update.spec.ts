@@ -3,7 +3,13 @@ import chai, { expect } from 'chai';
 import OrganizationModel, { IOrganization } from 'models/organization';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
-import { assertConnection, assertNoConnection, createApplication, createOrganization } from '../utils/helpers';
+import {
+    assertConnection,
+    assertNoConnection,
+    createApplication,
+    createOrganization,
+    sortByNestedName
+} from '../utils/helpers';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import mongoose, { HydratedDocument } from 'mongoose';
@@ -284,14 +290,14 @@ describe('Update organization tests', () => {
             response.body.data.should.have.property('attributes').and.be.an('object');
             response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
             response.body.data.attributes.should.have.property('applications')
-            response.body.data.attributes.applications.sort().should.eql(
+            response.body.data.attributes.applications.sort(sortByNestedName).should.eql(
                 [{
                     id: testApplicationOne.id,
                     name: testApplicationOne.name,
                 }, {
                     id: testApplicationTwo.id,
                     name: testApplicationTwo.name,
-                }].sort()
+                }].sort(sortByNestedName)
             );
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);

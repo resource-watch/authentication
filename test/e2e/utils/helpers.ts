@@ -16,6 +16,16 @@ export const getUUID: () => string = () => Math.random().toString(36).substring(
 
 export const createTokenForUser: (tokenData: Partial<IUser>) => string = (tokenData: Partial<IUser>) => JWT.sign(tokenData, process.env.JWT_SECRET);
 
+export const sortByNestedName: (a: Record<string, any>, b: Record<string, any>) => number = (a, b) => {
+    if (a.name < b.name) {
+        return -1;
+    }
+    if (a.name > b.name) {
+        return 1;
+    }
+    return 0;
+}
+
 export const ensureHasPaginationElements: (response: ChaiHttp.Response) => void = (response: ChaiHttp.Response) => {
     response.body.should.have.property('links').and.be.an('object');
 
