@@ -19,7 +19,7 @@ interface IOrganizationMethods {
 
     associateWithApplicationIds(applicationIds: IApplicationId[]): Promise<IOrganization>
 
-    associateWithUserId(userIds: IUserLegacyId, role: Role): IOrganization
+    associateWithUsers(userLinksInOrganization: UserLinkInOrganizationDto[]): IOrganization
 }
 
 export type IOrganizationId = Id<IOrganization>;
@@ -27,7 +27,7 @@ export type IOrganizationId = Id<IOrganization>;
 export interface IOrganization extends Document<IOrganizationId>, IOrganizationMethods {
     name: string;
     applications: IApplication[];
-    users: IUser[];
+    users: IOrganizationUser[];
     createdAt: Date;
     updatedAt: Date;
 }
@@ -35,7 +35,11 @@ export interface IOrganization extends Document<IOrganizationId>, IOrganizationM
 export type CreateOrganizationsDto = {
     name: string;
     applications: IApplicationId[];
-    users: IUserLegacyId[];
+    users: UserLinkInOrganizationDto[];
+}
+
+export type UserLinkInOrganizationDto = {
+    id: IUserLegacyId, role: Role
 }
 
 type OrganizationModel = Model<IOrganization, any, IOrganizationMethods>;
@@ -66,7 +70,10 @@ export const organizationSchema: ISchema<IOrganization, OrganizationModel, IOrga
     methods: {
         async hydrate(): Promise<(IOrganization & Required<{ _id: IOrganizationId }>)> {
             const organizationUsers: IOrganizationUser[] = await OrganizationUserModel.find({ organization: this._id.toString() });
-            this.users = organizationUsers ? await Promise.all(organizationUsers.map(async (organizationUser: IOrganizationUser) => (organizationUser.getUser()))) : null;
+            this.users = organizationUsers ? await Promise.all(organizationUsers.map(async (organizationUser: IOrganizationUser) => {
+                organizationUser.user = await organizationUser.getUser();
+                return organizationUser;
+            })) : null;
 
             const organizationApplications: IOrganizationApplication[] = await OrganizationApplicationModel.find({ organization: this._id.toString() }).populate('application');
             this.applications = organizationApplications ? organizationApplications.map((organizationApplication: IOrganizationApplication) => (organizationApplication.application)) : null;
@@ -89,10 +96,17 @@ export const organizationSchema: ISchema<IOrganization, OrganizationModel, IOrga
 
             return this.save();
         },
-        async associateWithUserId(userId: IUserLegacyId, role: Role): Promise<IOrganization> {
-            await UserModelStub.clearOrganizationAssociations(userId);
+        async associateWithUsers(userLinksInOrganization: UserLinkInOrganizationDto[]): Promise<IOrganization> {
+            await Promise.all(userLinksInOrganization.map(async (userLinkInOrganization: UserLinkInOrganizationDto) => {
+                await UserModelStub.clearOrganizationAssociations(userLinkInOrganization.id);
 
-            await new OrganizationUserModel({ organization: this._id.toString(), userId, role }).save();
+                return new OrganizationUserModel({
+                    organization: this._id.toString(),
+                    userId: userLinkInOrganization.id,
+                    role: userLinkInOrganization.role
+                }).save();
+
+            }));
 
             return this;
         },
