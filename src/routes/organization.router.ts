@@ -10,6 +10,7 @@ import { pick } from 'lodash';
 import Utils from 'utils';
 import { IUser } from 'services/okta.interfaces';
 import OrganizationService from "services/organization.service";
+import { ORGANIZATION_ROLES } from "models/organization-user";
 
 const organizationRouter: Router = router();
 organizationRouter.prefix('/api/v1/organization');
@@ -34,7 +35,11 @@ const createOrganizationValidation: Record<string, any> = {
     },
     body: {
         name: Joi.string().required(),
-        applications: Joi.array().items(Joi.string()).optional()
+        applications: Joi.array().items(Joi.string()).optional(),
+        users: Joi.array().items(Joi.object({
+            id: Joi.string(),
+            role: Joi.string().allow(...Object.values(ORGANIZATION_ROLES))
+        })).optional()
     }
 };
 
@@ -48,7 +53,11 @@ const updateOrganizationValidation: Record<string, any> = {
     },
     body: {
         name: Joi.string().optional(),
-        applications: Joi.array().items(Joi.string()).optional()
+        applications: Joi.array().items(Joi.string()).optional(),
+        users: Joi.array().items(Joi.object({
+            id: Joi.string(),
+            role: Joi.string().allow(...Object.values(ORGANIZATION_ROLES))
+        })).optional()
     }
 };
 
@@ -98,7 +107,8 @@ class OrganizationRouter {
             ctx.request.body,
             [
                 'name',
-                'applications'
+                'applications',
+                'users'
             ]
         );
 
@@ -113,7 +123,8 @@ class OrganizationRouter {
             ctx.request.body,
             [
                 'name',
-                'applications'
+                'applications',
+                'users'
             ]
         );
 
@@ -123,6 +134,8 @@ class OrganizationRouter {
         } catch (error) {
             if (error instanceof OrganizationNotFoundError) {
                 ctx.throw(404, error.message);
+            } else {
+                ctx.throw(500, error.message);
             }
         }
     }

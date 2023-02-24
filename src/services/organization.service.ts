@@ -1,4 +1,8 @@
-import OrganizationModel, { CreateOrganizationsDto, IOrganization, IOrganizationId } from 'models/organization';
+import OrganizationModel, {
+    CreateOrganizationsDto,
+    IOrganization,
+    IOrganizationId,
+} from 'models/organization';
 import { FilterQuery, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import OrganizationNotFoundError from 'errors/organizationNotFound.error';
 import { pick } from "lodash";
@@ -14,6 +18,10 @@ export default class OrganizationService {
 
         if ('applications' in organizationData && Array.isArray(organizationData.applications) && organizationData.applications.length > 0) {
             await organization.associateWithApplicationIds(organizationData.applications)
+        }
+
+        if ('users' in organizationData && Array.isArray(organizationData.users) && organizationData.users.length > 0) {
+            await organization.associateWithUsers(organizationData.users)
         }
 
         return organization.save();
@@ -36,9 +44,9 @@ export default class OrganizationService {
             await organization.associateWithApplicationIds(organizationData.applications)
         }
 
-        // if ('users' in organizationData && Array.isArray(organizationData.users) && organizationData.users.length > 0) {
-        //     await organization.associateWithUsers(organizationData.users)
-        // }
+        if ('users' in organizationData && Array.isArray(organizationData.users) && organizationData.users.length > 0) {
+            await organization.associateWithUsers(organizationData.users)
+        }
 
         return organization.save();
     }

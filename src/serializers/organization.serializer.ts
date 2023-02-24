@@ -2,7 +2,7 @@ import { Serializer } from 'jsonapi-serializer';
 import { IOrganization } from 'models/organization';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import { IApplication } from "models/application";
-import { IUser } from "services/okta.interfaces";
+import { IOrganizationUser } from "models/organization-user";
 
 const organizationSerializer: Serializer = new Serializer('organization', {
     attributes: [
@@ -20,9 +20,10 @@ const organizationSerializer: Serializer = new Serializer('organization', {
             id: application._id.toString(),
             name: application.name
         })) : [],
-        users: organization.users ? organization.users.map((user: IUser) => ({
-            id: user.id.toString(),
-            name: user.name
+        users: organization.users ? organization.users.map((organizationUser: IOrganizationUser) => ({
+            id: organizationUser.user.id.toString(),
+            name: organizationUser.user.name,
+            role: organizationUser.role
         })) : []
     }))
 });

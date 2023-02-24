@@ -319,7 +319,7 @@ export class OktaProvider {
                 await OrganizationUserModel.deleteMany({ user: updatedUser.id });
                 if (body.organization !== null) {
                     const organization: IOrganization = await OrganizationService.getOrganizationById(body.organization.id as IOrganizationId);
-                    await organization.associateWithUserId(updatedUser.id, body.organization.role);
+                    await organization.associateWithUsers([{ id: updatedUser.id, role: body.organization.role }]);
                 }
             }
 

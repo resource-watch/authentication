@@ -7,12 +7,13 @@ import { assertConnection, createApplication, createOrganization } from '../util
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
-import { mockValidJWT } from '../okta/okta.mocks';
+import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
 import ApplicationModel, { IApplication } from "models/application";
 import OrganizationApplicationModel from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
+import { OktaUser } from "services/okta.interfaces";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -179,6 +180,44 @@ describe('Get organizations tests', () => {
             new Date(response.body.data[0].attributes.updatedAt).should.equalDate(testOrganization.updatedAt);
 
             await assertConnection({ organization: testOrganization, application: testApplication });
+        });
+    })
+
+    describe('with associated users', () => {
+        it('Get organizations with associated users should be successful', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const testOrganization: IOrganization = await createOrganization();
+
+            mockGetUserById(testUser);
+
+            await new OrganizationUserModel({
+                organization: testOrganization,
+                userId: testUser.profile.legacyId,
+                role: 'ADMIN'
+            }).save();
+
+            const response: request.Response = await requester
+                .get(`/api/v1/organization`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('array').and.length(1);
+            response.body.data[0].should.have.property('type').and.equal('organizations');
+            response.body.data[0].should.have.property('id').and.equal(testOrganization._id.toString());
+            response.body.data[0].should.have.property('attributes').and.be.an('object');
+            response.body.data[0].attributes.should.have.property('name').and.equal(testOrganization.name);
+            response.body.data[0].attributes.should.have.property('users').and.eql([{
+                id: testUser.profile.legacyId,
+                name: testUser.profile.displayName,
+                role: 'ADMIN'
+            }]);
+            response.body.data[0].attributes.should.have.property('createdAt');
+            new Date(response.body.data[0].attributes.createdAt).should.equalDate(testOrganization.createdAt);
+            response.body.data[0].attributes.should.have.property('updatedAt');
+            new Date(response.body.data[0].attributes.updatedAt).should.equalDate(testOrganization.updatedAt);
+
+            await assertConnection({ organization: testOrganization, userId: testUser.profile.legacyId });
         });
     })
 

@@ -5,6 +5,10 @@ import { IOrganization } from 'models/organization';
 import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OktaService from "services/okta.service";
 
+export const ORGANIZATION_ROLES: Record<Role, Role> = {
+    MEMBER: 'MEMBER',
+    ADMIN: 'ADMIN',
+}
 export type Role = 'MEMBER' | 'ADMIN';
 
 interface IOrganizationUserMethods {
@@ -14,6 +18,7 @@ interface IOrganizationUserMethods {
 export interface IOrganizationUser extends Document, IOrganizationUserMethods {
     organization: IOrganization;
     userId: IUserLegacyId;
+    user?: IUser;
     role: Role;
     createdAt: Date;
     updatedAt: Date;
