@@ -1,5 +1,6 @@
 import { IUser } from 'services/okta.interfaces';
 import { IApplication } from "models/application";
+import { IOrganizationUser } from "models/organization-user";
 
 export default class UserSerializer {
 
@@ -15,11 +16,11 @@ export default class UserSerializer {
             role: user.role,
             provider: user.provider,
             extraUserData: user.extraUserData,
-            organization: user.organization ? {
-                id: user.organization.organization._id.toString(),
-                name: user.organization.organization.name,
-                role: user.organization.role,
-            } : null,
+            organizations: user.organizations ? user.organizations.map((organization: IOrganizationUser) => ({
+                id: organization.organization._id.toString(),
+                name: organization.organization.name,
+                role: organization.role,
+            })) : null,
             applications: user.applications ? user.applications.map((application: IApplication) => ({
                 id: application._id.toString(),
                 name: application.name,

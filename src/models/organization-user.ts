@@ -6,10 +6,10 @@ import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OktaService from "services/okta.service";
 
 export const ORGANIZATION_ROLES: Record<Role, Role> = {
-    MEMBER: 'MEMBER',
-    ADMIN: 'ADMIN',
+    ORG_MEMBER: 'ORG_MEMBER',
+    ORG_ADMIN: 'ORG_ADMIN',
 }
-export type Role = 'MEMBER' | 'ADMIN';
+export type Role = 'ORG_MEMBER' | 'ORG_ADMIN';
 
 interface IOrganizationUserMethods {
     getUser(): Promise<IUser>

@@ -37,8 +37,8 @@ const createOrganizationValidation: Record<string, any> = {
         name: Joi.string().required(),
         applications: Joi.array().items(Joi.string()).optional(),
         users: Joi.array().items(Joi.object({
-            id: Joi.string(),
-            role: Joi.string().allow(...Object.values(ORGANIZATION_ROLES))
+            id: Joi.string().required(),
+            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
         })).optional()
     }
 };
@@ -55,8 +55,8 @@ const updateOrganizationValidation: Record<string, any> = {
         name: Joi.string().optional(),
         applications: Joi.array().items(Joi.string()).optional(),
         users: Joi.array().items(Joi.object({
-            id: Joi.string(),
-            role: Joi.string().allow(...Object.values(ORGANIZATION_ROLES))
+            id: Joi.string().required(),
+            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
         })).optional()
     }
 };

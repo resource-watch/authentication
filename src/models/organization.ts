@@ -3,7 +3,7 @@ import { model, Schema, PaginateModel } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
 import ApplicationModel, { IApplication, IApplicationId } from 'models/application';
 import OrganizationUserModel, { IOrganizationUser, Role } from "models/organization-user";
-import { IUser, IUserLegacyId } from "services/okta.interfaces";
+import { IUserLegacyId } from "services/okta.interfaces";
 import { Id } from "types";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import { UserModelStub } from "models/user.model.stub";

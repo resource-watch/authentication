@@ -417,7 +417,7 @@ describe('Update organization tests', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     name: 'new organization name',
-                    users: [{id: testUser.profile.legacyId, role: 'ADMIN'}]
+                    users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
                 });
 
             response.status.should.equal(200);
@@ -431,7 +431,7 @@ describe('Update organization tests', () => {
             response.body.data.attributes.should.have.property('users').and.eql([{
                 id: testUser.profile.legacyId,
                 name: testUser.profile.displayName,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
@@ -465,7 +465,7 @@ describe('Update organization tests', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     name: 'new organization name',
-                    users: [{ id: testUser.profile.legacyId, role: 'ADMIN' }]
+                    users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
                 });
 
             response.status.should.equal(200);
@@ -479,7 +479,7 @@ describe('Update organization tests', () => {
             response.body.data.attributes.should.have.property('users').and.eql([{
                 id: testUser.profile.legacyId,
                 name: testUser.profile.displayName,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
@@ -534,16 +534,23 @@ describe('Update organization tests', () => {
             mockGetUserById(testUserTwo);
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
-            await new OrganizationUserModel({ userId: testUserOne.profile.legacyId, organization, role: 'ADMIN' }).save();
+            await new OrganizationUserModel({
+                userId: testUserOne.profile.legacyId,
+                organization,
+                role: 'ORG_ADMIN'
+            }).save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     name: 'new organization name',
-                    users: [{ id: testUserOne.profile.legacyId, role: 'ADMIN' }, {
+                    users: [{
+                        id: testUserOne.profile.legacyId,
+                        role: 'ORG_ADMIN'
+                    }, {
                         id: testUserTwo.profile.legacyId,
-                        role: 'ADMIN'
+                        role: 'ORG_ADMIN'
                     }],
                 });
 
@@ -559,11 +566,11 @@ describe('Update organization tests', () => {
             response.body.data.attributes.should.have.property('users').and.eql([{
                 id: testUserOne.profile.legacyId,
                 name: testUserOne.profile.displayName,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }, {
                 id: testUserTwo.profile.legacyId,
                 name: testUserTwo.profile.displayName,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);

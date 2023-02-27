@@ -1,6 +1,7 @@
 import { Id } from "types";
 import { IApplication } from "models/application";
-import { IOrganizationUser } from "models/organization-user";
+import { IOrganizationUser, Role } from "models/organization-user";
+import { IOrganizationId } from "models/organization";
 
 export type IUserId = Id<IUser>;
 export type IUserLegacyId = Id<OktaUserProfile>;
@@ -21,7 +22,7 @@ export interface IUser {
     extraUserData: { apps: string[]; };
     userToken?: string;
     applications?: IApplication[];
-    organization?: IOrganizationUser;
+    organizations?: IOrganizationUser[];
 }
 
 export interface OktaOAuthTokenPayload {
@@ -52,6 +53,11 @@ export interface OktaUserProfile {
     providerId?: string;
     photo?: string;
     applications?: string[]
+    organizations?: string[]
+}
+
+export type OrganizationLinkInUserDto = {
+    id: IOrganizationId, role: Role
 }
 
 export interface OktaUser {
