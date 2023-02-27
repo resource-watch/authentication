@@ -166,7 +166,12 @@ export class OktaProvider {
                     data,
                     cursor
                 } = await OktaService.getUserListForCursorPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
-                ctx.body = await UserSerializer.serialize(data);
+
+                const hydratedUserList: IUser[] = await Promise.all(data.map((user: IUser) => {
+                    return UserModelStub.hydrate(user);
+                }));
+
+                ctx.body = await UserSerializer.serialize(hydratedUserList);
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
@@ -180,7 +185,12 @@ export class OktaProvider {
 
             default: {
                 const { data } = await OktaService.getUserListForOffsetPagination(appsToUse, omit(query, ['app']) as Record<string, string>);
-                ctx.body = await UserSerializer.serialize(data);
+
+                const hydratedUserList: IUser[] = await Promise.all(data.map((user: IUser) => {
+                    return UserModelStub.hydrate(user);
+                }));
+
+                ctx.body = await UserSerializer.serialize(hydratedUserList);
                 const nPage: number = page;
 
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -211,7 +221,14 @@ export class OktaProvider {
             ctx.throw(404, 'User not found');
             return;
         }
-        ctx.body = user;
+
+        const serializedUser: Record<string, any> = await UserSerializer.serialize(await UserModelStub.hydrate(user));
+
+        ctx.body = {
+            ...user,
+            applications: serializedUser.data.applications,
+            organizations: serializedUser.data.organizations
+        };
     }
 
     static async getUserById(ctx: Context): Promise<void> {
@@ -224,7 +241,13 @@ export class OktaProvider {
             return;
         }
 
-        ctx.body = user;
+        const serializedUser: Record<string, any> = await UserSerializer.serialize(await UserModelStub.hydrate(user));
+
+        ctx.body = {
+            ...user,
+            applications: serializedUser.data.applications,
+            organizations: serializedUser.data.organizations
+        };
     }
 
     static async getUserResources(ctx: Context): Promise<void> {
@@ -262,8 +285,20 @@ export class OktaProvider {
     static async findByIds(ctx: Context): Promise<void> {
         logger.info('[OktaProvider] - Find by ids');
         ctx.assert(ctx.request.body.ids, 400, 'Ids objects required');
-        const data: IUser[] = await OktaService.getUsersByIds(ctx.request.body.ids);
-        ctx.body = { data };
+        const hydratedUserData: IUser[] = await OktaService.getUsersByIds(ctx.request.body.ids);
+
+        ctx.body = {
+            data: hydratedUserData.map((user: IUser) => {
+                const serializedUser: Record<string, any> = UserSerializer.serialize(user);
+
+                return {
+                    ...user,
+                    applications: serializedUser.data.applications,
+                    organizations: serializedUser.data.organizations
+                }
+            })
+
+        };
     }
 
     /**

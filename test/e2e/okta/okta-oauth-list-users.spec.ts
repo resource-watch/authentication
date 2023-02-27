@@ -2,11 +2,15 @@ import chai from 'chai';
 import nock from 'nock';
 import config from 'config';
 import type request from 'superagent';
-
 import { IUser, OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { ensureHasPaginationElements } from '../utils/helpers';
+import { createApplication, createOrganization, ensureHasPaginationElements } from '../utils/helpers';
 import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
+import ApplicationModel, { IApplication } from "models/application";
+import ApplicationUserModel from "models/application-user";
+import OrganizationModel, { IOrganization } from "models/organization";
+import OrganizationUserModel from "models/organization-user";
+import OrganizationApplicationModel from "models/organization-application";
 
 chai.should();
 
@@ -401,11 +405,89 @@ describe('[OKTA] List users', () => {
         ensureHasPaginationElements(response);
     });
 
+    describe('with associated applications', () => {
+        it('Getting an user with associated applications should be successful and get the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testApplication: IApplication = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: user.profile.legacyId,
+                application: testApplication
+            }).save();
+
+            mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
+
+            const response: request.Response = await requester
+                .get(`/auth/user`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data[0].should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data[0].should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data[0].should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data[0].should.have.property('role').and.equal(user.profile.role);
+            response.body.data[0].should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data[0].should.have.property('email').and.equal(user.profile.email);
+            response.body.data[0].should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name,
+            }]);
+            response.body.data[0].should.have.property('createdAt');
+            response.body.data[0].should.have.property('updatedAt');
+        });
+    })
+
+    describe('with associated organizations', () => {
+        it('Getting an user with associated organizations should be successful and get the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testOrganization: IOrganization = await createOrganization();
+
+            await new OrganizationUserModel({
+                userId: user.profile.legacyId,
+                organization: testOrganization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
+
+            const response: request.Response = await requester
+                .get(`/auth/user`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data[0].should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data[0].should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data[0].should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data[0].should.have.property('role').and.equal(user.profile.role);
+            response.body.data[0].should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data[0].should.have.property('email').and.equal(user.profile.email);
+            response.body.data[0].should.have.property('organizations').and.eql([{
+                id: testOrganization.id,
+                name: testOrganization.name,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data[0].should.have.property('createdAt');
+            response.body.data[0].should.have.property('updatedAt');
+        });
+    })
+
     after(async () => {
         await closeTestAgent();
     });
 
     afterEach(async () => {
+        await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
+
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }

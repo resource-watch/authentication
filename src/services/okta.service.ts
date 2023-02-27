@@ -21,6 +21,7 @@ import OktaApiService from 'services/okta.api.service';
 import { v4 as uuidv4 } from 'uuid';
 import mongoose from 'mongoose';
 import CacheService from 'services/cache.service';
+import { UserModelStub } from "models/user.model.stub";
 
 export default class OktaService {
 
@@ -132,7 +133,7 @@ export default class OktaService {
      * @deprecated This is a performance nightmare as it needs to load all of Okta's DB
      */
     static async getUsersByIds(ids: string[] = []): Promise<IUser[]> {
-        const users: IUser[] = [];
+        let users: IUser[] = [];
         let shouldFetchMore: boolean = true;
         let pageAfterCursor: string;
 
@@ -146,7 +147,10 @@ export default class OktaService {
 
             pageAfterCursor = cursor;
 
-            data.forEach((user: OktaUser) => users.push(OktaService.convertOktaUserToIUser(user)));
+            users = await Promise.all(data.map(async (user: OktaUser) => {
+                return UserModelStub.hydrate(OktaService.convertOktaUserToIUser(user))
+            }));
+
             pageAfterCursor = cursor;
             shouldFetchMore = !!cursor && data.length === 200;
         }
