@@ -1,7 +1,6 @@
 import nock from 'nock';
 import chai from 'chai';
 import type request from 'superagent';
-
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {
@@ -16,6 +15,12 @@ import Should = Chai.Should;
 import config from 'config';
 import DeletionModel, { IDeletion } from 'models/deletion';
 import { mockDeleteResourcesCalls } from "../utils/mocks";
+import OrganizationModel, { IOrganization } from "models/organization";
+import { assertNoConnection, createApplication, createOrganization } from "../utils/helpers";
+import ApplicationModel, { IApplication } from "models/application";
+import OrganizationApplicationModel from "models/organization-application";
+import ApplicationUserModel from "models/application-user";
+import OrganizationUserModel from "models/organization-user";
 
 const should: Should = chai.should();
 
@@ -232,11 +237,99 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         should.not.exist(value3);
     });
 
+    describe('with associated applications', () => {
+        it('Deleting an user with associated applications should be successful and delete the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testApplication: IApplication = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: user.profile.legacyId,
+                application: testApplication
+            }).save();
+
+            mockGetUserById(user, 2);
+            mockOktaDeleteUser(user);
+            mockGetUserByOktaId(user.id, user, 1);
+            mockOktaDeleteUser(user);
+
+            const response: request.Response = await requester
+                .delete(`/auth/user/${user.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data.should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data.should.have.property('role').and.equal(user.profile.role);
+            response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data.should.have.property('email').and.equal(user.profile.email);
+            response.body.data.should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name,
+            }]);
+            response.body.data.should.have.property('createdAt');
+            response.body.data.should.have.property('updatedAt');
+
+            await assertNoConnection({ userId: user.profile.legacyId, application: null });
+        });
+    })
+
+    describe('with associated organizations', () => {
+        it('Deleting an user with associated organizations should be successful and delete the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testOrganization: IOrganization = await createOrganization();
+
+            await new OrganizationUserModel({
+                userId: user.profile.legacyId,
+                organization: testOrganization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            mockGetUserById(user, 2);
+            mockOktaDeleteUser(user);
+            mockGetUserByOktaId(user.id, user, 1);
+            mockOktaDeleteUser(user);
+
+            const response: request.Response = await requester
+                .delete(`/auth/user/${user.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data.should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data.should.have.property('role').and.equal(user.profile.role);
+            response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data.should.have.property('email').and.equal(user.profile.email);
+            response.body.data.should.have.property('organizations').and.eql([{
+                id: testOrganization.id,
+                name: testOrganization.name,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data.should.have.property('createdAt');
+            response.body.data.should.have.property('updatedAt');
+
+            await assertNoConnection({ userId: user.profile.legacyId, organization: null });
+        });
+    })
+
     after(async () => {
         await closeTestAgent();
     });
 
     afterEach(async () => {
+        await ApplicationModel.deleteMany({}).exec();
+        await OrganizationModel.deleteMany({}).exec();
+        await OrganizationApplicationModel.deleteMany({}).exec();
+        await OrganizationUserModel.deleteMany({}).exec();
+        await ApplicationUserModel.deleteMany({}).exec();
+
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }

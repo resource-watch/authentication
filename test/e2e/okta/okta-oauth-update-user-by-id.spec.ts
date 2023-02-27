@@ -248,7 +248,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ application: testApplication, user: userToBeUpdated });
         });
 
-        it('Update an user and associating an application that\'s associated with a different user with the current user should be successful', async () => {
+        it('Updating an user and associating an application that\'s associated with a different user with the current user should be successful', async () => {
             const testApplication: HydratedDocument<IApplication> = await createApplication();
 
             const originalOwnerUser: OktaUser = getMockOktaUser();
@@ -307,7 +307,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertNoConnection({ application: testApplication, user: originalOwnerUser })
         });
 
-        it('Update an user and associating an application that\'s associated with an organization user should be successful and remove association with organization', async () => {
+        it('Updating an user and associating an application that\'s associated with an organization user should be successful and remove association with organization', async () => {
             const testApplication: IApplication = await createApplication();
             const testOrganization: IOrganization = await createOrganization();
 
@@ -370,7 +370,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertNoConnection({ organization: testOrganization, user: originalOwnerUser })
         });
 
-        it('Update an user and overwriting existing applications should be successful', async () => {
+        it('Updating an user and overwriting existing applications should be successful', async () => {
             const testApplicationOne: HydratedDocument<IApplication> = await createApplication();
             const testApplicationTwo: HydratedDocument<IApplication> = await createApplication();
 
@@ -429,7 +429,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ application: testApplicationTwo, user: userToBeUpdated })
         });
 
-        it('Update an user and removing applications should be successful', async () => {
+        it('Updating an user and removing applications should be successful', async () => {
             const testApplication: HydratedDocument<IApplication> = await createApplication();
 
             const userToBeUpdated: OktaUser = getMockOktaUser();
@@ -550,7 +550,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ organization: testOrganization, user: userToBeUpdated });
         });
 
-        it('Update an user and associating an organization that\'s associated with a different user should be successful and not remove previous user association', async () => {
+        it('Updating an user and associating an organization that\'s associated with a different user should be successful and not remove previous user association', async () => {
             const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
 
             const originalUser: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
@@ -614,7 +614,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ organization: testOrganization, user: originalUser })
         });
 
-        it('Update an user and associating an organization that\'s associated with an application user should be successful and not remove association with application', async () => {
+        it('Updating an user and associating an organization that\'s associated with an application user should be successful and not remove association with application', async () => {
             const testOrganization: IOrganization = await createOrganization();
             const testOrganizationApplication: IApplication = await createApplication();
             const testUserApplication: IApplication = await createApplication();
@@ -685,7 +685,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertNoConnection({ application: testOrganizationApplication, user: originalOwnerUser })
         });
 
-        it('Update an user and overwriting existing organizations should be successful', async () => {
+        it('Updating an user and overwriting existing organizations should be successful', async () => {
             const testOrganizationOne: HydratedDocument<IOrganization> = await createOrganization();
             const testOrganizationTwo: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -749,7 +749,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ organization: testOrganizationTwo, user: userToBeUpdated })
         });
 
-        it('Update an user and removing organizations should be successful', async () => {
+        it('Updating an user and removing organizations should be successful', async () => {
             const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
 
             const userToBeUpdated: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
