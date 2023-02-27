@@ -12,7 +12,7 @@ import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
-import { OktaUser } from "../../../src/services/okta.interfaces";
+import { OktaUser } from "services/okta.interfaces";
 
 chai.should();
 chai.use(chaiDateTime);

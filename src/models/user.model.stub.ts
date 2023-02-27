@@ -1,6 +1,7 @@
-import { IUser, IUserLegacyId } from "services/okta.interfaces";
+import { IUser, IUserLegacyId, OrganizationLinkInUserDto } from "services/okta.interfaces";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel, { IApplicationUser } from "models/application-user";
+import ApplicationModel, { IApplication, IApplicationId } from "models/application";
 
 /**
  * This is not a real model.
@@ -20,12 +21,29 @@ export class UserModelStub {
     static async clearOrganizationAssociations(userId: IUserLegacyId): Promise<void> {
         await OrganizationUserModel.deleteMany({ userId: userId })
     }
+    static async associateWithApplicationIds(userId: IUserLegacyId, applicationIds: IApplicationId[]): Promise<void> {
+        await Promise.all(applicationIds.map(async (applicationId: IApplicationId) => {
+            const application: IApplication = await ApplicationModel.findById(applicationId);
+            await application.clearAssociations();
+
+            return new ApplicationUserModel({ userId: userId, application }).save();
+        }));
+    }
+    static async associateWithOrganizations(userId: IUserLegacyId, organizationsLinkInUser: OrganizationLinkInUserDto[]): Promise<void> {
+        await Promise.all(organizationsLinkInUser.map(async (organizationLinkInUser: OrganizationLinkInUserDto) => {
+            return new OrganizationUserModel({
+                organization: organizationLinkInUser.id,
+                userId,
+                role: organizationLinkInUser.role
+            }).save();
+        }));
+    }
 
     static async hydrate(user: IUser): Promise<IUser> {
         const applicationUsers: IApplicationUser[] = await ApplicationUserModel.find({ userId: user.id }).populate('application');
         user.applications = applicationUsers ? applicationUsers.map((applicationUser: IApplicationUser) => applicationUser.application) : null;
 
-        user.organization = await OrganizationUserModel.findOne({ userId: user.id }).populate('organization');
+        user.organizations = await OrganizationUserModel.find({ userId: user.id }).populate('organization');
 
         return user;
     }

@@ -91,12 +91,12 @@ export class OktaGoogleProvider {
         return ctx.redirect(url);
     }
 
-    static async googleToken(ctx: Context & RouterContext, next: Next): Promise<void> {
+    static async googleToken(ctx: Context, next: Next): Promise<void> {
         const app: string = Utils.getOriginApp(ctx);
-        await passport.authenticate(`google-token:${app}`)(ctx, next);
+        await passport.authenticate(`google-token:${app}`)((ctx as Context & RouterContext), next);
     }
 
-    static async googleCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
+    static async googleCallback(ctx: Context, next: Next): Promise<void> {
         return OktaProvider.authCodeCallback(ctx, next);
     }
 }

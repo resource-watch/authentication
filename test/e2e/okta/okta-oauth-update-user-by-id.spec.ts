@@ -1,5 +1,5 @@
 import nock from 'nock';
-import chai, { expect } from 'chai';
+import chai from 'chai';
 import chaiDateTime from 'chai-datetime';
 
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
@@ -19,7 +19,7 @@ import { assertConnection, assertNoConnection, createApplication, createOrganiza
 import OrganizationModel, { IOrganization } from "models/organization";
 import { HydratedDocument } from "mongoose";
 import OrganizationUserModel from "models/organization-user";
-import ApplicationUserModel, { IApplicationUser } from "models/application-user";
+import ApplicationUserModel from "models/application-user";
 import OrganizationApplicationModel from "models/organization-application";
 
 const should: Should = chai.should();
@@ -110,7 +110,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         const userToBeUpdated: OktaUser = getMockOktaUser();
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
-        mockGetUserById(userToBeUpdated, 2);
+        mockGetUserById(userToBeUpdated);
         mockOktaUpdateUser(userToBeUpdated, {
             displayName: 'changed name',
             photo: 'http://www.changed-photo.com',
@@ -148,6 +148,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
         response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
         response.body.data.should.have.property('applications').and.eql([]);
+        response.body.data.should.have.property('organizations').and.eql([]);
         response.body.data.should.have.property('createdAt');
         response.body.data.should.have.property('updatedAt');
     });
@@ -156,7 +157,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         const userToBeUpdated: OktaUser = getMockOktaUser();
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
-        mockGetUserById(userToBeUpdated, 2);
+        mockGetUserById(userToBeUpdated);
         mockOktaUpdateUser(userToBeUpdated, { displayName: 'changed name' });
 
         // Assert value does not exist in cache before
@@ -182,7 +183,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
     });
 
     describe('with associated applications', () => {
-        it('Associating an application with an existing user should be successful', async () => {
+        it('Updating an user and associating an application with an existing user should be successful', async () => {
             const userToBeUpdated: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
@@ -194,7 +195,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 application: testApplication
             }).save();
 
-            mockGetUserById(userToBeUpdated, 2);
+            mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
                 displayName: 'changed name',
                 photo: 'https://www.changed-photo.com',
@@ -247,63 +248,10 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ application: testApplication, user: userToBeUpdated });
         });
 
-        it('Removing the association between an application and an user should be successful', async () => {
+        it('Update an user and associating an application that\'s associated with a different user with the current user should be successful', async () => {
             const testApplication: HydratedDocument<IApplication> = await createApplication();
 
-            const userToBeUpdated: OktaUser = getMockOktaUser({ applications: [testApplication.id] });
-            const token: string = mockValidJWT({ role: 'ADMIN' });
-
-            await new ApplicationUserModel({ userId: userToBeUpdated.id, application: testApplication }).save();
-
-            mockGetUserById(userToBeUpdated, 2);
-            mockOktaUpdateUser(userToBeUpdated, {
-                displayName: 'changed name',
-                photo: 'https://www.changed-photo.com',
-                role: 'MANAGER',
-                apps: ['changed-apps'],
-            });
-
-            const response: request.Response = await requester
-                .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    email: 'changed-email@example.com',
-                    password: 'changedPassword',
-                    salt: 'changedSalt',
-                    extraUserData: {
-                        apps: ['changed-apps'],
-                        foo: 'bar'
-                    },
-                    _id: 'changed-id',
-                    userToken: 'changedToken',
-                    createdAt: '2000-01-01T00:00:00.000Z',
-                    updatedAt: '2000-01-01T00:00:00.000Z',
-                    role: 'MANAGER',
-                    provider: 'changedProvider',
-                    name: 'changed name',
-                    photo: 'https://www.changed-photo.com',
-                    applications: [],
-                });
-
-            response.status.should.equal(200);
-            response.body.data.should.have.property('name').and.equal('changed name');
-            response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
-            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
-            response.body.data.should.have.property('role').and.equal('MANAGER');
-            response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
-            response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
-            response.body.data.should.have.property('applications').and.eql([]);
-            response.body.data.should.have.property('createdAt');
-            response.body.data.should.have.property('updatedAt');
-
-            await assertNoConnection({ application: testApplication, user: null });
-        });
-
-        it('Associating an application that\'s associated with a different user with the current user should be successful', async () => {
-            const testApplication: HydratedDocument<IApplication> = await createApplication();
-
-            const originalOwnerUser: OktaUser = getMockOktaUser({ applications: [testApplication.id] });
+            const originalOwnerUser: OktaUser = getMockOktaUser();
 
             await new ApplicationUserModel({ userId: originalOwnerUser.id, application: testApplication }).save();
 
@@ -312,7 +260,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
 
             await testApplication.save();
 
-            mockGetUserById(userToBeUpdated, 2);
+            mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
                 displayName: 'changed name',
                 photo: 'https://www.changed-photo.com',
@@ -358,9 +306,75 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('updatedAt');
 
             await assertConnection({ application: testApplication, user: userToBeUpdated })
+            await assertNoConnection({ application: testApplication, user: originalOwnerUser })
         });
 
-        it('Replace a user\'s applications should be successful', async () => {
+        it('Update an user and associating an application that\'s associated with an organization user should be successful and remove association with organization', async () => {
+            const testApplication: IApplication = await createApplication();
+            const testOrganization: IOrganization = await createOrganization();
+
+            const originalOwnerUser: OktaUser = getMockOktaUser();
+
+            await new OrganizationApplicationModel({
+                userId: originalOwnerUser.id,
+                organization: testOrganization
+            }).save();
+
+            const userToBeUpdated: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            await testApplication.save();
+
+            mockGetUserById(userToBeUpdated);
+            mockOktaUpdateUser(userToBeUpdated, {
+                displayName: 'changed name',
+                photo: 'https://www.changed-photo.com',
+                role: 'MANAGER',
+                apps: ['changed-apps'],
+            });
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'changed-email@example.com',
+                    password: 'changedPassword',
+                    salt: 'changedSalt',
+                    extraUserData: {
+                        apps: ['changed-apps'],
+                        foo: 'bar'
+                    },
+                    _id: 'changed-id',
+                    userToken: 'changedToken',
+                    createdAt: '2000-01-01T00:00:00.000Z',
+                    updatedAt: '2000-01-01T00:00:00.000Z',
+                    role: 'MANAGER',
+                    provider: 'changedProvider',
+                    name: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                    applications: [testApplication.id],
+                });
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('name').and.equal('changed name');
+            response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
+            response.body.data.should.have.property('role').and.equal('MANAGER');
+            response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
+            response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
+            response.body.data.should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name
+            }]);
+            response.body.data.should.have.property('createdAt');
+            response.body.data.should.have.property('updatedAt');
+
+            await assertConnection({ application: testApplication, user: userToBeUpdated })
+            await assertNoConnection({ organization: testOrganization, user: originalOwnerUser })
+        });
+
+        it('Update an user and overwriting existing applications should be successful', async () => {
             const testApplicationOne: HydratedDocument<IApplication> = await createApplication();
             const testApplicationTwo: HydratedDocument<IApplication> = await createApplication();
 
@@ -370,7 +384,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
 
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
-            mockGetUserById(userToBeUpdated, 2);
+            mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
                 displayName: 'changed name',
                 photo: 'https://www.changed-photo.com',
@@ -418,24 +432,80 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertNoConnection({ application: testApplicationOne, user: userToBeUpdated })
             await assertConnection({ application: testApplicationTwo, user: userToBeUpdated })
         });
+
+        it('Update an user and removing applications should be successful', async () => {
+            const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+            const userToBeUpdated: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            await new ApplicationUserModel({ userId: userToBeUpdated.id, application: testApplication }).save();
+
+            mockGetUserById(userToBeUpdated);
+            mockOktaUpdateUser(userToBeUpdated, {
+                displayName: 'changed name',
+                photo: 'https://www.changed-photo.com',
+                role: 'MANAGER',
+                apps: ['changed-apps'],
+            });
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'changed-email@example.com',
+                    password: 'changedPassword',
+                    salt: 'changedSalt',
+                    extraUserData: {
+                        apps: ['changed-apps'],
+                        foo: 'bar'
+                    },
+                    _id: 'changed-id',
+                    userToken: 'changedToken',
+                    createdAt: '2000-01-01T00:00:00.000Z',
+                    updatedAt: '2000-01-01T00:00:00.000Z',
+                    role: 'MANAGER',
+                    provider: 'changedProvider',
+                    name: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                    applications: [],
+                });
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('name').and.equal('changed name');
+            response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
+            response.body.data.should.have.property('role').and.equal('MANAGER');
+            response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
+            response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
+            response.body.data.should.have.property('applications').and.eql([]);
+            response.body.data.should.have.property('createdAt');
+            response.body.data.should.have.property('updatedAt');
+
+            await assertNoConnection({ application: testApplication, user: null });
+        });
     })
 
     describe('with associated organizations', () => {
-        it('Associating an organization with an existing user should be successful', async () => {
+        it('Updating an user and associating an organization with an existing user should be successful', async () => {
             const userToBeUpdated: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
             const testApplication: IApplication = await createApplication();
             const testOrganization: IOrganization = await createOrganization();
 
-            await new OrganizationApplicationModel({ application: testApplication, organization: testOrganization });
+            await new OrganizationApplicationModel({
+                application: testApplication,
+                organization: testOrganization
+            }).save();
 
-            mockGetUserById(userToBeUpdated, 2);
+            mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
                 displayName: 'changed name',
                 photo: 'https://www.changed-photo.com',
                 role: 'MANAGER',
-                apps: ['changed-apps'],
+                apps: ['changed-apps']
             });
 
             const response: request.Response = await requester
@@ -458,10 +528,10 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organization: {
+                    organizations: [{
                         id: testOrganization.id,
-                        role: 'ADMIN'
-                    },
+                        role: 'ORG_ADMIN'
+                    }],
                 });
 
             response.status.should.equal(200);
@@ -471,27 +541,36 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('role').and.equal('MANAGER');
             response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
             response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
-            response.body.data.should.have.property('organization').and.eql({
+            response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ADMIN'
-            });
+                role: 'ORG_ADMIN'
+            }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
-            await assertConnection({ organization: testOrganization, user: userToBeUpdated, role: 'ADMIN' })
-            await assertNoConnection({ organization: testOrganization, application: testApplication })
+            await assertConnection({ organization: testOrganization, application: testApplication });
+            await assertNoConnection({ user: userToBeUpdated, application: testApplication });
+            await assertConnection({ organization: testOrganization, user: userToBeUpdated });
         });
 
-        it('Removing the association between an organization and an user should be successful', async () => {
+        it('Update an user and associating an organization that\'s associated with a different user should be successful and not remove previous user association', async () => {
             const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+            const originalUser: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
+
+            await new OrganizationUserModel({
+                userId: originalUser.profile.legacyId,
+                organization: testOrganization,
+                role: 'ORG_ADMIN'
+            }).save();
 
             const userToBeUpdated: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
-            await new OrganizationUserModel({ userId: userToBeUpdated.id, organization: testOrganization });
+            await testOrganization.save();
 
-            mockGetUserById(userToBeUpdated, 2);
+            mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
                 displayName: 'changed name',
                 photo: 'https://www.changed-photo.com',
@@ -519,7 +598,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organization: null,
+                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
                 });
 
             response.status.should.equal(200);
@@ -529,145 +608,211 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('role').and.equal('MANAGER');
             response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
             response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
-            response.body.data.should.have.property('organization').and.equal(null);
+            response.body.data.should.have.property('organizations').and.eql([{
+                id: testOrganization.id,
+                name: testOrganization.name,
+                role: 'ORG_ADMIN'
+            }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
-            await assertNoConnection({ organization: testOrganization, user: userToBeUpdated })
+            await assertConnection({ organization: testOrganization, user: userToBeUpdated })
+            await assertConnection({ organization: testOrganization, user: originalUser })
         });
-        //
-        // it('Associating an organization that\'s associated with a different user with the current user should be successful', async () => {
-        //     const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
-        //
-        //     const originalOwnerUser: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
-        //
-        //     testOrganization.userId = originalOwnerUser.profile.legacyId;
-        //     await testOrganization.save();
-        //
-        //     const userToBeUpdated: OktaUser = getMockOktaUser();
-        //     const token: string = mockValidJWT({ role: 'ADMIN' });
-        //
-        //     mockGetUserById(originalOwnerUser, 2);
-        //     mockGetUserById(userToBeUpdated, 3);
-        //     mockOktaUpdateUser(userToBeUpdated, {
-        //         organizations: [],
-        //     });
-        //     mockOktaUpdateUser(userToBeUpdated, {
-        //         displayName: 'changed name',
-        //         photo: 'https://www.changed-photo.com',
-        //         role: 'MANAGER',
-        //         apps: ['changed-apps'],
-        //         organizations: [testOrganization.id],
-        //     });
-        //     mockOktaUpdateUser(originalOwnerUser, {
-        //         organizations: [],
-        //     });
-        //
-        //     const response: request.Response = await requester
-        //         .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
-        //         .set('Content-Type', 'application/json')
-        //         .set('Authorization', `Bearer ${token}`)
-        //         .send({
-        //             email: 'changed-email@example.com',
-        //             password: 'changedPassword',
-        //             salt: 'changedSalt',
-        //             extraUserData: {
-        //                 apps: ['changed-apps'],
-        //                 foo: 'bar'
-        //             },
-        //             _id: 'changed-id',
-        //             userToken: 'changedToken',
-        //             createdAt: '2000-01-01T00:00:00.000Z',
-        //             updatedAt: '2000-01-01T00:00:00.000Z',
-        //             role: 'MANAGER',
-        //             provider: 'changedProvider',
-        //             name: 'changed name',
-        //             photo: 'https://www.changed-photo.com',
-        //             organizations: [testOrganization.id],
-        //         });
-        //
-        //     response.status.should.equal(200);
-        //     response.body.data.should.have.property('name').and.equal('changed name');
-        //     response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
-        //     response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
-        //     response.body.data.should.have.property('role').and.equal('MANAGER');
-        //     response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
-        //     response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
-        //     response.body.data.should.have.property('organizations').and.eql([testOrganization.id]);
-        //     response.body.data.should.have.property('createdAt');
-        //     response.body.data.should.have.property('updatedAt');
-        //
-        //     const databaseOrganization: IOrganization = await OrganizationModel.findById(testOrganization.id).populate('applications');
-        //     expect(databaseOrganization.applications).to.equal(undefined);
-        //     expect(databaseOrganization.userId).to.equal(userToBeUpdated.profile.legacyId);
-        // });
-        //
-        // it('Replace a user\'s organizations should be successful', async () => {
-        //     const testOrganizationOne: HydratedDocument<IOrganization> = await createOrganization();
-        //     const testOrganizationTwo: HydratedDocument<IOrganization> = await createOrganization();
-        //
-        //     const userToBeUpdated: OktaUser = getMockOktaUser({ organizations: [testOrganizationOne.id] });
-        //
-        //     testOrganizationOne.userId = userToBeUpdated.profile.legacyId;
-        //     await testOrganizationOne.save();
-        //
-        //     const token: string = mockValidJWT({ role: 'ADMIN' });
-        //
-        //     mockGetUserById(userToBeUpdated, 5);
-        //     mockOktaUpdateUser(userToBeUpdated, {
-        //         organizations: [],
-        //     }, 2);
-        //     mockOktaUpdateUser(userToBeUpdated, {
-        //         displayName: 'changed name',
-        //         photo: 'https://www.changed-photo.com',
-        //         role: 'MANAGER',
-        //         apps: ['changed-apps'],
-        //         organizations: [testOrganizationTwo.id],
-        //     });
-        //
-        //     const response: request.Response = await requester
-        //         .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
-        //         .set('Content-Type', 'application/json')
-        //         .set('Authorization', `Bearer ${token}`)
-        //         .send({
-        //             email: 'changed-email@example.com',
-        //             password: 'changedPassword',
-        //             salt: 'changedSalt',
-        //             extraUserData: {
-        //                 apps: ['changed-apps'],
-        //                 foo: 'bar'
-        //             },
-        //             _id: 'changed-id',
-        //             userToken: 'changedToken',
-        //             createdAt: '2000-01-01T00:00:00.000Z',
-        //             updatedAt: '2000-01-01T00:00:00.000Z',
-        //             role: 'MANAGER',
-        //             provider: 'changedProvider',
-        //             name: 'changed name',
-        //             photo: 'https://www.changed-photo.com',
-        //             organizations: [testOrganizationTwo.id],
-        //         });
-        //
-        //     response.status.should.equal(200);
-        //     response.body.data.should.have.property('name').and.equal('changed name');
-        //     response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
-        //     response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
-        //     response.body.data.should.have.property('role').and.equal('MANAGER');
-        //     response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
-        //     response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
-        //     response.body.data.should.have.property('organizations').and.eql([testOrganizationTwo.id]);
-        //     response.body.data.should.have.property('createdAt');
-        //     response.body.data.should.have.property('updatedAt');
-        //
-        //     const databaseOrganizationOne: IOrganization = await OrganizationModel.findById(testOrganizationOne.id).populate('applications');
-        //     expect(databaseOrganizationOne.applications).to.equal(undefined);
-        //     expect(databaseOrganizationOne.userId).to.equal(null);
-        //
-        //     const databaseOrganizationTwo: IOrganization = await OrganizationModel.findById(testOrganizationTwo.id).populate('applications');
-        //     expect(databaseOrganizationTwo.applications).to.equal(undefined);
-        //     expect(databaseOrganizationTwo.userId).to.equal(userToBeUpdated.profile.legacyId);
-        // });
+
+        it('Update an user and associating an organization that\'s associated with an application user should be successful and not remove association with application', async () => {
+            const testOrganization: IOrganization = await createOrganization();
+            const testOrganizationApplication: IApplication = await createApplication();
+            const testUserApplication: IApplication = await createApplication();
+
+            const originalOwnerUser: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
+
+            const userToBeUpdated: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            await new OrganizationApplicationModel({
+                organization: testOrganization,
+                application: testOrganizationApplication
+            }).save();
+
+            await new ApplicationUserModel({
+                userId: userToBeUpdated.profile.legacyId,
+                application: testUserApplication
+            }).save();
+
+            mockGetUserById(userToBeUpdated);
+            mockOktaUpdateUser(userToBeUpdated, {
+                displayName: 'changed name',
+                photo: 'https://www.changed-photo.com',
+                role: 'MANAGER',
+                apps: ['changed-apps'],
+            });
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'changed-email@example.com',
+                    password: 'changedPassword',
+                    salt: 'changedSalt',
+                    extraUserData: {
+                        apps: ['changed-apps'],
+                        foo: 'bar'
+                    },
+                    _id: 'changed-id',
+                    userToken: 'changedToken',
+                    createdAt: '2000-01-01T00:00:00.000Z',
+                    updatedAt: '2000-01-01T00:00:00.000Z',
+                    role: 'MANAGER',
+                    provider: 'changedProvider',
+                    name: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
+                });
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('name').and.equal('changed name');
+            response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
+            response.body.data.should.have.property('role').and.equal('MANAGER');
+            response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
+            response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
+            response.body.data.should.have.property('organizations').and.eql([{
+                id: testOrganization.id,
+                name: testOrganization.name,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data.should.have.property('createdAt');
+            response.body.data.should.have.property('updatedAt');
+
+            await assertConnection({ organization: testOrganization, user: userToBeUpdated })
+            await assertConnection({ application: testUserApplication, user: userToBeUpdated })
+            await assertNoConnection({ application: testOrganizationApplication, user: originalOwnerUser })
+        });
+
+        it('Update an user and overwriting existing organizations should be successful', async () => {
+            const testOrganizationOne: HydratedDocument<IOrganization> = await createOrganization();
+            const testOrganizationTwo: HydratedDocument<IOrganization> = await createOrganization();
+
+            const userToBeUpdated: OktaUser = getMockOktaUser({ organizations: [testOrganizationOne.id] });
+
+            await new OrganizationUserModel({
+                userId: userToBeUpdated.id,
+                organization: testOrganizationOne,
+                role: 'ADMIN'
+            }).save();
+
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            mockGetUserById(userToBeUpdated);
+            mockOktaUpdateUser(userToBeUpdated, {
+                displayName: 'changed name',
+                photo: 'https://www.changed-photo.com',
+                role: 'MANAGER',
+                apps: ['changed-apps'],
+            });
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'changed-email@example.com',
+                    password: 'changedPassword',
+                    salt: 'changedSalt',
+                    extraUserData: {
+                        apps: ['changed-apps'],
+                        foo: 'bar'
+                    },
+                    _id: 'changed-id',
+                    userToken: 'changedToken',
+                    createdAt: '2000-01-01T00:00:00.000Z',
+                    updatedAt: '2000-01-01T00:00:00.000Z',
+                    role: 'MANAGER',
+                    provider: 'changedProvider',
+                    name: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                    organizations: [{ id: testOrganizationTwo.id, role: 'ORG_ADMIN' }],
+                });
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('name').and.equal('changed name');
+            response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
+            response.body.data.should.have.property('role').and.equal('MANAGER');
+            response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
+            response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
+            response.body.data.should.have.property('organizations').and.eql([{
+                id: testOrganizationTwo.id,
+                name: testOrganizationTwo.name,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data.should.have.property('createdAt');
+            response.body.data.should.have.property('updatedAt');
+
+            await assertNoConnection({ organization: testOrganizationOne, user: userToBeUpdated })
+            await assertConnection({ organization: testOrganizationTwo, user: userToBeUpdated })
+        });
+
+        it('Update an user and removing organizations should be successful', async () => {
+            const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+            const userToBeUpdated: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            await new OrganizationUserModel({
+                userId: userToBeUpdated.id,
+                organization: testOrganization,
+                role: 'ADMIN'
+            }).save();
+
+            mockGetUserById(userToBeUpdated);
+            mockOktaUpdateUser(userToBeUpdated, {
+                displayName: 'changed name',
+                photo: 'https://www.changed-photo.com',
+                role: 'MANAGER',
+                apps: ['changed-apps'],
+            });
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'changed-email@example.com',
+                    password: 'changedPassword',
+                    salt: 'changedSalt',
+                    extraUserData: {
+                        apps: ['changed-apps'],
+                        foo: 'bar'
+                    },
+                    _id: 'changed-id',
+                    userToken: 'changedToken',
+                    createdAt: '2000-01-01T00:00:00.000Z',
+                    updatedAt: '2000-01-01T00:00:00.000Z',
+                    role: 'MANAGER',
+                    provider: 'changedProvider',
+                    name: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                    organizations: [],
+                });
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('name').and.equal('changed name');
+            response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+            response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['changed-apps'] });
+            response.body.data.should.have.property('role').and.equal('MANAGER');
+            response.body.data.should.have.property('id').and.equal(userToBeUpdated.profile.legacyId);
+            response.body.data.should.have.property('email').and.equal(userToBeUpdated.profile.email);
+            response.body.data.should.have.property('organizations').and.eql([]);
+            response.body.data.should.have.property('createdAt');
+            response.body.data.should.have.property('updatedAt');
+
+            await assertNoConnection({ organization: testOrganization, user: null });
+        });
     })
+
 
     after(async () => {
         await closeTestAgent();

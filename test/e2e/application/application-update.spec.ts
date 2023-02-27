@@ -546,7 +546,7 @@ describe('Update application tests', () => {
             await assertNoConnection({ organization: testOrganization, application: testApplication });
         });
 
-        it('Update an application and removing user should be successful', async () => {
+        it('Update an application and removing users should be successful', async () => {
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const token: string = mockValidJWT({
                 id: user.profile.legacyId,
@@ -592,7 +592,7 @@ describe('Update application tests', () => {
             await assertNoConnection({ user, application: testApplication });
         });
 
-        it('Update an application and overwriting existing user should be successful', async () => {
+        it('Update an application and overwriting existing users should be successful', async () => {
             const userOne: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const userTwo: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const token: string = mockValidJWT({ role: 'ADMIN' });

@@ -1,5 +1,4 @@
 import { Context, Next } from 'koa';
-import { RouterContext } from 'koa-router';
 import { URL } from 'url';
 import logger from 'logger';
 import Utils from 'utils';
@@ -25,13 +24,6 @@ import { DELETION_STATUS_DONE, DELETION_STATUS_PENDING, IDeletion } from 'models
 import DeletionService from 'services/deletion.service';
 import GetUserResourcesService from 'services/get-user-resources.service';
 import DeleteUserResourcesService from "services/delete-user-resources.service";
-import { IApplication } from "models/application";
-import ApplicationService from "services/application.service";
-import { IOrganization, IOrganizationId } from "models/organization";
-import OrganizationService from "services/organization.service";
-import ApplicationUserModel from "models/application-user";
-import OrganizationApplicationModel from "models/organization-application";
-import OrganizationUserModel from "models/organization-user";
 import { UserModelStub } from "models/user.model.stub";
 
 export class OktaProvider {
@@ -75,7 +67,7 @@ export class OktaProvider {
         }
     }
 
-    static async localCallback(ctx: Context & RouterContext): Promise<void> {
+    static async localCallback(ctx: Context): Promise<void> {
         try {
             const user: IUser = await OktaService.login(ctx.request.body.email, ctx.request.body.password);
 
@@ -288,10 +280,11 @@ export class OktaProvider {
         const { body } = ctx.request;
 
         if ('applications' in body) {
-            const applications: IApplication[] = await ApplicationService.getApplications({ _id: { $in: body.applications } })
-            applications.map((application: IApplication) => {
-                return application.clearAssociations();
-            })
+            await UserModelStub.clearApplicationAssociations(id);
+        }
+
+        if ('organizations' in body) {
+            await UserModelStub.clearOrganizationAssociations(id);
         }
 
         const updateData: OktaUpdateUserPayload = {
@@ -302,28 +295,15 @@ export class OktaProvider {
         };
 
         try {
-            let updatedUser: IUser = await OktaService.getUserById(id);
-            if ('applications' in body) {
-                await ApplicationUserModel.deleteMany({ user: updatedUser.id });
-                await OrganizationApplicationModel.deleteMany({ user: updatedUser.id });
-                if (body.applications !== null) {
-                    const applications: IApplication[] = await ApplicationService.getApplications({ _id: { $in: body.applications } })
-                    await Promise.all(applications.map(async (application: IApplication) => {
-                        await application.clearAssociations();
-                        return application.associateWithUser(updatedUser);
-                    }))
-                }
+            if ('applications' in body && Array.isArray(body.applications) && body.applications.length > 0) {
+                await UserModelStub.associateWithApplicationIds(id, body.applications);
             }
 
-            if ('organization' in body && body.organization && 'id' in body.organization && 'role' in body.organization) {
-                await OrganizationUserModel.deleteMany({ user: updatedUser.id });
-                if (body.organization !== null) {
-                    const organization: IOrganization = await OrganizationService.getOrganizationById(body.organization.id as IOrganizationId);
-                    await organization.associateWithUsers([{ id: updatedUser.id, role: body.organization.role }]);
-                }
+            if ('organizations' in body && Array.isArray(body.organizations) && body.organizations.length > 0) {
+                await UserModelStub.associateWithOrganizations(id, body.organizations);
             }
 
-            updatedUser = await OktaService.updateUser(id, updateData);
+            const updatedUser: IUser = await OktaService.updateUser(id, updateData);
 
             ctx.body = await UserSerializer.serialize(await UserModelStub.hydrate(updatedUser));
         } catch (err) {

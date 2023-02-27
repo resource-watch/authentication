@@ -85,17 +85,17 @@ export class OktaFacebookProvider {
         }
     }
 
-    static async facebook(ctx: Context & RouterContext): Promise<void> {
+    static async facebook(ctx: Context): Promise<void> {
         const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.FACEBOOK);
         return ctx.redirect(url);
     }
 
-    static async facebookToken(ctx: Context & RouterContext, next: Next): Promise<void> {
+    static async facebookToken(ctx: Context, next: Next): Promise<void> {
         const app: string = Utils.getOriginApp(ctx);
-        await passport.authenticate(`facebook-token:${app}`)(ctx, next);
+        await passport.authenticate(`facebook-token:${app}`)((ctx as Context & RouterContext), next);
     }
 
-    static async facebookCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
+    static async facebookCallback(ctx: Context, next: Next): Promise<void> {
         return OktaProvider.authCodeCallback(ctx, next);
     }
 }

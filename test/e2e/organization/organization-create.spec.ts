@@ -10,7 +10,7 @@ import ApplicationModel, { IApplication } from "models/application";
 import OrganizationApplicationModel from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
-import { OktaUser } from "../../../src/services/okta.interfaces";
+import { OktaUser } from "services/okta.interfaces";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -210,7 +210,7 @@ describe('Create organization tests', () => {
 
             const response: request.Response = await sendCreateOrganizationRequest(token, {
                 name: "my organization",
-                users: [{ id: testUser.profile.legacyId, role: 'ADMIN' }]
+                users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
             });
             response.status.should.equal(200);
 
@@ -223,7 +223,7 @@ describe('Create organization tests', () => {
             response.body.data.attributes.should.have.property('users').and.eql([{
                 id: testUser.profile.legacyId,
                 name: testUser.profile.displayName,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
@@ -249,12 +249,12 @@ describe('Create organization tests', () => {
             await new OrganizationUserModel({
                 organization: previousOrganization,
                 userId: testUser.profile.legacyId,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }).save();
 
             const response: request.Response = await sendCreateOrganizationRequest(token, {
                 name: "my organization",
-                users: [{ id: testUser.profile.legacyId, role: 'ADMIN' }]
+                users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
             });
             response.status.should.equal(200);
 
@@ -267,7 +267,7 @@ describe('Create organization tests', () => {
             response.body.data.attributes.should.have.property('users').and.eql([{
                 id: testUser.profile.legacyId,
                 name: testUser.profile.displayName,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
@@ -297,7 +297,7 @@ describe('Create organization tests', () => {
 
             const response: request.Response = await sendCreateOrganizationRequest(token, {
                 name: "my organization",
-                users: [{ id: testUser.profile.legacyId, role: 'ADMIN' }]
+                users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
             });
             response.status.should.equal(200);
 
@@ -310,7 +310,7 @@ describe('Create organization tests', () => {
             response.body.data.attributes.should.have.property('users').and.eql([{
                 id: testUser.profile.legacyId,
                 name: testUser.profile.displayName,
-                role: 'ADMIN'
+                role: 'ORG_ADMIN'
             }]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);

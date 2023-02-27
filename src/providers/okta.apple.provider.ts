@@ -3,7 +3,6 @@ import logger from 'logger';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import Verifier from 'apple-signin-verify-token';
-import { RouterContext } from 'koa-router';
 import UserSerializer from 'serializers/user.serializer';
 import OktaService from 'services/okta.service';
 import { OktaOAuthProvider, OktaUser, IUser } from 'services/okta.interfaces';
@@ -11,7 +10,7 @@ import OktaProvider from 'providers/okta.provider';
 
 export class OktaAppleProvider {
 
-    static async apple(ctx: Context & RouterContext): Promise<void> {
+    static async apple(ctx: Context): Promise<void> {
         const url: string = OktaService.getOAuthRedirect(OktaOAuthProvider.APPLE);
         return ctx.redirect(url);
     }
@@ -61,7 +60,7 @@ export class OktaAppleProvider {
         }
     }
 
-    static async appleCallback(ctx: Context & RouterContext, next: Next): Promise<void> {
+    static async appleCallback(ctx: Context, next: Next): Promise<void> {
         return OktaProvider.authCodeCallback(ctx, next);
     }
 }

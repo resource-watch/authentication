@@ -1,6 +1,6 @@
 import config from 'config';
-import { Context, DefaultState, Next } from 'koa';
-import Router from 'koa-router';
+import { Context, Next } from 'koa';
+import router, { Router } from 'koa-joi-router';
 import { cloneDeep } from 'lodash';
 import logger from 'logger';
 import Utils from 'utils';
@@ -10,6 +10,29 @@ import OktaProvider from 'providers/okta.provider';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
 import OktaAppleProvider from 'providers/okta.apple.provider';
+import { ORGANIZATION_ROLES } from "models/organization-user";
+
+const authRouter: Router = router();
+authRouter.prefix('/auth');
+
+const Joi: typeof router.Joi = router.Joi;
+
+const updateUserValidation: Record<string, any> = {
+    type: 'json',
+    query: {
+        loggedUser: Joi.any().optional(),
+    },
+    body: Joi.object({
+        name: Joi.string().optional(),
+        email: Joi.string().optional(),
+        password: Joi.string().optional(),
+        role: Joi.string().optional(),
+        organizations: Joi.array().items(Joi.object({
+            id: Joi.string().required(),
+            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
+        })).optional()
+    }).unknown(true)
+};
 
 async function setCallbackUrl(ctx: Context, next: Next): Promise<void> {
     logger.info('Setting callbackUrl');
@@ -69,71 +92,121 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: Next): Promi
     await next();
 }
 
-const router: Router = new Router<DefaultState, Context>({ prefix: '/auth' });
+authRouter.route({
+    method: 'get',
+    path: '/google',
+    pre: setCallbackUrl,
+    handler: OktaGoogleProvider.google,
+});
+authRouter.route({
+    method: 'get',
+    path: '/google/callback',
+    pre: OktaGoogleProvider.googleCallback,
+    handler: OktaProvider.updateApplications,
+});
+authRouter.route({
+    method: 'get',
+    path: '/google/token',
+    pre: OktaGoogleProvider.googleToken,
+    handler: OktaProvider.generateJWT,
+});
 
-router.get('/google', setCallbackUrl, OktaGoogleProvider.google);
-router.get('/google/callback', OktaGoogleProvider.googleCallback, OktaProvider.updateApplications);
-router.get('/google/token', OktaGoogleProvider.googleToken, OktaProvider.generateJWT);
 
-router.get('/facebook', setCallbackUrl, OktaFacebookProvider.facebook);
-router.get('/facebook/callback', OktaFacebookProvider.facebookCallback, OktaProvider.updateApplications);
-router.get('/facebook/token', OktaFacebookProvider.facebookToken, OktaProvider.generateJWT);
+authRouter.route({
+    method: 'get',
+    path: '/facebook',
+    pre: setCallbackUrl,
+    handler: OktaFacebookProvider.facebook,
+});
+authRouter.route({
+    method: 'get',
+    path: '/facebook/callback',
+    pre: OktaFacebookProvider.facebookCallback,
+    handler: OktaProvider.updateApplications,
+});
+authRouter.route({
+    method: 'get',
+    path: '/facebook/token',
+    pre: OktaFacebookProvider.facebookToken,
+    handler: OktaProvider.generateJWT,
+});
+authRouter.route({
+    method: 'get',
+    path: '/apple',
+    pre: setCallbackUrl,
+    handler: OktaAppleProvider.apple,
+});
+authRouter.route({
+    method: 'post',
+    path: '/apple/callback',
+    pre: OktaAppleProvider.appleCallback,
+    handler: OktaProvider.updateApplications,
+});
+authRouter.route({
+    method: 'get',
+    path: '/apple/token',
+    pre: OktaAppleProvider.appleToken,
+    handler: OktaProvider.generateJWT,
+});
 
-router.get('/apple', setCallbackUrl, OktaAppleProvider.apple);
-router.post('/apple/callback', OktaAppleProvider.appleCallback, OktaProvider.updateApplications);
-router.get('/apple/token', OktaAppleProvider.appleToken, OktaProvider.generateJWT);
+authRouter.route({
+    method: 'get',
+    path: '/',
+    pre: setCallbackUrl,
+    handler: OktaProvider.redirectLogin,
+});
 
-router.get('/', setCallbackUrl, OktaProvider.redirectLogin);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.get('/login', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.loginView);
-router.post('/login', OktaProvider.localCallback);
-router.get('/fail', loadApplicationGeneralConfig, OktaProvider.failAuth);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.get('/check-logged', OktaProvider.checkLogged);
-router.get('/success', loadApplicationGeneralConfig, OktaProvider.success);
-router.get('/logout', setCallbackUrlOnlyWithQueryParam, OktaProvider.logout);
-router.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.post('/sign-up', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.signUp);
-router.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.post('/reset-password', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.sendResetMail);
-router.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
-router.get('/user/me', Utils.isLogged, OktaProvider.getCurrentUser);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.get('/user/:id', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserById);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.get('/user/:id/resources', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserResources);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, OktaProvider.getIdsByRole);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, OktaProvider.createUser);
-router.patch('/user/me', Utils.isLogged, OktaProvider.updateMe);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.patch('/user/:id', Utils.isLogged, Utils.isAdmin, OktaProvider.updateUser);
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-router.delete('/user/:id', Utils.isLogged, Utils.isAdminOrMicroserviceOrSameUserToDelete, OktaProvider.deleteUser);
+authRouter.route({
+    method: 'get',
+    path: '/login',
+    pre: [setCallbackUrl, loadApplicationGeneralConfig],
+    handler: OktaProvider.loginView,
+});
 
-router.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
+authRouter.route({
+    method: 'post',
+    path: '/login',
+    handler: OktaProvider.localCallback,
+});
+
+authRouter.get('/fail', loadApplicationGeneralConfig, OktaProvider.failAuth);
+authRouter.get('/check-logged', OktaProvider.checkLogged);
+authRouter.get('/success', loadApplicationGeneralConfig, OktaProvider.success);
+authRouter.get('/logout', setCallbackUrlOnlyWithQueryParam, OktaProvider.logout);
+authRouter.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
+authRouter.post('/sign-up', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.signUp);
+authRouter.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
+authRouter.post('/reset-password', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.sendResetMail);
+authRouter.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);
+authRouter.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
+authRouter.get('/user/me', Utils.isLogged, OktaProvider.getCurrentUser);
+authRouter.get('/user/:id', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserById);
+authRouter.get('/user/:id/resources', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserResources);
+authRouter.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
+authRouter.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, OktaProvider.getIdsByRole);
+authRouter.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, OktaProvider.createUser);
+
+authRouter.route({
+    method: 'patch',
+    path: '/user/me',
+    validate: updateUserValidation,
+    pre: Utils.isLogged,
+    handler: OktaProvider.updateMe,
+});
+authRouter.route({
+    method: 'patch',
+    path: '/user/:id',
+    validate: updateUserValidation,
+    pre: [Utils.isLogged, Utils.isAdmin],
+    handler: OktaProvider.updateUser,
+});
+
+authRouter.delete('/user/:id', Utils.isLogged, Utils.isAdminOrMicroserviceOrSameUserToDelete, OktaProvider.deleteUser);
+
+authRouter.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-router.get('/sign-up-redirect', OktaProvider.signUpRedirect);
+authRouter.get('/sign-up-redirect', OktaProvider.signUpRedirect);
 
-export default router;
+export default authRouter;

@@ -78,7 +78,7 @@ export function loadRoutes(app: Application): void {
 
     // Load routes
     logger.debug('Loading routes...');
-    app.use(AuthRouter.routes());
+    app.use(AuthRouter.middleware());
     app.use(DeletionRouter.middleware());
     app.use(ApplicationRouter.middleware());
     app.use(OrganizationRouter.middleware());
