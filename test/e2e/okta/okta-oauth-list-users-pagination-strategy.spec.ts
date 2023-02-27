@@ -4,8 +4,17 @@ import type request from 'superagent';
 
 import { IUser, OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { ensureHasOktaPaginationElements, ensureHasPaginationElements } from '../utils/helpers';
+import {
+    createApplication,
+    createOrganization,
+    ensureHasOktaPaginationElements,
+    ensureHasPaginationElements
+} from '../utils/helpers';
 import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
+import { IApplication } from "../../../src/models/application";
+import ApplicationUserModel from "../../../src/models/application-user";
+import { IOrganization } from "../../../src/models/organization";
+import OrganizationUserModel from "../../../src/models/organization-user";
 
 chai.should();
 
@@ -213,6 +222,78 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         response.body.links.should.have.property('next').and.equal('http://potato.com/auth/user?page[number]=2&page[size]=10');
         response.body.links.should.have.property('first').and.equal('http://potato.com/auth/user?page[number]=1&page[size]=10');
     });
+
+    describe('with associated applications', () => {
+        it('Getting an user with associated applications should be successful and get the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testApplication: IApplication = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: user.profile.legacyId,
+                application: testApplication
+            }).save();
+
+            mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
+
+            const response: request.Response = await requester
+                .get(`/auth/user`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data[0].should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data[0].should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data[0].should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data[0].should.have.property('role').and.equal(user.profile.role);
+            response.body.data[0].should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data[0].should.have.property('email').and.equal(user.profile.email);
+            response.body.data[0].should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name,
+            }]);
+            response.body.data[0].should.have.property('createdAt');
+            response.body.data[0].should.have.property('updatedAt');
+        });
+    })
+
+    describe('with associated organizations', () => {
+        it('Getting an user with associated organizations should be successful and get the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testOrganization: IOrganization = await createOrganization();
+
+            await new OrganizationUserModel({
+                userId: user.profile.legacyId,
+                organization: testOrganization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
+
+            const response: request.Response = await requester
+                .get(`/auth/user`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data[0].should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data[0].should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data[0].should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data[0].should.have.property('role').and.equal(user.profile.role);
+            response.body.data[0].should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data[0].should.have.property('email').and.equal(user.profile.email);
+            response.body.data[0].should.have.property('organizations').and.eql([{
+                id: testOrganization.id,
+                name: testOrganization.name,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data[0].should.have.property('createdAt');
+            response.body.data[0].should.have.property('updatedAt');
+        });
+    })
 
     after(async () => {
         await closeTestAgent();

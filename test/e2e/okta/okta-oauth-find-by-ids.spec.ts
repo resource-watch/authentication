@@ -6,6 +6,11 @@ import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
 import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
+import { IApplication } from "models/application";
+import { createApplication, createOrganization } from "../utils/helpers";
+import ApplicationUserModel from "models/application-user";
+import { IOrganization } from "models/organization";
+import OrganizationUserModel from "models/organization-user";
 
 chai.should();
 
@@ -164,6 +169,82 @@ describe('[OKTA] Find users by id', () => {
         responseUserOne.should.have.property('role').and.equal(userOne.profile.role);
         responseUserOne.should.have.property('provider').and.equal(userOne.profile.provider);
     });
+
+    describe('with associated applications', () => {
+        it('Getting an user with associated applications should be successful and get the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+
+            const testApplication: IApplication = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: user.profile.legacyId,
+                application: testApplication
+            }).save();
+
+            mockOktaListUsers(
+                { limit: 200, search: `((profile.legacyId eq "${user.id}"))` },
+                [user]
+            );
+
+            const response: request.Response = await requester
+                .post(`/auth/user/find-by-ids`)
+                .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
+                .send({ ids: [user.id] });
+
+            response.status.should.equal(200);
+            response.body.data[0].should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data[0].should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data[0].should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data[0].should.have.property('role').and.equal(user.profile.role);
+            response.body.data[0].should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data[0].should.have.property('email').and.equal(user.profile.email);
+            response.body.data[0].should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name,
+            }]);
+            response.body.data[0].should.have.property('createdAt');
+            response.body.data[0].should.have.property('updatedAt');
+        });
+    })
+
+    describe('with associated organizations', () => {
+        it('Getting an user with associated organizations should be successful and get the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+
+            const testOrganization: IOrganization = await createOrganization();
+
+            await new OrganizationUserModel({
+                userId: user.profile.legacyId,
+                organization: testOrganization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            mockOktaListUsers(
+                { limit: 200, search: `((profile.legacyId eq "${user.id}"))` },
+                [user]
+            );
+            
+            const response: request.Response = await requester
+                .post(`/auth/user/find-by-ids`)
+                .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
+                .send({ ids: [user.id] });
+
+            response.status.should.equal(200);
+            response.body.data[0].should.have.property('name').and.equal(user.profile.displayName);
+            response.body.data[0].should.have.property('photo').and.equal(user.profile.photo);
+            response.body.data[0].should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: user.profile.apps });
+            response.body.data[0].should.have.property('role').and.equal(user.profile.role);
+            response.body.data[0].should.have.property('id').and.equal(user.profile.legacyId);
+            response.body.data[0].should.have.property('email').and.equal(user.profile.email);
+            response.body.data[0].should.have.property('organizations').and.eql([{
+                id: testOrganization.id,
+                name: testOrganization.name,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data[0].should.have.property('createdAt');
+            response.body.data[0].should.have.property('updatedAt');
+        });
+    })
 
     after(async () => {
         await closeTestAgent();
