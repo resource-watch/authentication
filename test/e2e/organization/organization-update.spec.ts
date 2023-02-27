@@ -563,7 +563,7 @@ describe('Update organization tests', () => {
             response.body.data.should.have.property('attributes').and.be.an('object');
             response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
             response.body.data.attributes.should.have.property('users')
-            response.body.data.attributes.should.have.property('users').and.eql([{
+            response.body.data.attributes.users.sort(sortByNestedName).should.eql([{
                 id: testUserOne.profile.legacyId,
                 name: testUserOne.profile.displayName,
                 role: 'ORG_ADMIN'
@@ -571,7 +571,7 @@ describe('Update organization tests', () => {
                 id: testUserTwo.profile.legacyId,
                 name: testUserTwo.profile.displayName,
                 role: 'ORG_ADMIN'
-            }]);
+            }].sort(sortByNestedName));
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');

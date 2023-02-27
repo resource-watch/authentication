@@ -17,6 +17,22 @@ authRouter.prefix('/auth');
 
 const Joi: typeof router.Joi = router.Joi;
 
+// TODO: add proper validation to other body properties
+const createUserValidation: Record<string, any> = {
+    type: 'json',
+    query: {
+        loggedUser: Joi.any().optional(),
+    },
+    body: Joi.object({
+        organizations: Joi.array().items(Joi.object({
+            id: Joi.string().required(),
+            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
+        })).optional(),
+        applications: Joi.array().items(Joi.string()).optional(),
+    }).unknown(true)
+};
+
+// TODO: add proper validation to other body properties
 const updateUserValidation: Record<string, any> = {
     type: 'json',
     query: {
@@ -30,7 +46,8 @@ const updateUserValidation: Record<string, any> = {
         organizations: Joi.array().items(Joi.object({
             id: Joi.string().required(),
             role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
-        })).optional()
+        })).optional(),
+        applications: Joi.array().items(Joi.string()).optional(),
     }).unknown(true)
 };
 
@@ -184,7 +201,15 @@ authRouter.get('/user/:id', Utils.isLogged, Utils.isAdminOrMicroservice, OktaPro
 authRouter.get('/user/:id/resources', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserResources);
 authRouter.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
 authRouter.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, OktaProvider.getIdsByRole);
-authRouter.post('/user', Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig, OktaProvider.createUser);
+
+
+authRouter.route({
+    method: 'post',
+    path: '/user',
+    validate: createUserValidation,
+    pre: [Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig],
+    handler: OktaProvider.createUser,
+});
 
 authRouter.route({
     method: 'patch',

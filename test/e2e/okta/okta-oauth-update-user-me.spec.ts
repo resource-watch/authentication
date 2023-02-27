@@ -287,8 +287,6 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 extraUserData: { apps: user.profile.apps },
             });
 
-            await testApplication.save();
-
             mockGetUserById(user);
             mockOktaUpdateUser(user, {
                 displayName: 'changed name',
@@ -356,8 +354,6 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: user.profile.role,
                 extraUserData: { apps: user.profile.apps },
             });
-
-            await testApplication.save();
 
             mockGetUserById(user);
             mockOktaUpdateUser(user, {
@@ -621,8 +617,6 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: user.profile.role,
                 extraUserData: { apps: user.profile.apps },
             });
-
-            await testOrganization.save();
 
             mockGetUserById(user);
             mockOktaUpdateUser(user, {

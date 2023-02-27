@@ -420,7 +420,7 @@ export class OktaProvider {
         }
 
         try {
-            ctx.body = await OktaService.createUserWithoutPassword({
+            const createdUser: IUser = await OktaService.createUserWithoutPassword({
                 name: body.name,
                 email: body.email,
                 role: body.role,
@@ -429,6 +429,23 @@ export class OktaProvider {
                 provider: OktaOAuthProvider.LOCAL,
                 origin: ctx.session.callbackUrl || '',
             });
+
+
+            if ('applications' in body && Array.isArray(body.applications) && body.applications.length > 0) {
+                await UserModelStub.associateWithApplicationIds(createdUser.id, body.applications);
+            }
+
+            if ('organizations' in body && Array.isArray(body.organizations) && body.organizations.length > 0) {
+                await UserModelStub.associateWithOrganizations(createdUser.id, body.organizations);
+            }
+
+            const serializedUser: Record<string, any> = await UserSerializer.serialize(await UserModelStub.hydrate(createdUser));
+
+            ctx.body = {
+                ...createdUser,
+                applications: serializedUser.data.applications,
+                organizations: serializedUser.data.organizations
+            };
         } catch (err) {
             logger.error('[OktaProvider] - Error creating user, ', err);
             if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {

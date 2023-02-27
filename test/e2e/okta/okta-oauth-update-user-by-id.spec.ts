@@ -258,8 +258,6 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             const userToBeUpdated: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
-            await testApplication.save();
-
             mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
                 displayName: 'changed name',
@@ -322,8 +320,6 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
 
             const userToBeUpdated: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
-
-            await testApplication.save();
 
             mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
@@ -567,8 +563,6 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
 
             const userToBeUpdated: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
-
-            await testOrganization.save();
 
             mockGetUserById(userToBeUpdated);
             mockOktaUpdateUser(userToBeUpdated, {
