@@ -36,7 +36,7 @@ const createApplicationValidation: Record<string, any> = {
         name: Joi.string().required(),
         organization: Joi.string().optional(),
         user: Joi.string().optional()
-    }).oxor('user', 'organization')
+    }).xor('user', 'organization')
 };
 
 const updateApplicationValidation: Record<string, any> = {

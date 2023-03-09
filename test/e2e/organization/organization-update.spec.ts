@@ -357,6 +357,50 @@ describe('Update organization tests', () => {
     })
 
     describe('with associated users', () => {
+
+        it('Update a organization with an empty users list should return a 400 error', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    users: []
+                });
+
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status', 400);
+            response.body.errors[0].should.have.property('detail', '"users" must contain at least 1 items');
+        });
+
+        it('Update a organization with users but no owners should return a 400 error', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: "my organization",
+                    users: [{ id: testUser.profile.legacyId, role: 'ORG_MEMBER' }]
+
+                });
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status', 400);
+            response.body.errors[0].should.have.property('detail', '"users" must contain a user with role ORG_ADMIN');
+        });
+
         it('Update an organization without setting users should be successful and not modify the application users', async () => {
             const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const token: string = mockValidJWT({
@@ -493,12 +537,12 @@ describe('Update organization tests', () => {
             });
         });
 
-        it('Update an organization and removing users should be successful', async () => {
+        it('Update an organization and removing all users should fail', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
-            await new OrganizationUserModel({ userId: testUser.profile.legacyId, organization, role: 'ADMIN' }).save();
+            await new OrganizationUserModel({ userId: testUser.profile.legacyId, organization, role: 'ORG_ADMIN' }).save();
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -506,6 +550,61 @@ describe('Update organization tests', () => {
                 .send({
                     name: 'new organization name',
                     users: []
+                });
+
+            response.status.should.equal(400);
+
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status', 400);
+            response.body.errors[0].should.have.property('detail', '"users" must contain at least 1 items');
+
+            await assertConnection({ userId: testUser.profile.legacyId, organization });
+        });
+
+        it('Update an organization and setting some users but no ADMIN should fail', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationUserModel({ userId: testUser.profile.legacyId, organization, role: 'ORG_ADMIN' }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    users: [{ id: testUser.profile.legacyId, role: 'ORG_MEMBER' }]
+                });
+
+            response.status.should.equal(400);
+
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status', 400);
+            response.body.errors[0].should.have.property('detail', '"users" must contain a user with role ORG_ADMIN');
+
+            await assertConnection({ userId: testUser.profile.legacyId, organization });
+        });
+
+        it('Update an organization and removing some users while retaining an admin should fail', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testUserOne: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const testUserTwo: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationUserModel({ userId: testUserOne.profile.legacyId, organization, role: 'ORG_ADMIN' }).save();
+            await new OrganizationUserModel({ userId: testUserTwo.profile.legacyId, organization, role: 'ORG_MEMBER' }).save();
+
+            mockGetUserById(testUserTwo);
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    users: [{
+                        id: testUserTwo.profile.legacyId,
+                        role: 'ORG_ADMIN'
+                    }]
                 });
 
             response.status.should.equal(200);
@@ -516,13 +615,18 @@ describe('Update organization tests', () => {
             response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
             response.body.data.should.have.property('attributes').and.be.an('object');
             response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name).and.equal('new organization name');
-            response.body.data.attributes.should.have.property('users').and.eql([]);
+            response.body.data.attributes.should.have.property('users').and.eql([{
+                id: testUserTwo.profile.legacyId,
+                name: testUserTwo.profile.displayName,
+                role: 'ORG_ADMIN'
+            }]);
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
 
-            await assertNoConnection({ userId: testUser.profile.legacyId, organization });
+            await assertNoConnection({ userId: testUserOne.profile.legacyId, organization });
+            await assertConnection({ userId: testUserTwo.profile.legacyId, organization, role: 'ORG_ADMIN' });
         });
 
         it('Update an organization and overwriting existing users should be successful', async () => {

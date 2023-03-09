@@ -83,6 +83,43 @@ describe('Update application tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Application not found');
     });
 
+    it('Update a application with organization and user ownership simultaneously should return a 400 error', async () => {
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+
+        const application: HydratedDocument<IApplication> = await createApplication();
+
+        const response: request.Response = await requester
+            .patch(`/api/v1/application/${application._id.toString()}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                organization: new mongoose.Types.ObjectId().toString(),
+                user: new mongoose.Types.ObjectId().toString()
+            });
+
+        response.status.should.equal(400);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status').and.equal(400);
+        response.body.errors[0].should.have.property('detail').and.equal('"value" contains a conflict between optional exclusive peers [user, organization]');
+    });
+
+    it('Update a application with an invalid body value should return a 400 error', async () => {
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+
+        const application: HydratedDocument<IApplication> = await createApplication();
+
+        const response: request.Response = await requester
+            .patch(`/api/v1/application/${application._id.toString()}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                potato: new mongoose.Types.ObjectId().toString(),
+            });
+
+        response.status.should.equal(400);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status').and.equal(400);
+        response.body.errors[0].should.have.property('detail').and.equal('"potato" is not allowed');
+    });
+
     it('Update a application while being logged in as ADMIN should return a 200 and the user data (happy case - no user data provided)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
