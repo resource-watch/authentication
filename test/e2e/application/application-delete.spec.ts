@@ -68,7 +68,7 @@ describe('Delete application tests', () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await requester
-            .patch(`/api/v1/application/${new mongoose.Types.ObjectId().toString()}`)
+            .delete(`/api/v1/application/${new mongoose.Types.ObjectId().toString()}`)
             .set('Authorization', `Bearer ${token}`)
             .send({});
 

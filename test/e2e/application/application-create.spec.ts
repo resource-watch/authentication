@@ -1,12 +1,12 @@
 import nock from 'nock';
 import chai, { expect } from 'chai';
-import ApplicationModel, { IApplication } from 'models/application';
+import ApplicationModel, { CreateApplicationsDto, IApplication } from 'models/application';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
 import request from 'superagent';
 import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.mocks';
 import { mockCreateAWSAPIGatewayAPIKey } from "./aws.mocks";
-import { assertConnection, assertNoConnection, createApplication, createOrganization } from "../utils/helpers";
+import { assertConnection, createApplication, createOrganization } from "../utils/helpers";
 import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
@@ -21,7 +21,7 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const sendCreateApplicationRequest: (token: string, application?: Partial<IApplication>) => Promise<request.Response> = async (token: string, application: Partial<IApplication> = {}) => requester
+const sendCreateApplicationRequest: (token: string, application?: Partial<CreateApplicationsDto>) => Promise<request.Response> = async (token: string, application: Partial<CreateApplicationsDto> = {}) => requester
     .post(`/api/v1/application`)
     .set('Authorization', `Bearer ${token}`)
     .send({ ...application });
@@ -62,7 +62,7 @@ describe('Create application tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
-    it('Create a application while being logged in as ADMIN without the required fields should return a 400 \'Unauthorized\' error', async () => {
+    it('Create a application while being logged in as ADMIN without the required name field should return a 400 error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await sendCreateApplicationRequest(token);
@@ -73,12 +73,28 @@ describe('Create application tests', () => {
         response.body.errors[0].should.have.property('detail', '"name" is required');
     });
 
-    it('Create a application while being logged in as ADMIN should return a 200 (happy case)', async () => {
+    it('Create a application while being logged in as ADMIN without the required user or organization should return a 400 error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        const response: request.Response = await sendCreateApplicationRequest(token, { name: "my application" });
+
+        response.body.errors[0].should.have.property('status', 400);
+        response.body.errors[0].should.have.property('detail', '"value" must contain at least one of [user, organization]');
+    });
+
+    it('Create a application while being logged in as ADMIN should return a 200 (happy case)', async () => {
+        const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: testUser.profile.legacyId,
+            email: testUser.profile.email,
+            role: testUser.profile.role,
+            extraUserData: { apps: testUser.profile.apps },
+        });
+
+        mockGetUserById(testUser, 2);
         const apiKey = mockCreateAWSAPIGatewayAPIKey();
 
-        const response: request.Response = await sendCreateApplicationRequest(token, { name: "my application" });
+        const response: request.Response = await sendCreateApplicationRequest(token, { name: "my application", user: testUser.profile.legacyId });
         response.status.should.equal(200);
 
         const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);

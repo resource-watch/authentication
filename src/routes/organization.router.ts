@@ -36,10 +36,23 @@ const createOrganizationValidation: Record<string, any> = {
     body: {
         name: Joi.string().required(),
         applications: Joi.array().items(Joi.string()).optional(),
-        users: Joi.array().items(Joi.object({
-            id: Joi.string().required(),
-            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
-        })).optional()
+        users: Joi
+            .array()
+            .items(Joi.object({
+                id: Joi.string().required(),
+                role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
+            }))
+            .min(1)
+            .has(
+                Joi.object({
+                    id: Joi.string().required(),
+                    role: Joi.string().valid(ORGANIZATION_ROLES.ORG_ADMIN).required()
+                })
+            )
+            .required()
+            .messages({
+                'array.hasUnknown': `"users" must contain a user with role ORG_ADMIN`,
+            })
     }
 };
 
@@ -54,10 +67,22 @@ const updateOrganizationValidation: Record<string, any> = {
     body: {
         name: Joi.string().optional(),
         applications: Joi.array().items(Joi.string()).optional(),
-        users: Joi.array().items(Joi.object({
-            id: Joi.string().required(),
-            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
-        })).optional()
+        users: Joi
+            .array()
+            .items(Joi.object({
+                id: Joi.string().required(),
+                role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
+            }))
+            .min(1)
+            .has(
+                Joi.object({
+                    id: Joi.string().required(),
+                    role: Joi.string().valid(ORGANIZATION_ROLES.ORG_ADMIN).required()
+                }))
+            .optional()
+            .messages({
+                'array.hasUnknown': `"users" must contain a user with role ORG_ADMIN`,
+            })
     }
 };
 

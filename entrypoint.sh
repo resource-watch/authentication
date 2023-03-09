@@ -4,7 +4,7 @@ set -e
 case "$1" in
     develop)
         echo "Running Development Server"
-        exec npm run start
+        exec yarn run start
         ;;
     test)
         echo "Running Test"

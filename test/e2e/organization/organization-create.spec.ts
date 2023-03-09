@@ -72,10 +72,65 @@ describe('Create organization tests', () => {
         response.body.errors[0].should.have.property('detail', '"name" is required');
     });
 
-    it('Create a organization while being logged in as ADMIN should return a 200 (happy case)', async () => {
+    it('Create a organization without users should return a 400 error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const response: request.Response = await sendCreateOrganizationRequest(token, { name: "my organization" });
+        response.status.should.equal(400);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status', 400);
+        response.body.errors[0].should.have.property('detail', '"users" is required');
+    });
+
+    it('Create a organization with an empty users list should return a 400 error', async () => {
+        const token: string = mockValidJWT({ role: 'ADMIN' });
+
+        const response: request.Response = await sendCreateOrganizationRequest(token, {
+            name: "my organization",
+            users: []
+        });
+        response.status.should.equal(400);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status', 400);
+        response.body.errors[0].should.have.property('detail', '"users" must contain at least 1 items');
+    });
+
+    it('Create a organization with users but no owners should return a 400 error', async () => {
+        const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: testUser.profile.legacyId,
+            email: testUser.profile.email,
+            role: testUser.profile.role,
+            extraUserData: { apps: testUser.profile.apps },
+        });
+
+        const response: request.Response = await sendCreateOrganizationRequest(token, {
+            name: "my organization",
+            users: [{ id: testUser.profile.legacyId, role: 'ORG_MEMBER' }]
+
+        });
+        response.status.should.equal(400);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status', 400);
+        response.body.errors[0].should.have.property('detail', '"users" must contain a user with role ORG_ADMIN');
+    });
+
+    it('Create a organization while being logged in as ADMIN should return a 200 (happy case)', async () => {
+        const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: testUser.profile.legacyId,
+            email: testUser.profile.email,
+            role: testUser.profile.role,
+            extraUserData: { apps: testUser.profile.apps },
+        });
+
+        mockGetUserById(testUser);
+
+        const response: request.Response = await sendCreateOrganizationRequest(token, {
+            name: "my organization",
+            users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
+
+        });
         response.status.should.equal(200);
 
         const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
@@ -93,12 +148,21 @@ describe('Create organization tests', () => {
 
     describe('with associated applications', () => {
         it('Create an organization with associated application should be successful', async () => {
-            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            mockGetUserById(testUser);
             const testApplication: IApplication = await createApplication();
 
             const response: request.Response = await sendCreateOrganizationRequest(token, {
                 name: "my organization",
-                applications: [testApplication.id]
+                applications: [testApplication.id],
+                users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
             });
             response.status.should.equal(200);
 
@@ -121,7 +185,15 @@ describe('Create organization tests', () => {
         });
 
         it('Create an organization with associated application that belong to other organizations should be successful and remove link to the previous organization', async () => {
-            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            mockGetUserById(testUser);
             const testApplication: IApplication = await createApplication();
             const previousOrganization: IOrganization = await createOrganization();
 
@@ -132,7 +204,8 @@ describe('Create organization tests', () => {
 
             const response: request.Response = await sendCreateOrganizationRequest(token, {
                 name: "my organization",
-                applications: [testApplication.id]
+                applications: [testApplication.id],
+                users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
             });
             response.status.should.equal(200);
 
@@ -165,6 +238,8 @@ describe('Create organization tests', () => {
                 extraUserData: { apps: testUser.profile.apps },
             });
 
+            mockGetUserById(testUser);
+
             await new ApplicationUserModel({
                 userId: testUser.profile.legacyId,
                 application: testApplication
@@ -172,7 +247,8 @@ describe('Create organization tests', () => {
 
             const response: request.Response = await sendCreateOrganizationRequest(token, {
                 name: "my organization",
-                applications: [testApplication.id]
+                applications: [testApplication.id],
+                users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
             });
             response.status.should.equal(200);
 

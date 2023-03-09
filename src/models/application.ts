@@ -1,8 +1,8 @@
 import type { Document, Schema as ISchema } from 'mongoose';
 import { model, Schema, PaginateModel, Model } from 'mongoose';
 import paginate from 'mongoose-paginate-v2';
-import { IOrganization } from 'models/organization';
-import { IUser } from "services/okta.interfaces";
+import { IOrganization, IOrganizationId } from 'models/organization';
+import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import { Id } from "types";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import ApplicationUserModel, { IApplicationUser } from "models/application-user";
@@ -31,8 +31,8 @@ export interface IApplication extends Document<IApplicationId>, IApplicationMeth
 
 export type CreateApplicationsDto = {
     name: string;
-    organization: string;
-    user: string;
+    organization: IOrganizationId;
+    user: IUserLegacyId;
 }
 
 export type UpdateApplicationsDto = CreateApplicationsDto;
