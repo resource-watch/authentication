@@ -17,7 +17,9 @@ describe('GET user resources', () => {
         if (process.env.NODE_ENV !== 'test') {
             throw Error(`Running the test suite with NODE_ENV ${process.env.NODE_ENV} may result in permanent data loss. Please use NODE_ENV=test.`);
         }
+    });
 
+    beforeEach(async () => {
         requester = await getTestAgent();
     });
 
@@ -567,9 +569,11 @@ describe('GET user resources', () => {
         response.body.should.have.property('topics').and.be.an('object').and.have.property('count').and.equal(1);
     });
 
-    afterEach(() => {
+    afterEach(async () => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
         }
+
+        await closeTestAgent();
     });
 });
