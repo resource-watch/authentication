@@ -567,10 +567,6 @@ describe('GET user resources', () => {
         response.body.should.have.property('topics').and.be.an('object').and.have.property('count').and.equal(1);
     });
 
-    after(async () => {
-        await closeTestAgent();
-    });
-
     afterEach(() => {
         if (!nock.isDone()) {
             throw new Error(`Not all nock interceptors were used: ${nock.pendingMocks()}`);
