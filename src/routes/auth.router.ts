@@ -112,6 +112,9 @@ router.get('/user/me', Utils.isLogged, OktaProvider.getCurrentUser);
 router.get('/user/:id', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserById);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
+router.get('/user/:id/resources', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserResources);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 router.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

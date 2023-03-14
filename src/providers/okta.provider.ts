@@ -23,6 +23,7 @@ import { sleep } from 'sleep';
 import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.error';
 import { IDeletion } from 'models/deletion';
 import DeletionService from 'services/deletion.service';
+import UserResourcesService from "services/user-resources.service";
 
 export class OktaProvider {
 
@@ -223,6 +224,37 @@ export class OktaProvider {
         }
 
         ctx.body = user;
+    }
+
+    static async getUserResources(ctx: Context): Promise<void> {
+        logger.info('[OktaProvider] - Get resources for user by id: ', ctx.params.id);
+
+        const user: IUser = await OktaService.getUserById(ctx.params.id);
+
+        if (!user) {
+            ctx.throw(404, 'User not found');
+            return;
+        }
+
+        const result: Record<string, any> = {
+            datasets: await UserResourcesService.getDatasets(user.id),
+            layers: await UserResourcesService.getLayers(user.id),
+            widgets: await UserResourcesService.getWidgets(user.id),
+            userAccount: {
+                data: user
+            },
+            userData: await UserResourcesService.getUserData(user.id),
+            collections: await UserResourcesService.getCollectionsData(user.id),
+            favourites: await UserResourcesService.getFavouritesData(user.id),
+            areas: await UserResourcesService.getAreas(user.id),
+            stories: await UserResourcesService.getStories(user.id),
+            subscriptions: await UserResourcesService.getSubscriptions(user.id),
+            dashboards: await UserResourcesService.getDashboards(user.id),
+            profiles: await UserResourcesService.getProfile(user.id),
+            topics: await UserResourcesService.getTopics(user.id),
+        }
+
+        ctx.body = result;
     }
 
     static async findByIds(ctx: Context): Promise<void> {
