@@ -537,6 +537,7 @@ describe('GET user resources', () => {
 
         const response: request.Response = await requester
             .get(`/auth/user/${user.profile.legacyId}/resources`)
+            .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);

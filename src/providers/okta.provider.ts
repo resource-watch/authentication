@@ -23,7 +23,7 @@ import { sleep } from 'sleep';
 import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.error';
 import { IDeletion } from 'models/deletion';
 import DeletionService from 'services/deletion.service';
-import UserResourcesService from "services/user-resources.service";
+import UserResourcesService from 'services/user-resources.service';
 
 export class OktaProvider {
 
