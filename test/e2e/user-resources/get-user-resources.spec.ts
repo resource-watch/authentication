@@ -487,7 +487,6 @@ describe('GET user resources', () => {
                 meta: { "total-pages": 1, "total-items": 3, size: 10 }
             });
 
-
         nock(process.env.GATEWAY_URL)
             .get(`/v1/profile/${user.profile.legacyId}`)
             .reply(200, {
@@ -550,9 +549,9 @@ describe('GET user resources', () => {
         response.body.should.have.property('widgets').and.be.an('object').and.have.property('data').and.have.length(1);
         response.body.should.have.property('widgets').and.be.an('object').and.have.property('count').and.equal(5);
         response.body.should.have.property('userAccount').and.be.an('object').and.have.property('data');
-        response.body.should.have.property('userAccount').and.be.an('object').and.not.have.property('count');
+        response.body.should.have.property('userAccount').and.be.an('object').and.have.property('count').and.equal(1);
         response.body.should.have.property('userData').and.be.an('object').and.have.property('data');
-        response.body.should.have.property('userData').and.be.an('object').and.not.have.property('count');
+        response.body.should.have.property('userData').and.be.an('object').and.have.property('count').and.equal(1);
         response.body.should.have.property('collections').and.be.an('object').and.have.property('data').and.have.length(1);
         response.body.should.have.property('collections').and.be.an('object').and.have.property('count').and.equal(2);
         response.body.should.have.property('areas').and.be.an('object').and.have.property('data').and.have.length(3);
@@ -564,7 +563,7 @@ describe('GET user resources', () => {
         response.body.should.have.property('dashboards').and.be.an('object').and.have.property('data').and.have.length(1);
         response.body.should.have.property('dashboards').and.be.an('object').and.have.property('count').and.equal(1);
         response.body.should.have.property('profiles').and.be.an('object').and.have.property('data');
-        response.body.should.have.property('profiles').and.be.an('object').and.not.have.property('count');
+        response.body.should.have.property('profiles').and.be.an('object').and.have.property('count').and.equal(1);
         response.body.should.have.property('topics').and.be.an('object').and.have.property('data').and.have.length(1);
         response.body.should.have.property('topics').and.be.an('object').and.have.property('count').and.equal(1);
     });

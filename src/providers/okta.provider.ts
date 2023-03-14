@@ -241,7 +241,8 @@ export class OktaProvider {
             layers: await UserResourcesService.getLayers(user.id),
             widgets: await UserResourcesService.getWidgets(user.id),
             userAccount: {
-                data: user
+                data: user,
+                count: 1
             },
             userData: await UserResourcesService.getUserData(user.id),
             collections: await UserResourcesService.getCollectionsData(user.id),

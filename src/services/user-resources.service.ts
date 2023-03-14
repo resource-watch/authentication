@@ -91,12 +91,14 @@ export default class UserResourcesService {
             );
 
             return {
-                data: response.data
+                data: response.data,
+                count: Object.keys(response.data).length > 1 ? 1 : 0
             };
         } catch (error) {
             logger.warn(`Error trying to load user data resource for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                message: "Could not load user data"
+                data: [],
+                count: -1
             };
         }
     }
@@ -249,13 +251,21 @@ export default class UserResourcesService {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/profile/${userId}`,
                     method: 'GET',
+                    resolveWithFullResponse: false
                 }
             );
 
             return {
-                data: response.data
+                data: [response.data],
+                count: Object.keys(response.data).length > 1 ? 1 : 0
             };
         } catch (error) {
+            if (error.statusCode === 404 && error.response.data.errors[0].detail === 'Wrong ID provided') {
+                return {
+                    data: [],
+                    count: 0
+                };
+            }
             logger.warn(`Error trying to load profile resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
                 data: [],
