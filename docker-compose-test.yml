@@ -34,7 +34,6 @@ services:
     container_name: authorization-redis
     ports:
       - "16379:6379"
-    restart: always
 
   mongo:
     image: mongo:3.6
