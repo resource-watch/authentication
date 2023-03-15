@@ -6,7 +6,7 @@ type ResourceResult = {
     count: number
 }
 
-export default class UserResourcesService {
+export default class GetUserResourcesService {
     static async getDatasets(userId: string): Promise<ResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({

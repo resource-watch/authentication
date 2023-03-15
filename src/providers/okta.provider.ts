@@ -23,7 +23,7 @@ import { sleep } from 'sleep';
 import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.error';
 import { IDeletion } from 'models/deletion';
 import DeletionService from 'services/deletion.service';
-import UserResourcesService from 'services/user-resources.service';
+import GetUserResourcesService from 'services/get-user-resources.service';
 
 export class OktaProvider {
 
@@ -237,22 +237,22 @@ export class OktaProvider {
         }
 
         const result: Record<string, any> = {
-            datasets: await UserResourcesService.getDatasets(user.id),
-            layers: await UserResourcesService.getLayers(user.id),
-            widgets: await UserResourcesService.getWidgets(user.id),
+            datasets: await GetUserResourcesService.getDatasets(user.id),
+            layers: await GetUserResourcesService.getLayers(user.id),
+            widgets: await GetUserResourcesService.getWidgets(user.id),
             userAccount: {
                 data: user,
                 count: 1
             },
-            userData: await UserResourcesService.getUserData(user.id),
-            collections: await UserResourcesService.getCollectionsData(user.id),
-            favourites: await UserResourcesService.getFavouritesData(user.id),
-            areas: await UserResourcesService.getAreas(user.id),
-            stories: await UserResourcesService.getStories(user.id),
-            subscriptions: await UserResourcesService.getSubscriptions(user.id),
-            dashboards: await UserResourcesService.getDashboards(user.id),
-            profiles: await UserResourcesService.getProfile(user.id),
-            topics: await UserResourcesService.getTopics(user.id),
+            userData: await GetUserResourcesService.getUserData(user.id),
+            collections: await GetUserResourcesService.getCollectionsData(user.id),
+            favourites: await GetUserResourcesService.getFavouritesData(user.id),
+            areas: await GetUserResourcesService.getAreas(user.id),
+            stories: await GetUserResourcesService.getStories(user.id),
+            subscriptions: await GetUserResourcesService.getSubscriptions(user.id),
+            dashboards: await GetUserResourcesService.getDashboards(user.id),
+            profiles: await GetUserResourcesService.getProfile(user.id),
+            topics: await GetUserResourcesService.getTopics(user.id),
         }
 
         ctx.body = result;
