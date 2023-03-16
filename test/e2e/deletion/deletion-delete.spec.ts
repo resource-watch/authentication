@@ -103,10 +103,8 @@ describe('Delete deletion tests', () => {
         responseDeletion.attributes.should.have.property('widgetsDeleted').and.equal(deletion.widgetsDeleted);
         responseDeletion.attributes.should.have.property('userAccountDeleted').and.equal(deletion.userAccountDeleted);
         responseDeletion.attributes.should.have.property('userDataDeleted').and.equal(deletion.userDataDeleted);
-        responseDeletion.attributes.should.have.property('graphDataDeleted').and.equal(deletion.graphDataDeleted);
         responseDeletion.attributes.should.have.property('collectionsDeleted').and.equal(deletion.collectionsDeleted);
         responseDeletion.attributes.should.have.property('favouritesDeleted').and.equal(deletion.favouritesDeleted);
-        responseDeletion.attributes.should.have.property('vocabulariesDeleted').and.equal(deletion.vocabulariesDeleted);
         responseDeletion.attributes.should.have.property('areasDeleted').and.equal(deletion.areasDeleted);
         responseDeletion.attributes.should.have.property('storiesDeleted').and.equal(deletion.storiesDeleted);
         responseDeletion.attributes.should.have.property('subscriptionsDeleted').and.equal(deletion.subscriptionsDeleted);

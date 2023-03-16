@@ -1,88 +1,87 @@
 import { RWAPIMicroservice } from "rw-api-microservice-node";
 import logger from "logger";
 
-type ResourceResult = {
-    data: Record<string, any>[]
+type DeleteResourceResult = {
+    deletedData?: Record<string, any>[]
+    protectedData?: Record<string, any>[]
     count: number
+    error?: string
 }
 
 export default class DeleteUserResourcesService {
-    static async deleteDatasets(userId: string): Promise<ResourceResult> {
+    static async deleteDatasets(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    params: {
-                        userId,
-                        env: "all"
-                    },
-                    uri: '/v1/dataset',
+                    uri: `/v1/dataset/by-user/${userId}`,
                     method: 'DELETE'
                 }
             );
 
+            const deletedData: Array<any> = Array.isArray(response.deletedDatasets) ? response.deletedDatasets : [response.deletedDatasets]
+
             return {
-                data: response.data,
-                count: response.meta['total-items']
+                deletedData,
+                protectedData: Array.isArray(response.protectedDatasets) ? response.protectedDatasets : [response.protectedDatasets],
+                count: deletedData.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load dataset resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete dataset resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteLayers(userId: string): Promise<ResourceResult> {
+    static async deleteLayers(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    params: {
-                        userId,
-                        env: "all"
-                    },
-                    uri: '/v1/layer',
+                    uri: `/v1/layer/by-user/${userId}`,
                     method: 'DELETE'
                 }
             );
 
+            const deletedData: Array<any> = Array.isArray(response.deletedLayers) ? response.deletedLayers : [response.deletedLayers]
+
             return {
-                data: response.data,
-                count: response.meta['total-items']
+                deletedData,
+                protectedData: Array.isArray(response.protectedLayers) ? response.protectedLayers : [response.protectedLayers],
+                count: deletedData.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load layer resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete layer resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteWiddeletes(userId: string): Promise<ResourceResult> {
+    static async deleteWidgets(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    params: {
-                        userId,
-                        env: "all"
-                    },
-                    uri: '/v1/widdelete',
+                    uri: `/v1/widget/by-user/${userId}`,
                     method: 'DELETE'
                 }
             );
 
+            const deletedData: Array<any> = Array.isArray(response.deletedWidgets) ? response.deletedWidgets : [response.deletedWidgets]
+
             return {
-                data: response.data,
-                count: response.meta['total-items']
+                deletedData,
+                protectedData: Array.isArray(response.protectedWidgets) ? response.protectedWidgets : [response.protectedWidgets],
+                count: deletedData.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load widdelete resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete widget resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteUserData(userId: string): Promise<Record<string, any>> {
+    static async deleteUserData(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v2/user/${userId}`,
@@ -91,73 +90,61 @@ export default class DeleteUserResourcesService {
             );
 
             return {
-                data: response.data,
+                deletedData: [response.data],
                 count: Object.keys(response.data).length > 1 ? 1 : 0
             };
         } catch (error) {
-            logger.warn(`Error trying to load user data resource for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete user data resource for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteCollectionsData(userId: string): Promise<Record<string, any>> {
+    static async deleteCollectionsData(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    params: {
-                        userId,
-                        env: "all",
-                        application: "all"
-                    },
-                    uri: `/v1/collection`,
+                    uri: `/v1/collection/by-user/${userId}`,
                     method: 'DELETE'
                 }
             );
 
             return {
-                data: response.data,
-                count: response.meta['total-items']
+                deletedData: response.data,
+                count: response.data.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load collection resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete collection resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteFavouritesData(userId: string): Promise<Record<string, any>> {
+    static async deleteFavouritesData(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    params: {
-                        userId
-                    },
-                    uri: `/v1/favourite/find-by-user`,
-                    method: 'POST',
-                    body: {
-                        application: 'all',
-                        userId
-                    }
+                    uri: `/v1/favourite/by-user/${userId}`,
+                    method: 'DELETE',
                 }
             );
 
             return {
-                data: response.data,
+                deletedData: response.data,
                 count: response.data.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load favourite resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete favourite resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteAreas(userId: string): Promise<Record<string, any>> {
+    static async deleteAreas(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v2/area/by-user/${userId}`,
@@ -166,133 +153,125 @@ export default class DeleteUserResourcesService {
             );
 
             return {
-                data: response.data,
+                deletedData: response.data,
                 count: response.data.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load area resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete area resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteStories(userId: string): Promise<Record<string, any>> {
+    static async deleteStories(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    uri: `/v1/story/user/${userId}`,
+                    uri: `/v1/story/by-user/${userId}`,
                     method: 'DELETE',
                 }
             );
 
             return {
-                data: response.data,
+                deletedData: response.data,
                 count: response.data.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load story resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete story resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteSubscriptions(userId: string): Promise<Record<string, any>> {
+    static async deleteSubscriptions(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    uri: `/v1/subscriptions/user/${userId}`,
+                    uri: `/v1/subscriptions/by-user/${userId}`,
                     method: 'DELETE',
 
                 }
             );
 
             return {
-                data: response.data,
+                deletedData: response.data,
                 count: response.data.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load subscription resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete subscription resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteDashboards(userId: string): Promise<Record<string, any>> {
+    static async deleteDashboards(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    params: {
-                        user: userId,
-                        env: "all"
-                    },
-                    uri: `/v1/dashboard`,
+                    uri: `/v1/dashboard/by-user/${userId}`,
                     method: 'DELETE',
                 }
             );
 
             return {
-                data: response.data,
+                deletedData: response.data,
                 count: response.data.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load dashboard resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete dashboard resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteProfile(userId: string): Promise<Record<string, any>> {
+    static async deleteProfile(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/profile/${userId}`,
-                    method: 'DELETE',
-                    resolveWithFullResponse: false
+                    method: 'DELETE'
                 }
             );
 
             return {
-                data: [response.data],
-                count: Object.keys(response.data).length > 1 ? 1 : 0
+                deletedData: [],
+                count: 1
             };
         } catch (error) {
             if (error.statusCode === 404 && error.response.data.errors[0].detail === 'Wrong ID provided') {
                 return {
-                    data: [],
+                    deletedData: [],
                     count: 0
                 };
             }
-            logger.warn(`Error trying to load profile resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete profile resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }
     }
 
-    static async deleteTopics(userId: string): Promise<Record<string, any>> {
+    static async deleteTopics(userId: string): Promise<DeleteResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
-                    params: {
-                        user: userId,
-                    },
-                    uri: `/v1/topic`,
+                    uri: `/v1/topic/by-user/${userId}`,
                     method: 'DELETE',
                 }
             );
 
             return {
-                data: response.data,
+                deletedData: response.data,
                 count: response.data.length
             };
         } catch (error) {
-            logger.warn(`Error trying to load topic resources for user ID ${userId}. Error: ${error.toString()}`)
+            logger.warn(`Error trying to delete topic resources for user ID ${userId}. Error: ${error.toString()}`)
             return {
-                data: [],
+                error: error.toString(),
                 count: -1
             };
         }

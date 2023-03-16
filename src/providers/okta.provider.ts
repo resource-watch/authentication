@@ -24,6 +24,7 @@ import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.e
 import { IDeletion } from 'models/deletion';
 import DeletionService from 'services/deletion.service';
 import GetUserResourcesService from 'services/get-user-resources.service';
+import DeleteUserResourcesService from "services/delete-user-resources.service";
 
 export class OktaProvider {
 
@@ -326,6 +327,7 @@ export class OktaProvider {
         }
 
         let deletedUser: IUser = null;
+        let deletion: IDeletion;
         try {
             deletedUser = await OktaService.deleteUser(ctx.params.id);
             ctx.body = UserSerializer.serialize(deletedUser);
@@ -338,8 +340,25 @@ export class OktaProvider {
                 requestorUserId: Utils.getUser(ctx).id,
                 userAccountDeleted: deletedUser !== null,
             };
-            await DeletionService.createDeletion(newDeletionData);
+            deletion = await DeletionService.createDeletion(newDeletionData);
         }
+
+        const updatedDeletionData: Partial<IDeletion> = {
+            datasetsDeleted: (await DeleteUserResourcesService.deleteDatasets(ctx.params.id)).count >= 0,
+            widgetsDeleted: (await DeleteUserResourcesService.deleteWidgets(ctx.params.id)).count >= 0,
+            layersDeleted: (await DeleteUserResourcesService.deleteLayers(ctx.params.id)).count >= 0,
+            userDataDeleted: (await DeleteUserResourcesService.deleteUserData(ctx.params.id)).count >= 0,
+            collectionsDeleted: (await DeleteUserResourcesService.deleteCollectionsData(ctx.params.id)).count >= 0,
+            favouritesDeleted: (await DeleteUserResourcesService.deleteFavouritesData(ctx.params.id)).count >= 0,
+            areasDeleted: (await DeleteUserResourcesService.deleteAreas(ctx.params.id)).count >= 0,
+            storiesDeleted: (await DeleteUserResourcesService.deleteStories(ctx.params.id)).count >= 0,
+            dashboardsDeleted: (await DeleteUserResourcesService.deleteSubscriptions(ctx.params.id)).count >= 0,
+            subscriptionsDeleted: (await DeleteUserResourcesService.deleteDashboards(ctx.params.id)).count >= 0,
+            profilesDeleted: (await DeleteUserResourcesService.deleteProfile(ctx.params.id)).count >= 0,
+            topicsDeleted: (await DeleteUserResourcesService.deleteTopics(ctx.params.id)).count >= 0,
+        };
+
+        await DeletionService.updateDeletion(deletion.id, updatedDeletionData);
     }
 
     static async createUser(ctx: Context): Promise<void> {
