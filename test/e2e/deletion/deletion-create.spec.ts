@@ -92,10 +92,8 @@ describe('Create deletion tests', () => {
         response.body.data.attributes.should.have.property('widgetsDeleted').and.equal(databaseDeletion.widgetsDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('userAccountDeleted').and.equal(databaseDeletion.userAccountDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('userDataDeleted').and.equal(databaseDeletion.userDataDeleted).and.equal(false);
-        response.body.data.attributes.should.have.property('graphDataDeleted').and.equal(databaseDeletion.graphDataDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('collectionsDeleted').and.equal(databaseDeletion.collectionsDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('favouritesDeleted').and.equal(databaseDeletion.favouritesDeleted).and.equal(false);
-        response.body.data.attributes.should.have.property('vocabulariesDeleted').and.equal(databaseDeletion.vocabulariesDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('areasDeleted').and.equal(databaseDeletion.areasDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('storiesDeleted').and.equal(databaseDeletion.storiesDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('subscriptionsDeleted').and.equal(databaseDeletion.subscriptionsDeleted).and.equal(false);
@@ -114,10 +112,8 @@ describe('Create deletion tests', () => {
             widgetsDeleted: true,
             userAccountDeleted: true,
             userDataDeleted: true,
-            graphDataDeleted: true,
             collectionsDeleted: true,
             favouritesDeleted: true,
-            vocabulariesDeleted: true,
             areasDeleted: true,
             storiesDeleted: true,
             subscriptionsDeleted: true,
@@ -144,10 +140,8 @@ describe('Create deletion tests', () => {
         response.body.data.attributes.should.have.property('widgetsDeleted').and.equal(databaseDeletion.widgetsDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('userAccountDeleted').and.equal(databaseDeletion.userAccountDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('userDataDeleted').and.equal(databaseDeletion.userDataDeleted).and.equal(true);
-        response.body.data.attributes.should.have.property('graphDataDeleted').and.equal(databaseDeletion.graphDataDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('collectionsDeleted').and.equal(databaseDeletion.collectionsDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('favouritesDeleted').and.equal(databaseDeletion.favouritesDeleted).and.equal(true);
-        response.body.data.attributes.should.have.property('vocabulariesDeleted').and.equal(databaseDeletion.vocabulariesDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('areasDeleted').and.equal(databaseDeletion.areasDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('storiesDeleted').and.equal(databaseDeletion.storiesDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('subscriptionsDeleted').and.equal(databaseDeletion.subscriptionsDeleted).and.equal(true);
