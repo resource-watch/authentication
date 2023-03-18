@@ -326,24 +326,9 @@ export class OktaProvider {
             ctx.throw(500, 'Internal server error');
         }
 
-        let deletedUser: IUser = null;
-        let deletion: IDeletion;
-        try {
-            deletedUser = await OktaService.deleteUser(ctx.params.id);
-            ctx.body = UserSerializer.serialize(deletedUser);
-        } catch (err) {
-            logger.error('[OktaProvider] - Error deleting user, ', err);
-            return ctx.throw(500, 'Internal server error');
-        } finally {
-            const newDeletionData: Partial<IDeletion> = {
-                userId: ctx.params.id,
-                requestorUserId: Utils.getUser(ctx).id,
-                userAccountDeleted: deletedUser !== null,
-            };
-            deletion = await DeletionService.createDeletion(newDeletionData);
-        }
-
-        const updatedDeletionData: Partial<IDeletion> = {
+        const deletionData: Partial<IDeletion> = {
+            userId: ctx.params.id,
+            requestorUserId: Utils.getUser(ctx).id,
             datasetsDeleted: (await DeleteUserResourcesService.deleteDatasets(ctx.params.id)).count >= 0,
             widgetsDeleted: (await DeleteUserResourcesService.deleteWidgets(ctx.params.id)).count >= 0,
             layersDeleted: (await DeleteUserResourcesService.deleteLayers(ctx.params.id)).count >= 0,
@@ -358,7 +343,18 @@ export class OktaProvider {
             topicsDeleted: (await DeleteUserResourcesService.deleteTopics(ctx.params.id)).count >= 0,
         };
 
-        await DeletionService.updateDeletion(deletion.id, updatedDeletionData);
+        let deletedUser: IUser = null;
+        let deletion: IDeletion;
+        try {
+            deletedUser = await OktaService.deleteUser(ctx.params.id);
+            ctx.body = UserSerializer.serialize(deletedUser);
+            deletionData.userAccountDeleted = (deletedUser !== null);
+        } catch (err) {
+            logger.error('[OktaProvider] - Error deleting user, ', err);
+            return ctx.throw(500, 'Internal server error');
+        } finally {
+            deletion = await DeletionService.createDeletion(deletionData);
+        }
     }
 
     static async createUser(ctx: Context): Promise<void> {
