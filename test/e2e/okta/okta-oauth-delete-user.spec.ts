@@ -111,6 +111,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         databaseDeletion.should.have.property('layersDeleted').and.equal(true)
         databaseDeletion.should.have.property('widgetsDeleted').and.equal(true)
         databaseDeletion.should.have.property('userAccountDeleted').and.equal(true)
+        databaseDeletion.should.have.property('userDataDeleted').and.equal(true)
         databaseDeletion.should.have.property('collectionsDeleted').and.equal(true)
         databaseDeletion.should.have.property('favouritesDeleted').and.equal(true)
         databaseDeletion.should.have.property('areasDeleted').and.equal(true)

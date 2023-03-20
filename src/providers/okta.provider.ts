@@ -344,7 +344,6 @@ export class OktaProvider {
         };
 
         let deletedUser: IUser = null;
-        let deletion: IDeletion;
         try {
             deletedUser = await OktaService.deleteUser(ctx.params.id);
             ctx.body = UserSerializer.serialize(deletedUser);
@@ -353,7 +352,7 @@ export class OktaProvider {
             logger.error('[OktaProvider] - Error deleting user, ', err);
             return ctx.throw(500, 'Internal server error');
         } finally {
-            deletion = await DeletionService.createDeletion(deletionData);
+            await DeletionService.createDeletion(deletionData);
         }
     }
 

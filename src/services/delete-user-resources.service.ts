@@ -94,6 +94,12 @@ export default class DeleteUserResourcesService {
                 count: Object.keys(response.data).length > 1 ? 1 : 0
             };
         } catch (error) {
+            if (error.statusCode === 404 && error.response.data.errors[0].detail === 'User not found') {
+                return {
+                    deletedData: [],
+                    count: 0
+                };
+            }
             logger.warn(`Error trying to delete user data resource for user ID ${userId}. Error: ${error.toString()}`)
             return {
                 error: error.toString(),
