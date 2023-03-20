@@ -7,8 +7,11 @@ import paginate from 'mongoose-paginate-v2';
  * Pending: Request for deletion received, but some/all user resources have not been deleted
  * done: Request for deletion received and all user resources were deleted successfully
  */
+export const DELETION_STATUS_PENDING: DELETION_STATUS_TYPE = 'pending';
+export const DELETION_STATUS_DONE: DELETION_STATUS_TYPE = 'done';
+
 export type DELETION_STATUS_TYPE = 'pending' | 'done';
-export const DELETION_STATUS: DELETION_STATUS_TYPE[] = ['pending', 'done'];
+export const DELETION_STATUS: DELETION_STATUS_TYPE[] = [DELETION_STATUS_PENDING, DELETION_STATUS_DONE];
 
 export interface IDeletion extends Document {
     userId: string;
@@ -57,7 +60,8 @@ export const Deletion: ISchema<IDeletion> = new Schema<IDeletion>({
 
 Deletion.plugin(paginate);
 
-interface DeletionDocument extends Document, IDeletion {}
+interface DeletionDocument extends Document, IDeletion {
+}
 
 const DeletionModel: PaginateModel<DeletionDocument> = model<DeletionDocument, PaginateModel<DeletionDocument>>('Deletion', Deletion);
 

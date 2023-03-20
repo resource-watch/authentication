@@ -21,7 +21,7 @@ import UserNotFoundError from 'errors/userNotFound.error';
 import config from 'config';
 import { sleep } from 'sleep';
 import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.error';
-import { IDeletion } from 'models/deletion';
+import { DELETION_STATUS, DELETION_STATUS_DONE, DELETION_STATUS_PENDING, IDeletion } from 'models/deletion';
 import DeletionService from 'services/deletion.service';
 import GetUserResourcesService from 'services/get-user-resources.service';
 import DeleteUserResourcesService from "services/delete-user-resources.service";
@@ -343,11 +343,27 @@ export class OktaProvider {
             topicsDeleted: (await DeleteUserResourcesService.deleteTopics(ctx.params.id)).count >= 0,
         };
 
+        const allDataDeleted: boolean = (
+            deletionData.datasetsDeleted
+            && deletionData.widgetsDeleted
+            && deletionData.layersDeleted
+            && deletionData.userDataDeleted
+            && deletionData.collectionsDeleted
+            && deletionData.favouritesDeleted
+            && deletionData.areasDeleted
+            && deletionData.storiesDeleted
+            && deletionData.dashboardsDeleted
+            && deletionData.subscriptionsDeleted
+            && deletionData.profilesDeleted
+            && deletionData.topicsDeleted
+        );
+
         let deletedUser: IUser = null;
         try {
             deletedUser = await OktaService.deleteUser(ctx.params.id);
             ctx.body = UserSerializer.serialize(deletedUser);
             deletionData.userAccountDeleted = (deletedUser !== null);
+            deletionData.status = (allDataDeleted && deletionData.userDataDeleted) ? DELETION_STATUS_DONE : DELETION_STATUS_PENDING;
         } catch (err) {
             logger.error('[OktaProvider] - Error deleting user, ', err);
             return ctx.throw(500, 'Internal server error');

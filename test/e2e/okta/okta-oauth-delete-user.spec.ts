@@ -120,6 +120,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         databaseDeletion.should.have.property('dashboardsDeleted').and.equal(true)
         databaseDeletion.should.have.property('profilesDeleted').and.equal(true)
         databaseDeletion.should.have.property('topicsDeleted').and.equal(true)
+        databaseDeletion.should.have.property('status').and.equal('done')
     });
 
     it('Deleting a existing user while logged in as a MICROSERVICE should return 200 OK with the deleted user data', async () => {
