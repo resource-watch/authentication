@@ -1,6 +1,6 @@
 import { RWAPIMicroservice } from "rw-api-microservice-node";
 import logger from "logger";
-import { IUserLegacyId } from "./okta.interfaces";
+import { IUserLegacyId } from "services/okta.interfaces";
 
 type ResourceResult = {
     data: Record<string, any>[]
