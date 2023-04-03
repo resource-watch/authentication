@@ -183,34 +183,42 @@ organizationRouter.route({
     method: 'get',
     path: '/',
     validate: getOrganizationsValidation,
-    pre: Utils.isAdmin,
-    handler: OrganizationRouter.getOrganizations,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: OrganizationRouter.getOrganizations,
 });
 organizationRouter.route({
     method: 'get',
     path: '/:id',
-    pre: Utils.isAdmin,
-    handler: OrganizationRouter.getOrganizationById,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: OrganizationRouter.getOrganizationById,
 });
 organizationRouter.route({
     method: 'post',
     path: '/',
     validate: createOrganizationValidation,
-    pre: Utils.isAdmin,
-    handler: OrganizationRouter.createOrganization,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: OrganizationRouter.createOrganization,
 });
+
 organizationRouter.route({
     method: 'patch',
     path: '/:id',
     validate: updateOrganizationValidation,
-    pre: Utils.isAdmin,
-    handler: OrganizationRouter.updateOrganization,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: OrganizationRouter.updateOrganization,
 });
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 organizationRouter.route({
     method: 'delete',
     path: '/:id',
-    pre: Utils.isAdmin,
-    handler: OrganizationRouter.deleteOrganization,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: OrganizationRouter.deleteOrganization,
 });
 
 export default organizationRouter;

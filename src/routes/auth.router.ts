@@ -4,7 +4,6 @@ import router, { Router } from 'koa-joi-router';
 import { cloneDeep } from 'lodash';
 import logger from 'logger';
 import Utils from 'utils';
-
 import Settings, { IApplication } from 'services/settings.service';
 import OktaProvider from 'providers/okta.provider';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
@@ -112,122 +111,171 @@ async function setCallbackUrlOnlyWithQueryParam(ctx: Context, next: Next): Promi
 authRouter.route({
     method: 'get',
     path: '/google',
-    pre: setCallbackUrl,
-    handler: OktaGoogleProvider.google,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: setCallbackUrl, handler: OktaGoogleProvider.google,
 });
 authRouter.route({
     method: 'get',
     path: '/google/callback',
-    pre: OktaGoogleProvider.googleCallback,
-    handler: OktaProvider.updateApplications,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: OktaGoogleProvider.googleCallback, handler: OktaProvider.updateApplications,
 });
 authRouter.route({
     method: 'get',
     path: '/google/token',
-    pre: OktaGoogleProvider.googleToken,
-    handler: OktaProvider.generateJWT,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: OktaGoogleProvider.googleToken, handler: OktaProvider.generateJWT,
 });
 
 
 authRouter.route({
     method: 'get',
     path: '/facebook',
-    pre: setCallbackUrl,
-    handler: OktaFacebookProvider.facebook,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: setCallbackUrl, handler: OktaFacebookProvider.facebook,
 });
 authRouter.route({
     method: 'get',
     path: '/facebook/callback',
-    pre: OktaFacebookProvider.facebookCallback,
-    handler: OktaProvider.updateApplications,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: OktaFacebookProvider.facebookCallback, handler: OktaProvider.updateApplications,
 });
 authRouter.route({
     method: 'get',
     path: '/facebook/token',
-    pre: OktaFacebookProvider.facebookToken,
-    handler: OktaProvider.generateJWT,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: OktaFacebookProvider.facebookToken, handler: OktaProvider.generateJWT,
 });
 authRouter.route({
     method: 'get',
     path: '/apple',
-    pre: setCallbackUrl,
-    handler: OktaAppleProvider.apple,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: setCallbackUrl, handler: OktaAppleProvider.apple,
 });
 authRouter.route({
     method: 'post',
     path: '/apple/callback',
-    pre: OktaAppleProvider.appleCallback,
-    handler: OktaProvider.updateApplications,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: OktaAppleProvider.appleCallback, handler: OktaProvider.updateApplications,
 });
 authRouter.route({
     method: 'get',
     path: '/apple/token',
-    pre: OktaAppleProvider.appleToken,
-    handler: OktaProvider.generateJWT,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: OktaAppleProvider.appleToken, handler: OktaProvider.generateJWT,
 });
 
 authRouter.route({
     method: 'get',
     path: '/',
-    pre: setCallbackUrl,
-    handler: OktaProvider.redirectLogin,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: setCallbackUrl, handler: OktaProvider.redirectLogin,
 });
 
 authRouter.route({
     method: 'get',
     path: '/login',
-    pre: [setCallbackUrl, loadApplicationGeneralConfig],
-    handler: OktaProvider.loginView,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: [setCallbackUrl, loadApplicationGeneralConfig], handler: OktaProvider.loginView,
 });
 
 authRouter.route({
     method: 'post',
     path: '/login',
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     handler: OktaProvider.localCallback,
 });
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/fail', loadApplicationGeneralConfig, OktaProvider.failAuth);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/check-logged', OktaProvider.checkLogged);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/success', loadApplicationGeneralConfig, OktaProvider.success);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/logout', setCallbackUrlOnlyWithQueryParam, OktaProvider.logout);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/sign-up', loadApplicationGeneralConfig, OktaProvider.getSignUp);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.post('/sign-up', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.signUp);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/reset-password', loadApplicationGeneralConfig, OktaProvider.requestEmailResetView);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.post('/reset-password', setCallbackUrl, loadApplicationGeneralConfig, OktaProvider.sendResetMail);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/generate-token', Utils.isLogged, OktaProvider.generateJWT);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/user', Utils.isLogged, Utils.isAdmin, OktaProvider.getUsers);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/user/me', Utils.isLogged, OktaProvider.getCurrentUser);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/user/:id', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserById);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/user/:id/resources', Utils.isLogged, Utils.isAdminOrMicroservice, OktaProvider.getUserResources);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.post('/user/find-by-ids', Utils.isLogged, Utils.isMicroservice, OktaProvider.findByIds);
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/user/ids/:role', Utils.isLogged, Utils.isMicroservice, OktaProvider.getIdsByRole);
-
 
 authRouter.route({
     method: 'post',
     path: '/user',
     validate: createUserValidation,
-    pre: [Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig],
-    handler: OktaProvider.createUser,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: [Utils.isLogged, Utils.isAdminOrManager, loadApplicationGeneralConfig], handler: OktaProvider.createUser,
 });
 
 authRouter.route({
     method: 'patch',
     path: '/user/me',
     validate: updateUserValidation,
-    pre: Utils.isLogged,
-    handler: OktaProvider.updateMe,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isLogged, handler: OktaProvider.updateMe,
 });
 authRouter.route({
     method: 'patch',
     path: '/user/:id',
     validate: updateUserValidation,
-    pre: [Utils.isLogged, Utils.isAdmin],
-    handler: OktaProvider.updateUser,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: [Utils.isLogged, Utils.isAdmin], handler: OktaProvider.updateUser,
 });
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.delete('/user/:id', Utils.isLogged, Utils.isAdminOrMicroserviceOrSameUserToDelete, OktaProvider.deleteUser);
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 authRouter.get('/authorization-code/callback', OktaProvider.authCodeCallback, OktaProvider.updateApplications);
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

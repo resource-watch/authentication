@@ -413,7 +413,7 @@ export class OktaProvider {
         let deletedUser: IUser = null;
         try {
             deletedUser = await OktaService.deleteUser(ctx.params.id);
-            ctx.body = UserSerializer.serialize(deletedUser);
+            ctx.body = await UserSerializer.serialize(await UserModelStub.hydrate(deletedUser));
             deletionData.userAccountDeleted = (deletedUser !== null);
             deletionData.status = (allDataDeleted && deletionData.userDataDeleted) ? DELETION_STATUS_DONE : DELETION_STATUS_PENDING;
         } catch (err) {

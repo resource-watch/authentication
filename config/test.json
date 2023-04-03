@@ -7,6 +7,9 @@
     "url": "https://wri-admin.okta.com",
     "apiKey": "testApiKey"
   },
+  "mongodb": {
+    "database": "authorization_test"
+  },
   "aws": {
     "region": "us-east-1",
     "accessKeyId": "accessKeyId",

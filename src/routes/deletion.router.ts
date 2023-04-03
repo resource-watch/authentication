@@ -213,10 +213,24 @@ class DeletionRouter {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 deletionRouter.get('/', getDeletionsConfig, Utils.isAdmin, DeletionRouter.getDeletions);
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 deletionRouter.get('/:id', Utils.isAdmin, DeletionRouter.getDeletionById);
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 deletionRouter.post('/', createDeletionConfig, Utils.isAdmin, DeletionRouter.createDeletion);
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 deletionRouter.patch('/:id', updateDeletionConfig, Utils.isAdmin, DeletionRouter.updateDeletion);
+
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 deletionRouter.delete('/:id', Utils.isAdmin, DeletionRouter.deleteDeletion);
 
 export default deletionRouter;

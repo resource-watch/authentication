@@ -150,34 +150,40 @@ applicationRouter.route({
     method: 'get',
     path: '/',
     validate: getApplicationsValidation,
-    pre: Utils.isAdmin,
-    handler: ApplicationRouter.getApplications,
+
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: ApplicationRouter.getApplications,
 });
 applicationRouter.route({
     method: 'get',
     path: '/:id',
-    pre: Utils.isAdmin,
-    handler: ApplicationRouter.getApplicationById,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: ApplicationRouter.getApplicationById,
 });
 applicationRouter.route({
     method: 'post',
     path: '/',
     validate: createApplicationValidation,
-    pre: Utils.isAdmin,
-    handler: ApplicationRouter.createApplication,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: ApplicationRouter.createApplication,
 });
 applicationRouter.route({
     method: 'patch',
     path: '/:id',
     validate: updateApplicationValidation,
-    pre: Utils.isAdmin,
-    handler: ApplicationRouter.updateApplication,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: ApplicationRouter.updateApplication,
 });
 applicationRouter.route({
     method: 'delete',
     path: '/:id',
-    pre: Utils.isAdmin,
-    handler: ApplicationRouter.deleteApplication,
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    pre: Utils.isAdmin, handler: ApplicationRouter.deleteApplication,
 });
 
 export default applicationRouter;
