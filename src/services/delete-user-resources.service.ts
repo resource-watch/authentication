@@ -237,7 +237,7 @@ export default class DeleteUserResourcesService {
 
     static async deleteProfile(userId: string): Promise<DeleteResourceResult> {
         try {
-            const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
+            await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/profile/${userId}`,
                     method: 'DELETE'
                 }
