@@ -1,9 +1,11 @@
 import { Context, Next } from 'koa';
 import logger from 'logger';
 import Settings from 'services/settings.service';
-import { IUser } from 'services/okta.interfaces';
+import { IUser, IUserLegacyId } from 'services/okta.interfaces';
 import { URL } from 'url';
 import { PaginateOptions } from 'mongoose';
+import { IOrganizationId } from "models/organization";
+import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES } from "models/organization-user";
 
 export default class Utils {
 
@@ -53,6 +55,72 @@ export default class Utils {
             await next();
         } else {
             logger.info('Not admin');
+            ctx.throw(403, 'Not authorized');
+        }
+    }
+
+    static async isAdminOrOrgAdmin(ctx: Context, next: Next): Promise<void> {
+        logger.info('Checking if user is admin or organization admin');
+        const user: IUser = Utils.getUser(ctx);
+        if (!user) {
+            logger.info('Not authenticated');
+            ctx.throw(401, 'Not authenticated');
+            return;
+        }
+        if (user.role === 'ADMIN') {
+            logger.info('User is admin');
+            await next();
+            return ;
+        }
+
+        const organizationId: IOrganizationId = ctx.params.id;
+        const query: {
+            role: "ORG_MEMBER" | "ORG_ADMIN";
+            organization: IOrganizationId;
+            user: IUserLegacyId
+        } = {
+            role: ORGANIZATION_ROLES.ORG_ADMIN,
+            organization: organizationId,
+            user: user.id
+        }
+        const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
+        if (organizationUser) {
+            logger.info('User is org admin');
+            await next();
+        } else {
+            logger.info('Not org admin');
+            ctx.throw(403, 'Not authorized');
+        }
+    }
+
+    static async isAdminOrOrgUser(ctx: Context, next: Next): Promise<void> {
+        logger.info('Checking if user is admin or belongs to organization');
+        const user: IUser = Utils.getUser(ctx);
+        if (!user) {
+            logger.info('Not authenticated');
+            ctx.throw(401, 'Not authenticated');
+            return;
+        }
+        if (user.role === 'ADMIN') {
+            logger.info('User is admin');
+            await next();
+            return ;
+        }
+
+        const organizationId: IOrganizationId = ctx.params.id;
+        const query: {
+            organization: IOrganizationId;
+            user: IUserLegacyId
+        } = {
+            organization: organizationId,
+            user: user.id
+        }
+        const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
+        if (organizationUser) {
+            logger.info('User belongs to organization');
+            await next();
+        } else {
+            logger.info('Does not belong to organization');
             ctx.throw(403, 'Not authorized');
         }
     }
@@ -147,7 +215,7 @@ export default class Utils {
         }
 
         if ('referer' in ctx.request.header) {
-            const url:URL = new URL(ctx.request.header.referer);
+            const url: URL = new URL(ctx.request.header.referer);
             return url.host;
         }
         return ctx.request.host;

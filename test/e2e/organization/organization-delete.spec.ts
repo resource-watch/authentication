@@ -63,6 +63,22 @@ describe('Delete organization tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
+    it('Delete a organization while being logged in as MANAGER user should return a 403 \'Forbidden\' error', async () => {
+        const token: string = mockValidJWT({ role: 'MANAGER' });
+
+        const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+        const response: request.Response = await requester
+            .delete(`/api/v1/organization/${organization._id.toString()}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({});
+
+        response.status.should.equal(403);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status').and.equal(403);
+        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+    });
+
     it('Delete a organization that does not exist while being logged in as ADMIN user should return a 404 \'Organization not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
@@ -102,6 +118,30 @@ describe('Delete organization tests', () => {
         new Date(response.body.data.attributes.createdAt).should.equalDate(organization.createdAt);
         response.body.data.attributes.should.have.property('updatedAt');
         new Date(response.body.data.attributes.updatedAt).should.equalDate(organization.updatedAt);
+    });
+
+    describe('while being logged in as an organization ORG_ADMIN', () => {
+        it('Delete a organization should return a 403 \'Forbidden\' error', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            const response: request.Response = await requester
+                .delete(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+        });
     });
 
     describe('with associated applications', () => {
