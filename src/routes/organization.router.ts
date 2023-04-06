@@ -185,14 +185,14 @@ organizationRouter.route({
     validate: getOrganizationsValidation,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: OrganizationRouter.getOrganizations,
+    pre: Utils.isAdminOrOrgUser, handler: OrganizationRouter.getOrganizations,
 });
 organizationRouter.route({
     method: 'get',
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: OrganizationRouter.getOrganizationById,
+    pre: Utils.isAdminOrOrgUser, handler: OrganizationRouter.getOrganizationById,
 });
 organizationRouter.route({
     method: 'post',
@@ -209,7 +209,7 @@ organizationRouter.route({
     validate: updateOrganizationValidation,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: OrganizationRouter.updateOrganization,
+    pre: Utils.isAdminOrOrgAdmin, handler: OrganizationRouter.updateOrganization,
 });
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore

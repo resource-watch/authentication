@@ -70,6 +70,22 @@ describe('Update organization tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
+    it('Update a organization while being logged in as MANAGER should return a 403 \'Forbidden\' error', async () => {
+        const token: string = mockValidJWT({ role: 'MANAGER' });
+
+        const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+        const response: request.Response = await requester
+            .patch(`/api/v1/organization/${organization._id.toString()}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({});
+
+        response.status.should.equal(403);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status').and.equal(403);
+        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+    });
+
     it('Update a organization that does not exist while being logged in as ADMIN user should return a 404 \'Organization not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
@@ -138,33 +154,302 @@ describe('Update organization tests', () => {
         new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
     });
 
-    it('Update a organization while being logged in should return a 200 and the updated user data (happy case, regen api key)', async () => {
-        const token: string = mockValidJWT({ role: 'ADMIN' });
+    describe('while being logged in as an organization ORG_ADMIN', () => {
+        it('Update a organization should return a 200 and the user data (happy case)', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+            mockGetUserById(testUser);
 
-        const organization: HydratedDocument<IOrganization> = await createOrganization();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
 
-        const response: request.Response = await requester
-            .patch(`/api/v1/organization/${organization._id.toString()}`)
-            .set('Authorization', `Bearer ${token}`)
-            .send({
-                name: 'new organization name',
+            await new OrganizationUserModel({
+                organization,
+                userId: testUser.profile.legacyId,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                });
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.should.have.property('data').and.be.an('object');
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(organization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name).and.equal('new organization name');
+            response.body.data.attributes.should.have.property('applications').and.eql([]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(organization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(organization.updatedAt);
+        });
+
+        it('Update an organization and setting user should be successful', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
             });
 
-        response.status.should.equal(200);
+            mockGetUserById(testUser);
 
-        const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
 
-        response.body.should.have.property('data').and.be.an('object');
-        response.body.data.should.have.property('type').and.equal('organizations');
-        response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
-        response.body.data.should.have.property('attributes').and.be.an('object');
-        response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name).and.equal('new organization name');
-        response.body.data.attributes.should.have.property('applications').and.eql([]);
-        response.body.data.attributes.should.have.property('createdAt');
-        new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
-        response.body.data.attributes.should.have.property('updatedAt');
-        new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
-    });
+            await new OrganizationUserModel({
+                organization,
+                userId: testUser.profile.legacyId,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    users: [{ id: testUser.profile.legacyId, role: 'ORG_ADMIN' }]
+                });
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('users').and.eql([{
+                id: testUser.profile.legacyId,
+                name: testUser.profile.displayName,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            await assertConnection({ userId: testUser.profile.legacyId, organization });
+        });
+
+        it('Update an organization and removing some users while retaining an admin should be successful', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const testUserOne: OktaUser = getMockOktaUser();
+            const testUserTwo: OktaUser = getMockOktaUser();
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationUserModel({
+                organization,
+                userId: testUser.profile.legacyId,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            await new OrganizationUserModel({ userId: testUserOne.profile.legacyId, organization, role: 'ORG_ADMIN' }).save();
+            await new OrganizationUserModel({ userId: testUserTwo.profile.legacyId, organization, role: 'ORG_MEMBER' }).save();
+
+            mockGetUserById(testUserTwo);
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    users: [{
+                        id: testUserTwo.profile.legacyId,
+                        role: 'ORG_ADMIN'
+                    }]
+                });
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name).and.equal('new organization name');
+            response.body.data.attributes.should.have.property('users').and.eql([{
+                id: testUserTwo.profile.legacyId,
+                name: testUserTwo.profile.displayName,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            await assertNoConnection({ userId: testUserOne.profile.legacyId, organization });
+            await assertConnection({ userId: testUserTwo.profile.legacyId, organization, role: 'ORG_ADMIN' });
+        });
+
+        it('Update an organization and replacing the ORG_ADMIN user should be successful', async () => {
+            const testUserOne: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUserOne.profile.legacyId,
+                email: testUserOne.profile.email,
+                role: testUserOne.profile.role,
+                extraUserData: { apps: testUserOne.profile.apps },
+            });
+            const testUserTwo: OktaUser = getMockOktaUser();
+
+            mockGetUserById(testUserTwo);
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationUserModel({
+                userId: testUserOne.profile.legacyId,
+                organization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    users: [{
+                        id: testUserTwo.profile.legacyId,
+                        role: 'ORG_ADMIN'
+                    }],
+                });
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('users')
+            response.body.data.attributes.users.should.eql([{
+                id: testUserTwo.profile.legacyId,
+                name: testUserTwo.profile.displayName,
+                role: 'ORG_ADMIN'
+            }]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            await assertNoConnection({ userId: testUserOne.profile.legacyId, organization });
+            await assertConnection({ userId: testUserTwo.profile.legacyId, organization });
+        });
+
+        it('Update an organization and setting application should be successful', async () => {
+            const testUserOne: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUserOne.profile.legacyId,
+                email: testUserOne.profile.email,
+                role: testUserOne.profile.role,
+                extraUserData: { apps: testUserOne.profile.apps },
+            });
+
+            mockGetUserById(testUserOne);
+
+            const testApplication: IApplication = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationUserModel({
+                userId: testUserOne.profile.legacyId,
+                organization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    applications: [testApplication.id]
+                });
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('applications').and.eql([{
+                id: testApplication.id,
+                name: testApplication.name,
+            }]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            await assertConnection({ application: testApplication, organization });
+        });
+
+        it('Update an organization and removing applications should be successful', async () => {
+            const testUserOne: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUserOne.profile.legacyId,
+                email: testUserOne.profile.email,
+                role: testUserOne.profile.role,
+                extraUserData: { apps: testUserOne.profile.apps },
+            });
+
+            mockGetUserById(testUserOne);
+
+            const testApplication: IApplication = await createApplication();
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationApplicationModel({ application: testApplication, organization }).save();
+
+            await new OrganizationUserModel({
+                userId: testUserOne.profile.legacyId,
+                organization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    applications: []
+                });
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name).and.equal('new organization name');
+            response.body.data.attributes.should.have.property('applications').and.eql([]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+
+            await assertNoConnection({ application: testApplication, organization });
+        });
+    })
 
     describe('with associated applications', () => {
         it('Update an organization without setting applications should be successful and not modify the associated applications', async () => {
@@ -585,7 +870,7 @@ describe('Update organization tests', () => {
             await assertConnection({ userId: testUser.profile.legacyId, organization });
         });
 
-        it('Update an organization and removing some users while retaining an admin should fail', async () => {
+        it('Update an organization and removing some users while retaining an admin should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testUserOne: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const testUserTwo: OktaUser = getMockOktaUser({ role: 'ADMIN' });
