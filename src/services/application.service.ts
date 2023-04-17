@@ -222,4 +222,12 @@ export default class ApplicationService {
 
         return application;
     }
+
+    static async getApplicationByApiKey(apiKey: string): Promise<IApplication> {
+        const application: IApplication = await ApplicationModel.findOne({ apiKeyValue: apiKey });
+        if (!application) {
+            throw new ApplicationNotFoundError();
+        }
+        return application;
+    }
 }

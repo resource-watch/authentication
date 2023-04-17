@@ -62,7 +62,7 @@
     "@types/chai-string": "^1.4.2",
     "@types/config": "^3.3.0",
     "@types/jsonapi-serializer": "^3.6.5",
-    "@types/jsonwebtoken": "^8.5.9",
+    "@types/jsonwebtoken": "^9.0.1",
     "@types/koa": "^2.13.6",
     "@types/koa-generic-session": "^2.2.1",
     "@types/koa-joi-router": "^8.0.4",

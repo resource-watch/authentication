@@ -12,6 +12,7 @@ import OktaTwitterProvider, { registerOktaTwitterStrategies } from 'providers/ok
 import OrganizationRouter from 'routes/organization.router';
 import ApplicationRouter from 'routes/application.router';
 import mount from 'koa-mount';
+import RequestRouter from "routes/request.router";
 
 export function loadRoutes(app: Application): void {
     logger.debug('Loading OAuth middleware...');
@@ -78,6 +79,7 @@ export function loadRoutes(app: Application): void {
 
     // Load routes
     logger.debug('Loading routes...');
+    app.use(RequestRouter.middleware());
     app.use(AuthRouter.middleware());
     app.use(mount('/api/v1', DeletionRouter.middleware()));
     app.use(mount('/api/v1', ApplicationRouter.middleware()));

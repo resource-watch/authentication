@@ -16,7 +16,7 @@ import {
     OktaUser,
     OktaUserProfile
 } from 'services/okta.interfaces';
-import { createTokenForUser } from '../utils/helpers';
+import { createInvalidTokenForUser, createTokenForUser } from '../utils/helpers';
 
 export const getMockOktaUser: (override?: Partial<OktaUserProfile>) => OktaUser = (override = {}) => {
     const email: string = faker.internet.email();
@@ -167,6 +167,12 @@ export const mockValidJWT: (override?: Partial<JWTPayload>, mockGetUser?: boolea
     }
 
     return createTokenForUser(tokenPayload);
+};
+
+export const mockInvalidJWT: (override?: Partial<JWTPayload>, mockGetUser?: boolean) => string = (override = {}) => {
+    const tokenPayload: JWTPayload = generateRandomTokenPayload(override);
+
+    return createInvalidTokenForUser(tokenPayload);
 };
 
 export const mockMicroserviceJWT: () => string = () => {
