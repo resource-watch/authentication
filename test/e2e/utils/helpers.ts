@@ -15,6 +15,7 @@ import { expect } from "chai";
 export const getUUID: () => string = () => Math.random().toString(36).substring(7);
 
 export const createTokenForUser: (tokenData: Partial<IUser>) => string = (tokenData: Partial<IUser>) => JWT.sign(tokenData, process.env.JWT_SECRET);
+export const createInvalidTokenForUser: (tokenData: Partial<IUser>) => string = (tokenData: Partial<IUser>) => JWT.sign(tokenData, Math.random().toString(36).substring(7));
 
 export const sortByNestedName: (a: Record<string, any>, b: Record<string, any>) => number = (a, b) => {
     if (a.name < b.name) {

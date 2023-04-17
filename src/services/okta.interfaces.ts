@@ -2,6 +2,7 @@ import { Id } from "types";
 import { IApplication } from "models/application";
 import { IOrganizationUser, Role } from "models/organization-user";
 import { IOrganizationId } from "models/organization";
+import { JwtPayload } from "jsonwebtoken";
 
 export type IUserId = Id<IUser>;
 export type IUserLegacyId = Id<OktaUserProfile>;
