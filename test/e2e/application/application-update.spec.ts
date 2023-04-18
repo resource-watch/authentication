@@ -14,9 +14,10 @@ import {
 } from "./aws.mocks";
 import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
-import OrganizationUserModel from "models/organization-user";
+import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
+import { describe } from "mocha";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -53,22 +54,6 @@ describe('Update application tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
     });
 
-    it('Update a application while being logged in as USER should return a 403 \'Forbidden\' error', async () => {
-        const token: string = mockValidJWT({ role: 'USER' });
-
-        const application: HydratedDocument<IApplication> = await createApplication();
-
-        const response: request.Response = await requester
-            .patch(`/api/v1/application/${application._id.toString()}`)
-            .set('Authorization', `Bearer ${token}`)
-            .send({});
-
-        response.status.should.equal(403);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status').and.equal(403);
-        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
-    });
-
     it('Update a application that does not exist while being logged in as ADMIN user should return a 404 \'Application not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
@@ -83,42 +68,269 @@ describe('Update application tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Application not found');
     });
 
-    it('Update a application with organization and user ownership simultaneously should return a 400 error', async () => {
-        const token: string = mockValidJWT({ role: 'ADMIN' });
+    describe('USER role', () => {
+        it('Update a application while being logged in as USER that does not own the application should return a 403 \'Forbidden\' error', async () => {
+            const token: string = mockValidJWT({ role: 'USER' });
+            const anotherUser: OktaUser = getMockOktaUser({ role: 'USER' });
 
-        const application: HydratedDocument<IApplication> = await createApplication();
+            const application: HydratedDocument<IApplication> = await createApplication();
 
-        const response: request.Response = await requester
-            .patch(`/api/v1/application/${application._id.toString()}`)
-            .set('Authorization', `Bearer ${token}`)
-            .send({
-                organization: new mongoose.Types.ObjectId().toString(),
-                user: new mongoose.Types.ObjectId().toString()
+            await new ApplicationUserModel({
+                userId: anotherUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
+
+            mockGetUserById(anotherUser);
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to edit this application');
+        });
+
+        it('Update a application while being logged in as USER that owns the application should return a 200 and update the application data', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
             });
 
-        response.status.should.equal(400);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status').and.equal(400);
-        response.body.errors[0].should.have.property('detail').and.equal('"value" contains a conflict between optional exclusive peers [user, organization]');
-    });
+            const application: HydratedDocument<IApplication> = await createApplication();
+            mockUpdateAWSAPIGatewayAPIKey(application.apiKeyId, 'new application name');
 
-    it('Update a application with an invalid body value should return a 400 error', async () => {
-        const token: string = mockValidJWT({ role: 'ADMIN' });
+            await new ApplicationUserModel({
+                userId: testUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
 
-        const application: HydratedDocument<IApplication> = await createApplication();
+            mockGetUserById(testUser, 2);
 
-        const response: request.Response = await requester
-            .patch(`/api/v1/application/${application._id.toString()}`)
-            .set('Authorization', `Bearer ${token}`)
-            .send({
-                potato: new mongoose.Types.ObjectId().toString(),
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name'
+                });
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('object');
+
+            const responseApplication: Record<string, any> = response.body.data;
+
+            responseApplication.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal('new application name');
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+
+        it('Update a application while being logged in as USER that belongs to the org that owns the application should return a 200 and update the application data', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
             });
 
-        response.status.should.equal(400);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status').and.equal(400);
-        response.body.errors[0].should.have.property('detail').and.equal('"potato" is not allowed');
-    });
+            const application: HydratedDocument<IApplication> = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            mockUpdateAWSAPIGatewayAPIKey(application.apiKeyId, 'new application name');
+
+            await new OrganizationUserModel({
+                userId: testUser.profile.legacyId,
+                organization: organization._id.toString(),
+                role: ORGANIZATION_ROLES.ORG_MEMBER
+            }).save();
+            await new OrganizationApplicationModel({
+                application: application._id.toString(),
+                organization: organization._id.toString()
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name'
+                });
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('object');
+
+            const responseApplication: Record<string, any> = response.body.data;
+
+            responseApplication.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal('new application name');
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+
+        it('Update a application while being logged in as USER that owns the org that owns the application should return a 200 and update the application data', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            mockUpdateAWSAPIGatewayAPIKey(application.apiKeyId, 'new application name');
+
+            await new OrganizationUserModel({
+                userId: testUser.profile.legacyId,
+                organization: organization._id.toString(),
+                role: ORGANIZATION_ROLES.ORG_ADMIN
+            }).save();
+            await new OrganizationApplicationModel({
+                application: application._id.toString(),
+                organization: organization._id.toString()
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name'
+                });
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('object');
+
+            const responseApplication: Record<string, any> = response.body.data;
+
+            responseApplication.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal('new application name');
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+    })
+
+    describe('MANAGER role', () => {
+        it('Update a application while being logged in as MANAGER that does not own the application should return a 403 \'Forbidden\' error', async () => {
+            const token: string = mockValidJWT({ role: 'MANAGER' });
+            const anotherUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: anotherUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
+
+            mockGetUserById(anotherUser);
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to edit this application');
+        });
+
+        it('Update a application while being logged in as MANAGER that owns the application should return a 200 and update the application data', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: testUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
+
+            mockGetUserById(testUser, 2);
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(200);
+            response.body.should.have.property('data').and.be.an('object');
+
+            const responseApplication: Record<string, any> = response.body.data;
+
+            responseApplication.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+    })
+
+    describe('Missing or incorrect data', () => {
+        it('Update a application with organization and user ownership simultaneously should return a 400 error', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    organization: new mongoose.Types.ObjectId().toString(),
+                    user: new mongoose.Types.ObjectId().toString()
+                });
+
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(400);
+            response.body.errors[0].should.have.property('detail').and.equal('"value" contains a conflict between optional exclusive peers [user, organization]');
+        });
+
+        it('Update a application with an invalid body value should return a 400 error', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    potato: new mongoose.Types.ObjectId().toString(),
+                });
+
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(400);
+            response.body.errors[0].should.have.property('detail').and.equal('"potato" is not allowed');
+        });
+    })
 
     it('Update a application while being logged in as ADMIN should return a 200 and the user data (happy case - no user data provided)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
@@ -307,6 +519,7 @@ describe('Update application tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
+            mockGetUserById(user);
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
@@ -452,6 +665,7 @@ describe('Update application tests', () => {
                 application: application._id.toString()
             }).save();
 
+            mockGetUserById(user);
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
@@ -599,6 +813,7 @@ describe('Update application tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
+            mockGetUserById(user);
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
@@ -643,6 +858,7 @@ describe('Update application tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
+            mockGetUserById(userOne);
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
