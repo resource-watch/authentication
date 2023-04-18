@@ -8,10 +8,12 @@ import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.moc
 import { mockCreateAWSAPIGatewayAPIKey } from "./aws.mocks";
 import { assertConnection, createApplication, createOrganization } from "../utils/helpers";
 import OrganizationModel, { IOrganization } from "models/organization";
-import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
+import OrganizationApplicationModel from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
+import { describe } from "mocha";
+import mongoose from "mongoose";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -51,35 +53,169 @@ describe('Create application tests', () => {
         response.body.errors[0].should.have.property('detail', 'Not authenticated');
     });
 
-    it('Create a application while being logged in as USER should return a 403', async () => {
-        const token: string = mockValidJWT({ role: 'USER' });
+    describe('USER role', () => {
+        it('Create a application associated with myself (by omission) while being logged in as USER should return a 200', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
 
-        const response: request.Response = await sendCreateApplicationRequest(token);
+            mockGetUserById(testUser, 2);
+            const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
 
-        response.status.should.equal(403);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status').and.equal(403);
-        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+            const response: request.Response = await sendCreateApplicationRequest(token, { name: 'my application' });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+
+        it('Create a application associated with myself (explicitly) while being logged in as USER should return a 200', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            mockGetUserById(testUser, 2);
+            const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
+
+            const response: request.Response = await sendCreateApplicationRequest(token, {
+                name: 'my application', user: testUser.profile.legacyId,
+            });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+
+        it('Create a application associated with someone else while being logged in as USER should return a 403', async () => {
+            const token: string = mockValidJWT({ role: 'USER' });
+
+            const response: request.Response = await sendCreateApplicationRequest(token, {
+                name: 'my application',
+                user: new mongoose.Types.ObjectId().toString()
+            });
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('User can only create applications for themselves');
+        });
     });
 
-    it('Create a application while being logged in as ADMIN without the required name field should return a 400 error', async () => {
-        const token: string = mockValidJWT({ role: 'ADMIN' });
+    describe('MANAGER role', () => {
+        it('Create a application associated with myself (by omission) while being logged in as MANAGER should return a 200', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
 
-        const response: request.Response = await sendCreateApplicationRequest(token);
+            mockGetUserById(testUser, 2);
+            const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
 
-        response.status.should.equal(400);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status', 400);
-        response.body.errors[0].should.have.property('detail', '"name" is required');
+            const response: request.Response = await sendCreateApplicationRequest(token, { name: 'my application' });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+
+        it('Create a application associated with myself (explicitly) while being logged in as MANAGER should return a 200', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            mockGetUserById(testUser, 2);
+            const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
+
+            const response: request.Response = await sendCreateApplicationRequest(token, {
+                name: 'my application', user: testUser.profile.legacyId,
+            });
+
+            response.status.should.equal(200);
+
+            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+        });
+
+        it('Create a application associated with someone else while being logged in as MANAGER should return a 403', async () => {
+            const token: string = mockValidJWT({ role: 'MANAGER' });
+
+            const response: request.Response = await sendCreateApplicationRequest(token, {
+                name: 'my application',
+                user: new mongoose.Types.ObjectId().toString()
+            });
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('User can only create applications for themselves');
+        });
     });
 
-    it('Create a application while being logged in as ADMIN without the required user or organization should return a 400 error', async () => {
-        const token: string = mockValidJWT({ role: 'ADMIN' });
+    describe('Missing or incorrect data', () => {
+        it('Create a application while being logged in as ADMIN without the required name field should return a 400 error', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
 
-        const response: request.Response = await sendCreateApplicationRequest(token, { name: "my application" });
+            const response: request.Response = await sendCreateApplicationRequest(token);
 
-        response.body.errors[0].should.have.property('status', 400);
-        response.body.errors[0].should.have.property('detail', '"value" must contain at least one of [user, organization]');
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status', 400);
+            response.body.errors[0].should.have.property('detail', '"name" is required');
+        });
     });
 
     it('Create a application while being logged in as ADMIN should return a 200 (happy case)', async () => {
@@ -94,7 +230,40 @@ describe('Create application tests', () => {
         mockGetUserById(testUser, 2);
         const apiKey = mockCreateAWSAPIGatewayAPIKey();
 
-        const response: request.Response = await sendCreateApplicationRequest(token, { name: "my application", user: testUser.profile.legacyId });
+        const response: request.Response = await sendCreateApplicationRequest(token, {
+            name: "my application",
+            user: testUser.profile.legacyId
+        });
+        response.status.should.equal(200);
+
+        const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
+
+        response.body.data.should.have.property('type').and.equal('applications');
+        response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
+        response.body.data.should.have.property('attributes').and.be.an('object');
+        response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
+        response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
+        response.body.data.attributes.should.have.property('createdAt');
+        new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
+        response.body.data.attributes.should.have.property('updatedAt');
+        new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+    });
+
+    it('Create a application while being logged in as ADMIN without user or organization should return a 200 and associate the application with the current user', async () => {
+        const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: testUser.profile.legacyId,
+            email: testUser.profile.email,
+            role: testUser.profile.role,
+            extraUserData: { apps: testUser.profile.apps },
+        });
+
+        mockGetUserById(testUser, 2);
+        const apiKey = mockCreateAWSAPIGatewayAPIKey();
+
+        const response: request.Response = await sendCreateApplicationRequest(token, {
+            name: "my application"
+        });
         response.status.should.equal(200);
 
         const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);

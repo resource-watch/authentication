@@ -10,6 +10,7 @@ import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import { pick } from 'lodash';
 import Utils from 'utils';
 import { IUser } from 'services/okta.interfaces';
+import PermissionError from "errors/permission.error";
 
 const applicationRouter: Router = router();
 applicationRouter.prefix('/api/v1/application');
@@ -36,7 +37,7 @@ const createApplicationValidation: Record<string, any> = {
         name: Joi.string().required(),
         organization: Joi.string().optional(),
         user: Joi.string().optional()
-    }).xor('user', 'organization')
+    }).oxor('user', 'organization')
 };
 
 const updateApplicationValidation: Record<string, any> = {
@@ -97,6 +98,8 @@ class ApplicationRouter {
     }
 
     static async createApplication(ctx: Context): Promise<void> {
+        const loggedUser: IUser = Utils.getUser(ctx);
+
         const newApplicationData: Partial<CreateApplicationsDto> = pick(
             ctx.request.body,
             [
@@ -106,12 +109,21 @@ class ApplicationRouter {
             ]
         );
 
-        const application: IApplication = await ApplicationService.createApplication(newApplicationData);
-        ctx.body = ApplicationSerializer.serialize(await application.hydrate());
+        try {
+            const application: IApplication = await ApplicationService.createApplication(newApplicationData, loggedUser);
+            ctx.body = ApplicationSerializer.serialize(await application.hydrate());
+        } catch (error) {
+            if (error instanceof PermissionError) {
+                ctx.throw(403, error.message);
+                return;
+            }
+            ctx.throw(500, error.message);
+        }
     }
 
     static async updateApplication(ctx: Context): Promise<void> {
         const { id } = ctx.params;
+        const loggedUser: IUser = Utils.getUser(ctx);
 
         const newApplicationData: Partial<UpdateApplicationsDto> = pick(
             ctx.request.body,
@@ -123,12 +135,18 @@ class ApplicationRouter {
         );
 
         try {
-            const application: IApplication = await ApplicationService.updateApplication(id, newApplicationData, ctx.request.body.regenApiKey);
+            const application: IApplication = await ApplicationService.updateApplication(id, newApplicationData, loggedUser, ctx.request.body.regenApiKey);
             ctx.body = ApplicationSerializer.serialize(await application.hydrate());
         } catch (error) {
             if (error instanceof ApplicationNotFoundError) {
                 ctx.throw(404, error.message);
+                return;
             }
+            if (error instanceof PermissionError) {
+                ctx.throw(403, error.message);
+                return;
+            }
+            ctx.throw(500, error.message);
         }
     }
 
@@ -168,7 +186,7 @@ applicationRouter.route({
     validate: createApplicationValidation,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: ApplicationRouter.createApplication,
+    pre: Utils.isLogged, handler: ApplicationRouter.createApplication,
 });
 applicationRouter.route({
     method: 'patch',
@@ -176,7 +194,7 @@ applicationRouter.route({
     validate: updateApplicationValidation,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: ApplicationRouter.updateApplication,
+    pre: Utils.isLogged, handler: ApplicationRouter.updateApplication,
 });
 applicationRouter.route({
     method: 'delete',

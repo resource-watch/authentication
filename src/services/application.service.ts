@@ -13,9 +13,20 @@ import { IOrganization } from "models/organization";
 import { pick } from "lodash";
 import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OktaService from "services/okta.service";
+import PermissionError from "errors/permission.error";
+import OrganizationUserModel from "models/organization-user";
+import logger from "logger";
 
 export default class ApplicationService {
-    static async createApplication(applicationData: Partial<CreateApplicationsDto>): Promise<IApplication> {
+    static async createApplication(applicationData: Partial<CreateApplicationsDto>, requestUser: IUser): Promise<IApplication> {
+        if (!('user' in applicationData)) {
+            applicationData.user = requestUser.id;
+        }
+
+        if (requestUser.role !== 'ADMIN' && 'user' in applicationData && applicationData.user !== null && applicationData.user !== requestUser.id) {
+            throw new PermissionError('User can only create applications for themselves');
+        }
+
         const apiKeyResponse: CreateApiKeyCommandOutput = await APIGatewayAWSService.createApiKey(applicationData.name);
 
         const application: Partial<IApplication> = new ApplicationModel({
@@ -27,18 +38,38 @@ export default class ApplicationService {
         if ('organization' in applicationData && applicationData.organization !== null) {
             const currentOrganization: IOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
             await application.associateWithOrganization(currentOrganization);
-        }
-
-        if ('user' in applicationData && applicationData.user !== null) {
+        } else if ('user' in applicationData && applicationData.user !== null) {
             const user: IUser = await OktaService.getUserById(applicationData.user as IUserLegacyId);
             await application.associateWithUser(user);
+        } else {
+            throw new Error('Application must be associated with either an user or an organization');
         }
 
         return application.save();
     }
 
-    static async updateApplication(id: IApplicationId, applicationData: Partial<UpdateApplicationsDto>, regenApiKey: boolean): Promise<IApplication> {
-        const application: IApplication = await ApplicationService.getApplicationById(id);
+    static async updateApplication(id: IApplicationId, applicationData: Partial<UpdateApplicationsDto>, requestUser: IUser, regenApiKey: boolean): Promise<IApplication> {
+        let application: IApplication = await ApplicationService.getApplicationById(id);
+        application = await ApplicationModel.hydrate(application.toObject()).hydrate();
+
+        if (requestUser.role !== 'ADMIN') {
+            if ('user' in application && application.user !== null) {
+                if (application.user.id !== requestUser.id) {
+                    throw new PermissionError('You don\'t have permissions to edit this application');
+                }
+            } else if ('organization' in application && application.organization !== null) {
+                const organizationMembers: OrganizationUserModel[] = await OrganizationUserModel.findOne({
+                    organization: application.organization.id,
+                    user: requestUser.id
+                });
+                if (!organizationMembers) {
+                    throw new PermissionError('You don\'t have permissions to edit this application');
+                }
+            } else {
+                logger.warn(`Application ${id} seems to be orphaned`);
+                throw new PermissionError('You don\'t have permissions to edit this application');
+            }
+        }
 
         if ('organization' in applicationData || 'user' in applicationData) {
             await application.clearAssociations();
