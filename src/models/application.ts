@@ -1,11 +1,18 @@
-import type { Document, Schema as ISchema } from 'mongoose';
-import { model, Schema, PaginateModel, Model } from 'mongoose';
-import paginate from 'mongoose-paginate-v2';
+import type { Aggregate, Document, Schema as ISchema } from 'mongoose';
+import {
+    model,
+    Schema,
+    Model,
+    PaginateOptions,
+    AggregatePaginateResult,
+    AggregatePaginateModel
+} from 'mongoose';
 import { IOrganization, IOrganizationId } from 'models/organization';
 import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import { Id } from "types";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import ApplicationUserModel, { IApplicationUser } from "models/application-user";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 interface IApplicationMethods {
     hydrate(): Promise<(IApplication & Required<{ _id: IApplicationId }>)>
@@ -29,6 +36,14 @@ export interface IApplication extends Document<IApplicationId>, IApplicationMeth
     updatedAt: Date;
 }
 
+interface ApplicationModel extends Model<IApplication, any, IApplicationMethods> {
+    aggregatePaginate<T>(
+        query?: Aggregate<T[]>,
+        options?: PaginateOptions,
+        callback?: (err: any, result: AggregatePaginateResult<T>) => void,
+    ): Promise<AggregatePaginateResult<T>>;
+}
+
 export type CreateApplicationsDto = {
     name: string;
     organization: IOrganizationId;
@@ -36,8 +51,6 @@ export type CreateApplicationsDto = {
 }
 
 export type UpdateApplicationsDto = CreateApplicationsDto;
-
-type ApplicationModel = Model<IApplication, any, IApplicationMethods>;
 
 export const applicationSchema: ISchema<IApplication, ApplicationModel, IApplicationMethods> = new Schema<IApplication, ApplicationModel, IApplicationMethods>({
     name: { type: String, trim: true, required: true },
@@ -97,11 +110,11 @@ export const applicationSchema: ISchema<IApplication, ApplicationModel, IApplica
     },
 });
 
-applicationSchema.plugin(paginate);
+applicationSchema.plugin(aggregatePaginate);
 
 interface ApplicationDocument extends Document<IApplicationId>, IApplication, IApplicationMethods {
 }
 
-const ApplicationModel: PaginateModel<ApplicationDocument, ApplicationModel, IApplicationMethods> = model<ApplicationDocument, PaginateModel<ApplicationDocument, ApplicationModel, IApplicationMethods>>('Application', applicationSchema);
+const ApplicationModel: AggregatePaginateModel<ApplicationDocument> = model<ApplicationDocument, AggregatePaginateModel<ApplicationDocument>>('Application', applicationSchema);
 
 export default ApplicationModel;
