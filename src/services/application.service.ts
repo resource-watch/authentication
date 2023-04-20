@@ -109,10 +109,28 @@ export default class ApplicationService {
         return application.save();
     }
 
-    static async deleteApplication(id: string): Promise<IApplication> {
+    static async deleteApplication(id: string, requestUser: IUser): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
-
         const returnApplication: IApplication = await ApplicationModel.hydrate(application.toObject()).hydrate();
+
+        if (requestUser.role !== 'ADMIN') {
+            if ('user' in returnApplication && returnApplication.user !== null) {
+                if (returnApplication.user.id !== requestUser.id) {
+                    throw new PermissionError('You don\'t have permissions to delete this application');
+                }
+            } else if ('organization' in returnApplication && returnApplication.organization !== null) {
+                const organizationMembers: OrganizationUserModel[] = await OrganizationUserModel.findOne({
+                    organization: returnApplication.organization.id,
+                    user: requestUser.id
+                });
+                if (!organizationMembers) {
+                    throw new PermissionError('You don\'t have permissions to delete this application');
+                }
+            } else {
+                logger.warn(`Application ${id} seems to be orphaned`);
+                throw new PermissionError('You don\'t have permissions to delete this application');
+            }
+        }
 
         await APIGatewayAWSService.deleteApiKey(application.apiKeyId);
 
