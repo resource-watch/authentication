@@ -5,7 +5,7 @@ import { IUser, IUserLegacyId } from 'services/okta.interfaces';
 import { URL } from 'url';
 import { PaginateOptions } from 'mongoose';
 import { IOrganizationId } from "models/organization";
-import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES } from "models/organization-user";
+import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES, Role } from "models/organization-user";
 
 export default class Utils {
 
@@ -93,7 +93,7 @@ export default class Utils {
         }
     }
 
-    static async isAdminOrOrgUser(ctx: Context, next: Next): Promise<void> {
+    static async isAdminOrManagerOrOrgAdmin(ctx: Context, next: Next): Promise<void> {
         logger.info('Checking if user is admin or belongs to organization');
         const user: IUser = Utils.getUser(ctx);
         if (!user) {
@@ -106,14 +106,21 @@ export default class Utils {
             await next();
             return ;
         }
+        if (user.role === 'MANAGER') {
+            logger.info('User is manager');
+            await next();
+            return ;
+        }
 
         const organizationId: IOrganizationId = ctx.params.id;
         const query: {
             organization: IOrganizationId;
-            user: IUserLegacyId
+            user: IUserLegacyId,
+            role: Role
         } = {
             organization: organizationId,
-            user: user.id
+            user: user.id,
+            role: ORGANIZATION_ROLES.ORG_ADMIN
         }
         const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
         if (organizationUser) {
