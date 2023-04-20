@@ -185,14 +185,14 @@ organizationRouter.route({
     validate: getOrganizationsValidation,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdminOrOrgUser, handler: OrganizationRouter.getOrganizations,
+    pre: Utils.isAdminOrManager, handler: OrganizationRouter.getOrganizations,
 });
 organizationRouter.route({
     method: 'get',
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdminOrOrgUser, handler: OrganizationRouter.getOrganizationById,
+    pre: Utils.isAdminOrManagerOrOrgAdmin, handler: OrganizationRouter.getOrganizationById,
 });
 organizationRouter.route({
     method: 'post',

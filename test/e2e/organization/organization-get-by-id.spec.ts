@@ -63,7 +63,7 @@ describe('Get organization by id tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
-    it('Get organization by id while being authenticated as user with MANAGER role that does not belong to the organization should return a 403 \'Forbidden\' error', async () => {
+    it('Get organization by id while being authenticated as a MANAGER user should return a 200 and the organization data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -72,13 +72,20 @@ describe('Get organization by id tests', () => {
             .get(`/api/v1/organization/${organization._id.toString()}`)
             .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(403);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status').and.equal(403);
-        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('object');
+        response.body.data.should.have.property('type').and.equal('organizations');
+        response.body.data.should.have.property('id').and.equal(organization._id.toString());
+        response.body.data.should.have.property('attributes').and.be.an('object');
+        response.body.data.attributes.should.have.property('name').and.equal(organization.name);
+        response.body.data.attributes.should.have.property('applications').and.eql([]);
+        response.body.data.attributes.should.have.property('createdAt');
+        new Date(response.body.data.attributes.createdAt).should.equalDate(organization.createdAt);
+        response.body.data.attributes.should.have.property('updatedAt');
+        new Date(response.body.data.attributes.updatedAt).should.equalDate(organization.updatedAt);
     });
 
-    it('Get organization by id while being authenticated as an ADMIN user should return a 200 and the user data (happy case)', async () => {
+    it('Get organization by id while being authenticated as an ADMIN user should return a 200 and the organization data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();

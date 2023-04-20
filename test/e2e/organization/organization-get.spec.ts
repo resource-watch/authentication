@@ -60,7 +60,29 @@ describe('Get organizations tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
-    it('Get organizations while being logged in should return a 200 and the user data (happy case)', async () => {
+    it('Get organizations while being logged in as MANAGER should return a 200 and the organization list (happy case)', async () => {
+        const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+        const token: string = mockValidJWT({ role: 'MANAGER' });
+
+        const response: request.Response = await requester
+            .get(`/api/v1/organization`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(1);
+        response.body.data[0].should.have.property('type').and.equal('organizations');
+        response.body.data[0].should.have.property('id').and.equal(organization._id.toString());
+        response.body.data[0].should.have.property('attributes').and.be.an('object');
+        response.body.data[0].attributes.should.have.property('name').and.equal(organization.name);
+        response.body.data[0].attributes.should.have.property('applications').and.eql([]);
+        response.body.data[0].attributes.should.have.property('createdAt');
+        new Date(response.body.data[0].attributes.createdAt).should.equalDate(organization.createdAt);
+        response.body.data[0].attributes.should.have.property('updatedAt');
+        new Date(response.body.data[0].attributes.updatedAt).should.equalDate(organization.updatedAt);
+    });
+
+    it('Get organizations while being logged in should return a 200 and the organization list (happy case)', async () => {
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
