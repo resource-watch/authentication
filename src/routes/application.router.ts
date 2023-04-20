@@ -153,14 +153,20 @@ class ApplicationRouter {
 
     static async deleteApplication(ctx: Context): Promise<void> {
         const { id } = ctx.params;
+        const loggedUser: IUser = Utils.getUser(ctx);
 
         try {
-            const application: IApplication = await ApplicationService.deleteApplication(id);
+            const application: IApplication = await ApplicationService.deleteApplication(id, loggedUser);
             ctx.body = ApplicationSerializer.serialize(application);
         } catch (error) {
             if (error instanceof ApplicationNotFoundError) {
                 ctx.throw(404, error.message);
             }
+            if (error instanceof PermissionError) {
+                ctx.throw(403, error.message);
+                return;
+            }
+            ctx.throw(500, error.message);
         }
     }
 }
@@ -202,7 +208,7 @@ applicationRouter.route({
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: ApplicationRouter.deleteApplication,
+    pre: Utils.isLogged, handler: ApplicationRouter.deleteApplication,
 });
 
 export default applicationRouter;
