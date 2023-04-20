@@ -81,21 +81,29 @@ class ApplicationRouter {
 
     static async getApplicationById(ctx: Context): Promise<void> {
         const { id } = ctx.params;
+        const loggedUser: IUser = Utils.getUser(ctx);
 
         try {
             if (!mongoose.Types.ObjectId.isValid(id)) {
                 throw new ApplicationNotFoundError();
             }
 
-            const application: IApplication = await ApplicationService.getApplicationById(id);
-            ctx.body = ApplicationSerializer.serialize(await application.hydrate());
-        } catch (err) {
-            if (err instanceof ApplicationNotFoundError) {
-                ctx.throw(404, err.message);
+            let loggedUserFilter: IUser = null;
+            if (loggedUser.role !== 'ADMIN' && loggedUser.role !== 'MANAGER') {
+                loggedUserFilter = loggedUser;
+            }
+
+            ctx.body = ApplicationSerializer.serialize(await ApplicationService.getApplicationById(id, loggedUserFilter));
+        } catch (error) {
+            if (error instanceof ApplicationNotFoundError) {
+                ctx.throw(404, error.message);
                 return;
             }
-            throw err;
-        }
+            if (error instanceof PermissionError) {
+                ctx.throw(403, error.message);
+                return;
+            }
+            ctx.throw(500, error.message);        }
     }
 
     static async createApplication(ctx: Context): Promise<void> {
@@ -185,7 +193,7 @@ applicationRouter.route({
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: ApplicationRouter.getApplicationById,
+    pre: Utils.isLogged, handler: ApplicationRouter.getApplicationById,
 });
 applicationRouter.route({
     method: 'post',

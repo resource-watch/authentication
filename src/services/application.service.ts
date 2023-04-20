@@ -6,11 +6,9 @@ import ApplicationModel, {
 } from 'models/application';
 import {
     Aggregate, AggregatePaginateResult,
-    Cursor,
     FilterQuery,
-    PaginateDocument,
     PaginateOptions,
-    PaginateResult, PipelineStage,
+    PipelineStage,
 } from 'mongoose';
 import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import APIGatewayAWSService from "services/apigateway.aws.service";
@@ -56,8 +54,7 @@ export default class ApplicationService {
     }
 
     static async updateApplication(id: IApplicationId, applicationData: Partial<UpdateApplicationsDto>, requestUser: IUser, regenApiKey: boolean): Promise<IApplication> {
-        let application: IApplication = await ApplicationService.getApplicationById(id);
-        application = await ApplicationModel.hydrate(application.toObject()).hydrate();
+        const application: IApplication = await ApplicationService.getApplicationById(id);
 
         if (requestUser.role !== 'ADMIN') {
             if ('user' in application && application.user !== null) {
@@ -111,7 +108,7 @@ export default class ApplicationService {
 
     static async deleteApplication(id: string, requestUser: IUser): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
-        const returnApplication: IApplication = await ApplicationModel.hydrate(application.toObject()).hydrate();
+        const returnApplication: IApplication = await ApplicationModel.hydrate(application);
 
         if (requestUser.role !== 'ADMIN') {
             if ('user' in returnApplication && returnApplication.user !== null) {
@@ -179,11 +176,33 @@ export default class ApplicationService {
         return applications;
     }
 
-    static async getApplicationById(id: IApplicationId): Promise<IApplication> {
-        const application: IApplication = await ApplicationModel.findById(id.toString());
+    static async getApplicationById(id: IApplicationId, requestUser: IUser = null): Promise<IApplication> {
+        let application: IApplication = await ApplicationModel.findById(id.toString());
         if (!application) {
             throw new ApplicationNotFoundError();
         }
+
+        application = await ApplicationModel.hydrate(application.toObject()).hydrate();
+
+        if (requestUser !== null) {
+            if ('user' in application && application.user !== null) {
+                if (application.user.id !== requestUser.id) {
+                    throw new PermissionError('You don\'t have permissions to view this application');
+                }
+            } else if ('organization' in application && application.organization !== null) {
+                const organizationMembers: OrganizationUserModel[] = await OrganizationUserModel.findOne({
+                    organization: application.organization.id,
+                    user: requestUser.id
+                });
+                if (!organizationMembers) {
+                    throw new PermissionError('You don\'t have permissions to view this application');
+                }
+            } else {
+                logger.warn(`Application ${id} seems to be orphaned`);
+                throw new PermissionError('You don\'t have permissions to view this application');
+            }
+        }
+
         return application;
     }
 }
