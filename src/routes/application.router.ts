@@ -3,13 +3,13 @@ import router, { Router } from 'koa-joi-router';
 import logger from 'logger';
 import ApplicationService from 'services/application.service';
 import { CreateApplicationsDto, IApplication, UpdateApplicationsDto } from 'models/application';
-import mongoose from 'mongoose';
+import mongoose, { AggregatePaginateResult } from 'mongoose';
 import ApplicationSerializer from 'serializers/application.serializer';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import { pick } from 'lodash';
 import Utils from 'utils';
-import { IUser } from 'services/okta.interfaces';
+import { IUser, IUserLegacyId } from 'services/okta.interfaces';
 import PermissionError from "errors/permission.error";
 
 const applicationRouter: Router = router();
@@ -64,6 +64,7 @@ class ApplicationRouter {
         const paginationOptions: PaginateOptions = Utils.getPaginationParameters(ctx);
 
         const filters: Record<string, any> = pick(ctx.query, []);
+        const userIdFilter: IUserLegacyId = (loggedUser.role !== 'ADMIN' && loggedUser.role !== 'MANAGER') ? loggedUser.id : null;
 
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
@@ -71,7 +72,7 @@ class ApplicationRouter {
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
         try {
-            const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationService.getPaginatedApplications(filters, paginationOptions);
+            const applications: AggregatePaginateResult<IApplication> = await ApplicationService.getPaginatedApplications(filters, paginationOptions, userIdFilter)
             ctx.body = ApplicationSerializer.serializeList(applications, link);
         } catch (err) {
             logger.error(err);
@@ -171,7 +172,7 @@ applicationRouter.route({
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: ApplicationRouter.getApplications,
+    pre: Utils.isLogged, handler: ApplicationRouter.getApplications,
 });
 applicationRouter.route({
     method: 'get',

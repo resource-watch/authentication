@@ -1,6 +1,6 @@
 import { Serializer } from 'jsonapi-serializer';
 import { IApplication } from 'models/application';
-import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
+import { AggregatePaginateResult, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 
 const applicationSerializer: Serializer = new Serializer('application', {
     attributes: [
@@ -48,7 +48,7 @@ export interface SerializedApplicationResponse {
 
 class ApplicationSerializer {
 
-    static serializeList(data: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>>, link: string): SerializedApplicationResponse {
+    static serializeList(data: AggregatePaginateResult<IApplication>, link: string): SerializedApplicationResponse {
         const serializedData: SerializedApplicationResponse = applicationSerializer.serialize(data.docs);
 
         serializedData.links = {

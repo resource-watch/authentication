@@ -47,23 +47,30 @@ describe('Get applications tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
     });
 
-    it('Get applications while being logged in as USER should return a 403 error', async () => {
-        const token: string = mockValidJWT({ role: 'USER' });
+    it('Get applications while being logged in as USER should return a 200 and apps for the current user', async () => {
+        const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+        const token: string = mockValidJWT({
+            id: testUser.profile.legacyId,
+            email: testUser.profile.email,
+            role: testUser.profile.role,
+            extraUserData: { apps: testUser.profile.apps },
+        });
+        const otherUser: OktaUser = getMockOktaUser({ role: 'USER' });
 
-        const response: request.Response = await requester
-            .get(`/api/v1/application`)
-            .set('Authorization', `Bearer ${token}`);
+        const otherApplication: HydratedDocument<IApplication> = await createApplication();
+        const testUserApplication: HydratedDocument<IApplication> = await createApplication();
 
-        response.status.should.equal(403);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status').and.equal(403);
-        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
-    });
+        await new ApplicationUserModel({
+            userId: otherUser.profile.legacyId,
+            application: otherApplication._id.toString()
+        }).save();
 
-    it('Get applications while being logged in should return a 200 and the user data (happy case)', async () => {
-        const application: HydratedDocument<IApplication> = await createApplication();
+        await new ApplicationUserModel({
+            userId: testUser.profile.legacyId,
+            application: testUserApplication._id.toString()
+        }).save();
 
-        const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockGetUserById(testUser);
 
         const response: request.Response = await requester
             .get(`/api/v1/application`)
@@ -72,18 +79,168 @@ describe('Get applications tests', () => {
         response.status.should.equal(200);
         response.body.should.have.property('data').and.be.an('array').and.length(1);
         response.body.data[0].should.have.property('type').and.equal('applications');
-        response.body.data[0].should.have.property('id').and.equal(application._id.toString());
+        response.body.data[0].should.have.property('id').and.equal(testUserApplication._id.toString());
         response.body.data[0].should.have.property('attributes').and.be.an('object');
-        response.body.data[0].attributes.should.have.property('name').and.equal(application.name);
-        response.body.data[0].attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+        response.body.data[0].attributes.should.have.property('name').and.equal(testUserApplication.name);
+        response.body.data[0].attributes.should.have.property('apiKeyValue').and.equal(testUserApplication.apiKeyValue);
         response.body.data[0].attributes.should.have.property('createdAt');
-        new Date(response.body.data[0].attributes.createdAt).should.equalDate(application.createdAt);
+        new Date(response.body.data[0].attributes.createdAt).should.equalDate(testUserApplication.createdAt);
         response.body.data[0].attributes.should.have.property('updatedAt');
-        new Date(response.body.data[0].attributes.updatedAt).should.equalDate(application.updatedAt);
+        new Date(response.body.data[0].attributes.updatedAt).should.equalDate(testUserApplication.updatedAt);
+    });
+
+    it('Get applications while being logged in as MANAGER should return a 200 and apps for all users', async () => {
+        const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+        const token: string = mockValidJWT({
+            id: testUser.profile.legacyId,
+            email: testUser.profile.email,
+            role: testUser.profile.role,
+            extraUserData: { apps: testUser.profile.apps },
+        });
+        const otherUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+
+        const otherApplication: HydratedDocument<IApplication> = await createApplication();
+        const testUserApplication: HydratedDocument<IApplication> = await createApplication();
+
+        await new ApplicationUserModel({
+            userId: otherUser.profile.legacyId,
+            application: otherApplication._id.toString()
+        }).save();
+
+        await new ApplicationUserModel({
+            userId: testUser.profile.legacyId,
+            application: testUserApplication._id.toString()
+        }).save();
+
+        mockGetUserById(testUser);
+        mockGetUserById(otherUser);
+
+        const response: request.Response = await requester
+            .get(`/api/v1/application`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(2);
+
+        response.body.data[0].should.have.property('type').and.equal('applications');
+        response.body.data[0].should.have.property('id').and.be.oneOf([testUserApplication._id.toString(), otherApplication._id.toString()]);
+        response.body.data[0].should.have.property('attributes').and.be.an('object');
+        response.body.data[0].attributes.should.have.property('name').and.be.oneOf([testUserApplication.name, otherApplication.name]);
+        response.body.data[0].attributes.should.have.property('apiKeyValue').and.be.oneOf([testUserApplication.apiKeyValue, otherApplication.apiKeyValue]);
+        response.body.data[0].attributes.should.have.property('createdAt');
+        response.body.data[0].attributes.should.have.property('updatedAt');
+
+        response.body.data[1].should.have.property('type').and.equal('applications');
+        response.body.data[1].should.have.property('id').and.be.oneOf([testUserApplication._id.toString(), otherApplication._id.toString()]);
+        response.body.data[1].should.have.property('attributes').and.be.an('object');
+        response.body.data[1].attributes.should.have.property('name').and.be.oneOf([testUserApplication.name, otherApplication.name]);
+        response.body.data[1].attributes.should.have.property('apiKeyValue').and.be.oneOf([testUserApplication.apiKeyValue, otherApplication.apiKeyValue]);
+        response.body.data[1].attributes.should.have.property('createdAt');
+        response.body.data[1].attributes.should.have.property('updatedAt');
+    });
+
+    it('Get applications while being logged in as ADMIN should return a 200 and apps for all users', async () => {
+        const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: testUser.profile.legacyId,
+            email: testUser.profile.email,
+            role: testUser.profile.role,
+            extraUserData: { apps: testUser.profile.apps },
+        });
+        const otherUser: OktaUser = getMockOktaUser({ role: 'USER' });
+
+        const otherApplication: HydratedDocument<IApplication> = await createApplication();
+        const testUserApplication: HydratedDocument<IApplication> = await createApplication();
+
+        await new ApplicationUserModel({
+            userId: otherUser.profile.legacyId,
+            application: otherApplication._id.toString()
+        }).save();
+
+        await new ApplicationUserModel({
+            userId: testUser.profile.legacyId,
+            application: testUserApplication._id.toString()
+        }).save();
+
+        mockGetUserById(testUser);
+        mockGetUserById(otherUser);
+
+        const response: request.Response = await requester
+            .get(`/api/v1/application`)
+            .set('Authorization', `Bearer ${token}`);
+
+        response.status.should.equal(200);
+        response.body.should.have.property('data').and.be.an('array').and.length(2);
+
+        response.body.data[0].should.have.property('type').and.equal('applications');
+        response.body.data[0].should.have.property('id').and.be.oneOf([testUserApplication._id.toString(), otherApplication._id.toString()]);
+        response.body.data[0].should.have.property('attributes').and.be.an('object');
+        response.body.data[0].attributes.should.have.property('name').and.be.oneOf([testUserApplication.name, otherApplication.name]);
+        response.body.data[0].attributes.should.have.property('apiKeyValue').and.be.oneOf([testUserApplication.apiKeyValue, otherApplication.apiKeyValue]);
+        response.body.data[0].attributes.should.have.property('createdAt');
+        response.body.data[0].attributes.should.have.property('updatedAt');
+
+        response.body.data[1].should.have.property('type').and.equal('applications');
+        response.body.data[1].should.have.property('id').and.be.oneOf([testUserApplication._id.toString(), otherApplication._id.toString()]);
+        response.body.data[1].should.have.property('attributes').and.be.an('object');
+        response.body.data[1].attributes.should.have.property('name').and.be.oneOf([testUserApplication.name, otherApplication.name]);
+        response.body.data[1].attributes.should.have.property('apiKeyValue').and.be.oneOf([testUserApplication.apiKeyValue, otherApplication.apiKeyValue]);
+        response.body.data[1].attributes.should.have.property('createdAt');
+        response.body.data[1].attributes.should.have.property('updatedAt');
     });
 
     describe('Pagination', () => {
-        it('Get paginated applications should return a 200 and the paginated application data - Different pages', async () => {
+        it('Get paginated applications should return a 200 and the paginated application data - Different pages, USER role', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+            const otherUser: OktaUser = getMockOktaUser({ role: 'USER' });
+
+            for (let i: number = 0; i < 25; i++) {
+                const application: IApplication = await createApplication();
+
+                await new ApplicationUserModel({
+                    userId: (i % 2 == 0 ? testUser.profile.legacyId : otherUser.profile.legacyId),
+                    application: application._id.toString()
+                }).save();
+            }
+
+            mockGetUserById(testUser, 13);
+
+            const responsePageOne: request.Response = await requester
+                .get(`/api/v1/application`)
+                .query({ 'page[size]': 10, 'page[number]': 1 })
+                .set('Authorization', `Bearer ${token}`);
+
+            responsePageOne.status.should.equal(200);
+            responsePageOne.body.should.have.property('data').and.be.an('array').and.length(10);
+            responsePageOne.body.should.have.property('links').and.be.an('object');
+            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=2&page[size]=10`);
+            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=2&page[size]=10`);
+
+            const responsePageTwo: request.Response = await requester
+                .get(`/api/v1/application`)
+                .query({ 'page[size]': 10, 'page[number]': 2 })
+                .set('Authorization', `Bearer ${token}`);
+
+            responsePageTwo.status.should.equal(200);
+            responsePageTwo.body.should.have.property('data').and.be.an('array').and.length(3);
+            responsePageTwo.body.should.have.property('links').and.be.an('object');
+            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/application?page[number]=2&page[size]=10`);
+        });
+
+        it('Get paginated applications should return a 200 and the paginated application data - Different pages, ADMIN role', async () => {
             for (let i: number = 0; i < 25; i++) {
                 await createApplication();
             }

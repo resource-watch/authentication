@@ -4,7 +4,14 @@ import ApplicationModel, {
     IApplicationId,
     UpdateApplicationsDto
 } from 'models/application';
-import { FilterQuery, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
+import {
+    Aggregate, AggregatePaginateResult,
+    Cursor,
+    FilterQuery,
+    PaginateDocument,
+    PaginateOptions,
+    PaginateResult, PipelineStage,
+} from 'mongoose';
 import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import APIGatewayAWSService from "services/apigateway.aws.service";
 import { CreateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
@@ -116,18 +123,39 @@ export default class ApplicationService {
         return returnApplication;
     }
 
-    static async getApplications(query: FilterQuery<IApplication>): Promise<IApplication[]> {
-        return ApplicationModel.find(query);
-    }
+    static async getPaginatedApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions, loggedUserId: IUserLegacyId = null): Promise<AggregatePaginateResult<IApplication>> {
 
-    static async getPaginatedApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>>> {
-        const applications: PaginateResult<PaginateDocument<IApplication, unknown, PaginateOptions>> = await ApplicationModel.paginate(query, {
+        let aggregateCriteria: PipelineStage[] = [
+            { $match: query },
+        ];
+
+        if (loggedUserId !== null) {
+            aggregateCriteria = aggregateCriteria.concat([
+                {
+                    $lookup: {
+                        from: "applicationusers",
+                        localField: "_id",
+                        foreignField: "application",
+                        as: "applicationusers"
+                    }
+                },
+                { $unwind: "$applicationusers" },
+                {
+                    $match: {
+                        "applicationusers.userId": loggedUserId
+                    }
+                }]);
+        }
+
+        const aggregate: Aggregate<Array<any>> = ApplicationModel.aggregate(aggregateCriteria)
+
+        const applications: AggregatePaginateResult<IApplication> = await ApplicationModel.aggregatePaginate(aggregate, {
             ...paginationOptions,
-            populate: ['organization', 'user']
+            populate: ['organization', 'user'],
         });
 
         applications.docs = await Promise.all(applications.docs.map((application: IApplication) => {
-            return application.hydrate();
+            return (new ApplicationModel(application)).hydrate();
         }));
 
         return applications;
