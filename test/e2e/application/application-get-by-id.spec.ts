@@ -60,10 +60,146 @@ describe('Get application by id tests', () => {
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
         response.body.errors[0].should.have.property('status').and.equal(403);
-        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+        response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to view this application');
     });
 
-    it('Get application by id while being authenticated as an ADMIN user should return a 200 and the user data (happy case)', async () => {
+    describe('USER role' , () => {
+        it('Get application by id while being logged in as USER that owns the application should return a 200 and application data', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: testUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
+
+            mockGetUserById(testUser);
+
+            const response: request.Response = await requester
+                .get(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+
+        it('Get application by id while being logged in as USER that does not own the application should return a 403 \'Forbidden\' error', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+            const otherUser: OktaUser = getMockOktaUser({ role: 'USER' });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: otherUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
+
+            mockGetUserById(otherUser);
+
+            const response: request.Response = await requester
+                .get(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to view this application');
+        });
+    });
+
+    describe('MANAGER role' , () => {
+        it('Get application by id while being logged in as MANAGER that owns the application should return a 200 and application data', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: testUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
+
+            mockGetUserById(testUser);
+
+            const response: request.Response = await requester
+                .get(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+
+        it('Get application by id while being logged in as MANAGER that does not own the application should return a 200 and application data', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+            const otherUser: OktaUser = getMockOktaUser({ role: 'USER' });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+
+            await new ApplicationUserModel({
+                userId: otherUser.profile.legacyId,
+                application: application._id.toString()
+            }).save();
+
+            mockGetUserById(otherUser);
+
+            const response: request.Response = await requester
+                .get(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+            response.body.data.should.have.property('type').and.equal('applications');
+            response.body.data.should.have.property('id').and.equal(application._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+    });
+
+    it('Get application by id while being authenticated as an ADMIN user should return a 200 and the application data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const application: HydratedDocument<IApplication> = await createApplication();
