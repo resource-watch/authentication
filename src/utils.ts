@@ -3,9 +3,11 @@ import logger from 'logger';
 import Settings from 'services/settings.service';
 import { IUser, IUserLegacyId } from 'services/okta.interfaces';
 import { URL } from 'url';
-import { PaginateOptions } from 'mongoose';
+import mongoose, { PaginateOptions, PipelineStage } from 'mongoose';
 import { IOrganizationId } from "models/organization";
 import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES, Role } from "models/organization-user";
+import { IApplicationId } from "models/application";
+import ApplicationUserModel, { IApplicationUser } from "models/application-user";
 
 export default class Utils {
 
@@ -55,6 +57,65 @@ export default class Utils {
             await next();
         } else {
             logger.info('Not admin');
+            ctx.throw(403, 'Not authorized');
+        }
+    }
+
+    static async isAdminOrAppOwner(ctx: Context, next: Next): Promise<void> {
+        logger.info('Checking if user is admin or owns the application');
+        const user: IUser = Utils.getUser(ctx);
+        if (!user) {
+            logger.info('Not authenticated');
+            ctx.throw(401, 'Not authenticated');
+            return;
+        }
+        if (user.role === 'ADMIN') {
+            logger.info('User is admin');
+            await next();
+            return ;
+        }
+
+        const applicationId: IApplicationId = ctx.params.id;
+        const applicationUserQuery: {
+            application: IApplicationId;
+            userId: IUserLegacyId,
+        } = {
+            application: applicationId,
+            userId: user.id,
+        }
+        const applicationUser: IApplicationUser = await ApplicationUserModel.findOne(applicationUserQuery);
+        if (applicationUser) {
+            logger.info('User owns the application');
+            await next();
+            return ;
+        }
+
+        const aggregateCriteria: PipelineStage[] = [
+            { $match: { userId: user.id, role: ORGANIZATION_ROLES.ORG_ADMIN } },
+            {
+                $lookup: {
+                    from: "organizationapplications",
+                    localField: "organization",
+                    foreignField: "organization",
+                    as: "organizationapplications"
+                }
+            },
+            { $unwind: "$organizationapplications" },
+            {
+                $match: {
+                    "organizationapplications.application": new mongoose.Types.ObjectId(applicationId as string)
+                }
+            }
+        ];
+
+        const aggregate: Array<IOrganizationUser> = await OrganizationUserModel.aggregate(aggregateCriteria).exec();
+
+        if (aggregate.length > 0) {
+            logger.info('User owns the application through the organization');
+            await next();
+        }
+        else {
+            logger.info('Does not own the application');
             ctx.throw(403, 'Not authorized');
         }
     }

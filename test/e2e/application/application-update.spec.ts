@@ -80,8 +80,6 @@ describe('Update application tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockGetUserById(anotherUser);
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -90,7 +88,7 @@ describe('Update application tests', () => {
             response.status.should.equal(403);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
             response.body.errors[0].should.have.property('status').and.equal(403);
-            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to edit this application');
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
         });
 
         it('Update a application while being logged in as USER that owns the application should return a 200 and update the application data', async () => {
@@ -135,7 +133,7 @@ describe('Update application tests', () => {
             new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
         });
 
-        it('Update a application while being logged in as USER that belongs to the org that owns the application should return a 200 and update the application data', async () => {
+        it('Update a application while being logged in as USER that is admin of the org that owns the application should return a 200 and update the application data', async () => {
             const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
             const token: string = mockValidJWT({
                 id: testUser.profile.legacyId,
@@ -151,7 +149,7 @@ describe('Update application tests', () => {
             await new OrganizationUserModel({
                 userId: testUser.profile.legacyId,
                 organization: organization._id.toString(),
-                role: ORGANIZATION_ROLES.ORG_MEMBER
+                role: ORGANIZATION_ROLES.ORG_ADMIN
             }).save();
             await new OrganizationApplicationModel({
                 application: application._id.toString(),
@@ -179,6 +177,41 @@ describe('Update application tests', () => {
             new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+
+        it('Update a application while being logged in as USER that is member of the org that owns the application should return a 403 error', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationUserModel({
+                userId: testUser.profile.legacyId,
+                organization: organization._id.toString(),
+                role: ORGANIZATION_ROLES.ORG_MEMBER
+            }).save();
+            await new OrganizationApplicationModel({
+                application: application._id.toString(),
+                organization: organization._id.toString()
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new application name'
+                });
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
         });
 
         it('Update a application while being logged in as USER that owns the org that owns the application should return a 200 and update the application data', async () => {
@@ -240,8 +273,6 @@ describe('Update application tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockGetUserById(anotherUser);
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -250,7 +281,7 @@ describe('Update application tests', () => {
             response.status.should.equal(403);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
             response.body.errors[0].should.have.property('status').and.equal(403);
-            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to edit this application');
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
         });
 
         it('Update a application while being logged in as MANAGER that owns the application should return a 200 and update the application data', async () => {

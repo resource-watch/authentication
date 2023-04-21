@@ -5,7 +5,7 @@ import ApplicationService from 'services/application.service';
 import { CreateApplicationsDto, IApplication, UpdateApplicationsDto } from 'models/application';
 import mongoose, { AggregatePaginateResult } from 'mongoose';
 import ApplicationSerializer from 'serializers/application.serializer';
-import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
+import { PaginateOptions } from 'mongoose';
 import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import { pick } from 'lodash';
 import Utils from 'utils';
@@ -81,19 +81,13 @@ class ApplicationRouter {
 
     static async getApplicationById(ctx: Context): Promise<void> {
         const { id } = ctx.params;
-        const loggedUser: IUser = Utils.getUser(ctx);
 
         try {
             if (!mongoose.Types.ObjectId.isValid(id)) {
                 throw new ApplicationNotFoundError();
             }
 
-            let loggedUserFilter: IUser = null;
-            if (loggedUser.role !== 'ADMIN' && loggedUser.role !== 'MANAGER') {
-                loggedUserFilter = loggedUser;
-            }
-
-            ctx.body = ApplicationSerializer.serialize(await ApplicationService.getApplicationById(id, loggedUserFilter));
+            ctx.body = ApplicationSerializer.serialize(await ApplicationService.getApplicationById(id));
         } catch (error) {
             if (error instanceof ApplicationNotFoundError) {
                 ctx.throw(404, error.message);
@@ -103,7 +97,8 @@ class ApplicationRouter {
                 ctx.throw(403, error.message);
                 return;
             }
-            ctx.throw(500, error.message);        }
+            ctx.throw(500, error.message);
+        }
     }
 
     static async createApplication(ctx: Context): Promise<void> {
@@ -132,7 +127,6 @@ class ApplicationRouter {
 
     static async updateApplication(ctx: Context): Promise<void> {
         const { id } = ctx.params;
-        const loggedUser: IUser = Utils.getUser(ctx);
 
         const newApplicationData: Partial<UpdateApplicationsDto> = pick(
             ctx.request.body,
@@ -144,7 +138,7 @@ class ApplicationRouter {
         );
 
         try {
-            const application: IApplication = await ApplicationService.updateApplication(id, newApplicationData, loggedUser, ctx.request.body.regenApiKey);
+            const application: IApplication = await ApplicationService.updateApplication(id, newApplicationData, ctx.request.body.regenApiKey);
             ctx.body = ApplicationSerializer.serialize(await application.hydrate());
         } catch (error) {
             if (error instanceof ApplicationNotFoundError) {
@@ -161,10 +155,9 @@ class ApplicationRouter {
 
     static async deleteApplication(ctx: Context): Promise<void> {
         const { id } = ctx.params;
-        const loggedUser: IUser = Utils.getUser(ctx);
 
         try {
-            const application: IApplication = await ApplicationService.deleteApplication(id, loggedUser);
+            const application: IApplication = await ApplicationService.deleteApplication(id);
             ctx.body = ApplicationSerializer.serialize(application);
         } catch (error) {
             if (error instanceof ApplicationNotFoundError) {
@@ -193,7 +186,7 @@ applicationRouter.route({
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isLogged, handler: ApplicationRouter.getApplicationById,
+    pre: Utils.isAdminOrAppOwner, handler: ApplicationRouter.getApplicationById,
 });
 applicationRouter.route({
     method: 'post',
@@ -209,14 +202,14 @@ applicationRouter.route({
     validate: updateApplicationValidation,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isLogged, handler: ApplicationRouter.updateApplication,
+    pre: Utils.isAdminOrAppOwner, handler: ApplicationRouter.updateApplication,
 });
 applicationRouter.route({
     method: 'delete',
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isLogged, handler: ApplicationRouter.deleteApplication,
+    pre: Utils.isAdminOrAppOwner, handler: ApplicationRouter.deleteApplication,
 });
 
 export default applicationRouter;
