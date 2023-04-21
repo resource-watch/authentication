@@ -9,7 +9,7 @@ import request from 'superagent';
 import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.mocks';
 import ApplicationModel, { IApplication } from "models/application";
 import OrganizationApplicationModel from "models/organization-application";
-import OrganizationUserModel from "models/organization-user";
+import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { describe } from "mocha";
 import { OktaUser } from "services/okta.interfaces";
@@ -36,7 +36,7 @@ describe('Get organization by id tests', () => {
         await OrganizationModel.deleteMany({}).exec();
     });
 
-    it('Get organization by id without being authenticated should return a 401 \'Unauthorized\' error', async () => {
+    it('Get organization by id without being authenticated should return a 401 \'Not authenticated\' error', async () => {
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
@@ -48,19 +48,95 @@ describe('Get organization by id tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
     });
 
-    it('Get organization by id while being authenticated as user with USER role that does not belong to the organization should return a 403 \'Forbidden\' error', async () => {
-        const token: string = mockValidJWT({ role: 'USER' });
+    describe('USER role', () => {
+        it('Get organization by id while being authenticated as user with USER role that does not belong to the organization should return a 403 \'Not authorized\' error', async () => {
+            const token: string = mockValidJWT({ role: 'USER' });
 
-        const organization: HydratedDocument<IOrganization> = await createOrganization();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
 
-        const response: request.Response = await requester
-            .get(`/api/v1/organization/${organization._id.toString()}`)
-            .set('Authorization', `Bearer ${token}`);
+            const response: request.Response = await requester
+                .get(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
 
-        response.status.should.equal(403);
-        response.body.should.have.property('errors').and.be.an('array').and.length(1);
-        response.body.errors[0].should.have.property('status').and.equal(403);
-        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+        });
+
+        it('Get organization by id while being authenticated as user with USER role that belongs to the organization should return a 200 and the organization data (happy case)', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+            mockGetUserById(testUser);
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationUserModel({
+                organization,
+                userId: testUser.profile.legacyId,
+                role: ORGANIZATION_ROLES.ORG_MEMBER
+            }).save();
+
+            const response: request.Response = await requester
+                .get(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('applications').and.eql([]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+        });
+
+        it('Get organization by id while being authenticated as user with USER role that is ADMIN of the organization should return a 200 and the organization data (happy case)', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+            mockGetUserById(testUser);
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationUserModel({
+                organization,
+                userId: testUser.profile.legacyId,
+                role: ORGANIZATION_ROLES.ORG_ADMIN
+            }).save();
+
+            const response: request.Response = await requester
+                .get(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(200);
+
+            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
+
+            response.body.data.should.have.property('type').and.equal('organizations');
+            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
+            response.body.data.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
+            response.body.data.attributes.should.have.property('applications').and.eql([]);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
+        });
     });
 
     it('Get organization by id while being authenticated as a MANAGER user should return a 200 and the organization data (happy case)', async () => {
@@ -132,45 +208,6 @@ describe('Get organization by id tests', () => {
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
         response.body.errors[0].should.have.property('status').and.equal(404);
         response.body.errors[0].should.have.property('detail').and.equal('Organization not found');
-    });
-
-    describe('while being logged in as an organization ORG_ADMIN', () => {
-        it('Get organization by id should be successful', async () => {
-            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
-            const token: string = mockValidJWT({
-                id: testUser.profile.legacyId,
-                email: testUser.profile.email,
-                role: testUser.profile.role,
-                extraUserData: { apps: testUser.profile.apps },
-            });
-            mockGetUserById(testUser);
-
-            const organization: HydratedDocument<IOrganization> = await createOrganization();
-
-            await new OrganizationUserModel({
-                organization,
-                userId: testUser.profile.legacyId,
-                role: 'ORG_ADMIN'
-            }).save();
-
-            const response: request.Response = await requester
-                .get(`/api/v1/organization/${organization._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
-
-            response.status.should.equal(200);
-
-            const databaseOrganization: IOrganization = await OrganizationModel.findById(response.body.data.id);
-
-            response.body.data.should.have.property('type').and.equal('organizations');
-            response.body.data.should.have.property('id').and.equal(databaseOrganization._id.toString());
-            response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(databaseOrganization.name);
-            response.body.data.attributes.should.have.property('applications').and.eql([]);
-            response.body.data.attributes.should.have.property('createdAt');
-            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
-            response.body.data.attributes.should.have.property('updatedAt');
-            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
-        });
     });
 
     describe('with associated applications', () => {

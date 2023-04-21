@@ -1,12 +1,12 @@
 import type { Document, Schema as ISchema, Model } from 'mongoose';
-import { model, Schema, PaginateModel } from 'mongoose';
-import paginate from 'mongoose-paginate-v2';
+import { model, Schema, PaginateModel, AggregatePaginateModel } from 'mongoose';
 import ApplicationModel, { IApplication, IApplicationId } from 'models/application';
 import OrganizationUserModel, { IOrganizationUser, Role } from "models/organization-user";
 import { IUserLegacyId } from "services/okta.interfaces";
 import { Id } from "types";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import { UserModelStub } from "models/user.model.stub";
+import aggregatePaginate from "mongoose-aggregate-paginate-v2";
 
 interface IOrganizationMethods {
     hydrate(): Promise<(IOrganization & Required<{ _id: IOrganizationId }>)>
@@ -123,11 +123,11 @@ export const organizationSchema: ISchema<IOrganization, OrganizationModel, IOrga
     }
 });
 
-organizationSchema.plugin(paginate);
+organizationSchema.plugin(aggregatePaginate);
 
 interface OrganizationDocument extends Document<IOrganizationId>, IOrganization, IOrganizationMethods {
 }
 
-const OrganizationModel: PaginateModel<OrganizationDocument, OrganizationModel, IOrganizationMethods> = model<OrganizationDocument, PaginateModel<OrganizationDocument, OrganizationModel, IOrganizationMethods>>('Organization', organizationSchema);
+const OrganizationModel: AggregatePaginateModel<OrganizationDocument> = model<OrganizationDocument, AggregatePaginateModel<OrganizationDocument>>('Organization', organizationSchema);
 
 export default OrganizationModel;
