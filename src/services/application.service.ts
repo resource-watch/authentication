@@ -19,8 +19,6 @@ import { pick } from "lodash";
 import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OktaService from "services/okta.service";
 import PermissionError from "errors/permission.error";
-import OrganizationUserModel from "models/organization-user";
-import logger from "logger";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<CreateApplicationsDto>, requestUser: IUser): Promise<IApplication> {
@@ -53,27 +51,8 @@ export default class ApplicationService {
         return application.save();
     }
 
-    static async updateApplication(id: IApplicationId, applicationData: Partial<UpdateApplicationsDto>, requestUser: IUser, regenApiKey: boolean): Promise<IApplication> {
+    static async updateApplication(id: IApplicationId, applicationData: Partial<UpdateApplicationsDto>, regenApiKey: boolean): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
-
-        if (requestUser.role !== 'ADMIN') {
-            if ('user' in application && application.user !== null) {
-                if (application.user.id !== requestUser.id) {
-                    throw new PermissionError('You don\'t have permissions to edit this application');
-                }
-            } else if ('organization' in application && application.organization !== null) {
-                const organizationMembers: OrganizationUserModel[] = await OrganizationUserModel.findOne({
-                    organization: application.organization.id,
-                    user: requestUser.id
-                });
-                if (!organizationMembers) {
-                    throw new PermissionError('You don\'t have permissions to edit this application');
-                }
-            } else {
-                logger.warn(`Application ${id} seems to be orphaned`);
-                throw new PermissionError('You don\'t have permissions to edit this application');
-            }
-        }
 
         if ('organization' in applicationData || 'user' in applicationData) {
             await application.clearAssociations();
@@ -106,28 +85,9 @@ export default class ApplicationService {
         return application.save();
     }
 
-    static async deleteApplication(id: string, requestUser: IUser): Promise<IApplication> {
+    static async deleteApplication(id: string): Promise<IApplication> {
         const application: IApplication = await ApplicationService.getApplicationById(id);
         const returnApplication: IApplication = await ApplicationModel.hydrate(application);
-
-        if (requestUser.role !== 'ADMIN') {
-            if ('user' in returnApplication && returnApplication.user !== null) {
-                if (returnApplication.user.id !== requestUser.id) {
-                    throw new PermissionError('You don\'t have permissions to delete this application');
-                }
-            } else if ('organization' in returnApplication && returnApplication.organization !== null) {
-                const organizationMembers: OrganizationUserModel[] = await OrganizationUserModel.findOne({
-                    organization: returnApplication.organization.id,
-                    user: requestUser.id
-                });
-                if (!organizationMembers) {
-                    throw new PermissionError('You don\'t have permissions to delete this application');
-                }
-            } else {
-                logger.warn(`Application ${id} seems to be orphaned`);
-                throw new PermissionError('You don\'t have permissions to delete this application');
-            }
-        }
 
         await APIGatewayAWSService.deleteApiKey(application.apiKeyId);
 
@@ -176,32 +136,13 @@ export default class ApplicationService {
         return applications;
     }
 
-    static async getApplicationById(id: IApplicationId, requestUser: IUser = null): Promise<IApplication> {
+    static async getApplicationById(id: IApplicationId): Promise<IApplication> {
         let application: IApplication = await ApplicationModel.findById(id.toString());
         if (!application) {
             throw new ApplicationNotFoundError();
         }
 
         application = await ApplicationModel.hydrate(application.toObject()).hydrate();
-
-        if (requestUser !== null) {
-            if ('user' in application && application.user !== null) {
-                if (application.user.id !== requestUser.id) {
-                    throw new PermissionError('You don\'t have permissions to view this application');
-                }
-            } else if ('organization' in application && application.organization !== null) {
-                const organizationMembers: OrganizationUserModel[] = await OrganizationUserModel.findOne({
-                    organization: application.organization.id,
-                    user: requestUser.id
-                });
-                if (!organizationMembers) {
-                    throw new PermissionError('You don\'t have permissions to view this application');
-                }
-            } else {
-                logger.warn(`Application ${id} seems to be orphaned`);
-                throw new PermissionError('You don\'t have permissions to view this application');
-            }
-        }
 
         return application;
     }

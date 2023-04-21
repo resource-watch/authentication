@@ -48,7 +48,7 @@ describe('Get application by id tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
     });
 
-    it('Get application by id while being authenticated as a different should return a 403 \'Forbidden\' error', async () => {
+    it('Get application by id while being authenticated as a USER that does not own the app should return a 403 \'Forbidden\' error', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
 
         const application: HydratedDocument<IApplication> = await createApplication();
@@ -60,7 +60,7 @@ describe('Get application by id tests', () => {
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
         response.body.errors[0].should.have.property('status').and.equal(403);
-        response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to view this application');
+        response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
     describe('USER role' , () => {
@@ -115,8 +115,6 @@ describe('Get application by id tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockGetUserById(otherUser);
-
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`);
@@ -124,7 +122,7 @@ describe('Get application by id tests', () => {
             response.status.should.equal(403);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
             response.body.errors[0].should.have.property('status').and.equal(403);
-            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to view this application');
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
         });
     });
 
@@ -180,22 +178,14 @@ describe('Get application by id tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockGetUserById(otherUser);
-
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`);
 
-            response.status.should.equal(200);
-            response.body.data.should.have.property('type').and.equal('applications');
-            response.body.data.should.have.property('id').and.equal(application._id.toString());
-            response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(application.name);
-            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
-            response.body.data.attributes.should.have.property('createdAt');
-            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
-            response.body.data.attributes.should.have.property('updatedAt');
-            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
         });
     });
 

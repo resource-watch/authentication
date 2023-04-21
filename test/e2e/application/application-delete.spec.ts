@@ -108,8 +108,6 @@ describe('Delete application tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockGetUserById(otherUser);
-
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -118,7 +116,7 @@ describe('Delete application tests', () => {
             response.status.should.equal(403);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
             response.body.errors[0].should.have.property('status').and.equal(403);
-            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to delete this application');
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
         });
     })
 
@@ -181,8 +179,6 @@ describe('Delete application tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockGetUserById(otherUser);
-
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -191,7 +187,7 @@ describe('Delete application tests', () => {
             response.status.should.equal(403);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
             response.body.errors[0].should.have.property('status').and.equal(403);
-            response.body.errors[0].should.have.property('detail').and.equal('You don\'t have permissions to delete this application');
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
         });
     })
 
