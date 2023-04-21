@@ -155,7 +155,7 @@ export default class Utils {
     }
 
     static async isAdminOrManagerOrOrgAdmin(ctx: Context, next: Next): Promise<void> {
-        logger.info('Checking if user is admin or belongs to organization');
+        logger.info('Checking if user is admin or is organization admin');
         const user: IUser = Utils.getUser(ctx);
         if (!user) {
             logger.info('Not authenticated');
@@ -182,6 +182,43 @@ export default class Utils {
             organization: organizationId,
             user: user.id,
             role: ORGANIZATION_ROLES.ORG_ADMIN
+        }
+        const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
+        if (organizationUser) {
+            logger.info('User belongs to organization');
+            await next();
+        } else {
+            logger.info('Does not belong to organization');
+            ctx.throw(403, 'Not authorized');
+        }
+    }
+
+    static async isAdminOrManagerOrOrgMember(ctx: Context, next: Next): Promise<void> {
+        logger.info('Checking if user is admin or belongs to organization');
+        const user: IUser = Utils.getUser(ctx);
+        if (!user) {
+            logger.info('Not authenticated');
+            ctx.throw(401, 'Not authenticated');
+            return;
+        }
+        if (user.role === 'ADMIN') {
+            logger.info('User is admin');
+            await next();
+            return ;
+        }
+        if (user.role === 'MANAGER') {
+            logger.info('User is manager');
+            await next();
+            return ;
+        }
+
+        const organizationId: IOrganizationId = ctx.params.id;
+        const query: {
+            organization: IOrganizationId;
+            user: IUserLegacyId,
+        } = {
+            organization: organizationId,
+            user: user.id,
         }
         const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
         if (organizationUser) {

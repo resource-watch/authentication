@@ -1,6 +1,6 @@
 import { Serializer } from 'jsonapi-serializer';
 import { IOrganization } from 'models/organization';
-import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
+import { AggregatePaginateResult, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import { IApplication } from "models/application";
 import { IOrganizationUser } from "models/organization-user";
 
@@ -50,7 +50,7 @@ export interface SerializedOrganizationResponse {
 
 class OrganizationSerializer {
 
-    static serializeList(data: PaginateResult<PaginateDocument<IOrganization, unknown, PaginateOptions>>, link: string): SerializedOrganizationResponse {
+    static serializeList(data: AggregatePaginateResult<IOrganization>, link: string): SerializedOrganizationResponse {
         const serializedData: SerializedOrganizationResponse = organizationSerializer.serialize(data.docs);
 
         serializedData.links = {

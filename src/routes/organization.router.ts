@@ -2,13 +2,13 @@ import { Context } from 'koa';
 import router, { Router } from 'koa-joi-router';
 import logger from 'logger';
 import { CreateOrganizationsDto, IOrganization } from 'models/organization';
-import mongoose from 'mongoose';
+import mongoose, { AggregatePaginateResult } from 'mongoose';
 import OrganizationSerializer from 'serializers/organization.serializer';
 import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
 import OrganizationNotFoundError from 'errors/organizationNotFound.error';
 import { pick } from 'lodash';
 import Utils from 'utils';
-import { IUser } from 'services/okta.interfaces';
+import { IUser, IUserLegacyId } from 'services/okta.interfaces';
 import OrganizationService from "services/organization.service";
 import { ORGANIZATION_ROLES } from "models/organization-user";
 
@@ -94,6 +94,7 @@ class OrganizationRouter {
         const paginationOptions: PaginateOptions = Utils.getPaginationParameters(ctx);
 
         const filters: Record<string, any> = pick(ctx.query, []);
+        const userIdFilter: IUserLegacyId = (loggedUser.role !== 'ADMIN' && loggedUser.role !== 'MANAGER') ? loggedUser.id : null;
 
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
@@ -101,7 +102,7 @@ class OrganizationRouter {
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
         try {
-            const organizations: PaginateResult<PaginateDocument<IOrganization, unknown, PaginateOptions>> = await OrganizationService.getOrganizations(filters, paginationOptions);
+            const organizations: AggregatePaginateResult<IOrganization> = await OrganizationService.getPaginatedOrganizations(filters, paginationOptions, userIdFilter);
             ctx.body = OrganizationSerializer.serializeList(organizations, link);
         } catch (err) {
             logger.error(err);
@@ -185,14 +186,14 @@ organizationRouter.route({
     validate: getOrganizationsValidation,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdminOrManager, handler: OrganizationRouter.getOrganizations,
+    pre: Utils.isLogged, handler: OrganizationRouter.getOrganizations,
 });
 organizationRouter.route({
     method: 'get',
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdminOrManagerOrOrgAdmin, handler: OrganizationRouter.getOrganizationById,
+    pre: Utils.isAdminOrManagerOrOrgMember, handler: OrganizationRouter.getOrganizationById,
 });
 organizationRouter.route({
     method: 'post',

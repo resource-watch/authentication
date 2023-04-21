@@ -3,9 +3,16 @@ import OrganizationModel, {
     IOrganization,
     IOrganizationId,
 } from 'models/organization';
-import { FilterQuery, PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
+import {
+    Aggregate,
+    AggregatePaginateResult,
+    FilterQuery,
+    PaginateOptions,
+    PipelineStage
+} from 'mongoose';
 import OrganizationNotFoundError from 'errors/organizationNotFound.error';
 import { pick } from "lodash";
+import { IUserLegacyId } from "services/okta.interfaces";
 
 export default class OrganizationService {
     static async createOrganization(organizationData: Partial<CreateOrganizationsDto>): Promise<IOrganization> {
@@ -63,14 +70,38 @@ export default class OrganizationService {
         return returnOrganization;
     }
 
-    static async getOrganizations(query: FilterQuery<IOrganization>, paginationOptions: PaginateOptions): Promise<PaginateResult<PaginateDocument<IOrganization, unknown, PaginateOptions>>> {
-        const organizations: PaginateResult<PaginateDocument<IOrganization, unknown, PaginateOptions>> = await OrganizationModel.paginate(query, {
+    static async getPaginatedOrganizations(query: FilterQuery<IOrganization>, paginationOptions: PaginateOptions, loggedUserId: IUserLegacyId = null): Promise<AggregatePaginateResult<IOrganization>> {
+        let aggregateCriteria: PipelineStage[] = [
+            { $match: query },
+        ];
+
+        if (loggedUserId !== null) {
+            aggregateCriteria = aggregateCriteria.concat([
+                {
+                    $lookup: {
+                        from: "organizationusers",
+                        localField: "_id",
+                        foreignField: "organization",
+                        as: "organizationusers"
+                    }
+                },
+                { $unwind: "$organizationusers" },
+                {
+                    $match: {
+                        "organizationusers.userId": loggedUserId
+                    }
+                }]);
+        }
+
+        const aggregate: Aggregate<Array<any>> = OrganizationModel.aggregate(aggregateCriteria)
+
+        const organizations: AggregatePaginateResult<IOrganization> = await OrganizationModel.aggregatePaginate(aggregate, {
             ...paginationOptions,
-            populate: ['applications', 'users']
+            populate: ['applications', 'users'],
         });
 
         organizations.docs = await Promise.all(organizations.docs.map((organization: IOrganization) => {
-            return organization.hydrate();
+            return (new OrganizationModel(organization)).hydrate();
         }));
 
         return organizations;
