@@ -18,9 +18,10 @@ import ApplicationModel, { IApplication } from "models/application";
 import { assertConnection, assertNoConnection, createApplication, createOrganization } from "../utils/helpers";
 import OrganizationModel, { IOrganization } from "models/organization";
 import { HydratedDocument } from "mongoose";
-import OrganizationUserModel from "models/organization-user";
+import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import OrganizationApplicationModel from "models/organization-application";
+import { describe } from "mocha";
 
 const should: Should = chai.should();
 chai.use(chaiDateTime);
