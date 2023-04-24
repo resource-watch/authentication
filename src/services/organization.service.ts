@@ -12,7 +12,9 @@ import {
 } from 'mongoose';
 import OrganizationNotFoundError from 'errors/organizationNotFound.error';
 import { pick } from "lodash";
-import { IUserLegacyId } from "services/okta.interfaces";
+import { IUser, IUserLegacyId } from "services/okta.interfaces";
+import ApplicationModel, { IApplication, IApplicationId } from "models/application";
+import PermissionError from "errors/permission.error";
 
 export default class OrganizationService {
     static async createOrganization(organizationData: Partial<CreateOrganizationsDto>): Promise<IOrganization> {
@@ -34,10 +36,22 @@ export default class OrganizationService {
         return organization.save();
     }
 
-    static async updateOrganization(id: IOrganizationId, organizationData: Partial<CreateOrganizationsDto>): Promise<IOrganization> {
+    static async updateOrganization(id: IOrganizationId, organizationData: Partial<CreateOrganizationsDto>, requestUser: IUser): Promise<IOrganization> {
         const organization: IOrganization = await OrganizationService.getOrganizationById(id);
 
         if ('applications' in organizationData) {
+            if (requestUser.role !== 'ADMIN') {
+                await Promise.all(organizationData.applications.map(async (applicationId: IApplicationId) => {
+                    let application: IApplication = await ApplicationModel.findById(applicationId);
+                    application = await ApplicationModel.hydrate(application.toObject()).hydrate();
+
+                    const canAssociateWithOrg: boolean = application.user?.id === requestUser.id || application.organization?.id === organization.id;
+
+                    if (!canAssociateWithOrg) {
+                        throw new PermissionError(`You don't have permissions to associate application ${application.name} with organization ${organization.name}`);
+                    }
+                }));
+            }
             await organization.clearApplicationAssociations();
         }
         if ('users' in organizationData) {

@@ -4,13 +4,14 @@ import logger from 'logger';
 import { CreateOrganizationsDto, IOrganization } from 'models/organization';
 import mongoose, { AggregatePaginateResult } from 'mongoose';
 import OrganizationSerializer from 'serializers/organization.serializer';
-import { PaginateDocument, PaginateOptions, PaginateResult } from 'mongoose';
+import { PaginateOptions } from 'mongoose';
 import OrganizationNotFoundError from 'errors/organizationNotFound.error';
 import { pick } from 'lodash';
 import Utils from 'utils';
 import { IUser, IUserLegacyId } from 'services/okta.interfaces';
 import OrganizationService from "services/organization.service";
 import { ORGANIZATION_ROLES } from "models/organization-user";
+import PermissionError from "errors/permission.error";
 
 const organizationRouter: Router = router();
 organizationRouter.prefix('/api/v1/organization');
@@ -144,6 +145,7 @@ class OrganizationRouter {
 
     static async updateOrganization(ctx: Context): Promise<void> {
         const { id } = ctx.params;
+        const loggedUser: IUser = Utils.getUser(ctx);
 
         const newOrganizationData: Partial<CreateOrganizationsDto> = pick(
             ctx.request.body,
@@ -155,14 +157,19 @@ class OrganizationRouter {
         );
 
         try {
-            const organization: IOrganization = await OrganizationService.updateOrganization(id, newOrganizationData);
+            const organization: IOrganization = await OrganizationService.updateOrganization(id, newOrganizationData, loggedUser);
             ctx.body = OrganizationSerializer.serialize(await organization.hydrate());
         } catch (error) {
             if (error instanceof OrganizationNotFoundError) {
                 ctx.throw(404, error.message);
-            } else {
-                ctx.throw(500, error.message);
+                return;
             }
+
+            if (error instanceof PermissionError) {
+                ctx.throw(403, 'Not authorized');
+                return;
+            }
+            ctx.throw(500, error.message);
         }
     }
 
