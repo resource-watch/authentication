@@ -25,6 +25,9 @@ import DeletionService from 'services/deletion.service';
 import GetUserResourcesService from 'services/get-user-resources.service';
 import DeleteUserResourcesService from "services/delete-user-resources.service";
 import { UserModelStub } from "models/user.model.stub";
+import ApplicationModel, { IApplication, IApplicationId } from "models/application";
+import PermissionError from "errors/permission.error";
+import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES } from "models/organization-user";
 
 export class OktaProvider {
 
@@ -310,11 +313,30 @@ export class OktaProvider {
         ctx.body = { data };
     }
 
-    private static async performUpdateRequest(ctx: Context, id: IUserLegacyId): Promise<void> {
+    private static async performUpdateRequest(ctx: Context, id: IUserLegacyId): Promise<Record<string, any>> {
         const requestUser: IUser = Utils.getUser(ctx);
         const { body } = ctx.request;
 
         if ('applications' in body) {
+            if (requestUser.role !== 'ADMIN') {
+                const organizations: IOrganizationUser[] = await OrganizationUserModel.find({
+                    userId: id,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).populate('organization');
+                const organizationIds: IOrganizationUser[] = organizations.map((organization: IOrganizationUser) => organization.organization.id);
+
+                await Promise.all(body.applications.map(async (applicationId: IApplicationId) => {
+                    let application: IApplication = await ApplicationModel.findById(applicationId);
+                    application = await ApplicationModel.hydrate(application.toObject()).hydrate();
+
+                    const canAssociateWithOrg: boolean = application.user?.id === requestUser.id || organizationIds.includes(application.organization?.id);
+
+                    if (!canAssociateWithOrg) {
+                        throw new PermissionError(`You don't have permissions to associate application ${application.name} with user ${id}`);
+                    }
+                }));
+            }
+
             await UserModelStub.clearApplicationAssociations(id);
         }
 
@@ -329,39 +351,57 @@ export class OktaProvider {
             ...requestUser.role === 'ADMIN' && body.extraUserData && body.extraUserData.apps && { apps: body.extraUserData.apps }
         };
 
-        try {
-            if ('applications' in body && Array.isArray(body.applications) && body.applications.length > 0) {
-                await UserModelStub.associateWithApplicationIds(id, body.applications);
-            }
-
-            if ('organizations' in body && Array.isArray(body.organizations) && body.organizations.length > 0) {
-                await UserModelStub.associateWithOrganizations(id, body.organizations);
-            }
-
-            const updatedUser: IUser = await OktaService.updateUser(id, updateData);
-
-            ctx.body = await UserSerializer.serialize(await UserModelStub.hydrate(updatedUser));
-        } catch (err) {
-            if (err instanceof UserNotFoundError) {
-                ctx.throw(404, 'User not found');
-                return;
-            }
-
-            logger.error('[OktaProvider] - Error updating my user, ', err);
-            ctx.throw(500, 'Internal server error');
+        if ('applications' in body && Array.isArray(body.applications) && body.applications.length > 0) {
+            await UserModelStub.associateWithApplicationIds(id, body.applications);
         }
+
+        if ('organizations' in body && Array.isArray(body.organizations) && body.organizations.length > 0) {
+            await UserModelStub.associateWithOrganizations(id, body.organizations);
+        }
+
+        const updatedUser: IUser = await OktaService.updateUser(id, updateData);
+
+        return UserSerializer.serialize(await UserModelStub.hydrate(updatedUser));
     }
 
     static async updateUser(ctx: Context): Promise<void> {
         logger.info(`[OktaProvider] - Update user with id ${ctx.params.id}`);
         ctx.assert(ctx.params.id, 400, 'Id param required');
-        return OktaProvider.performUpdateRequest(ctx, ctx.params.id);
+
+        try {
+            ctx.body = await OktaProvider.performUpdateRequest(ctx, ctx.params.id);
+        } catch (error) {
+            if (error instanceof UserNotFoundError) {
+                ctx.throw(404, 'User not found');
+                return;
+            }
+            if (error instanceof PermissionError) {
+                ctx.throw(403, 'Not authorized');
+                return;
+            }
+            logger.error('[OktaProvider] - Error updating my user, ', error);
+            ctx.throw(500, 'Internal server error');
+        }
     }
 
     static async updateMe(ctx: Context): Promise<void> {
         logger.info(`[OktaProvider] - Update user me`);
         const user: IUser = Utils.getUser(ctx);
-        return OktaProvider.performUpdateRequest(ctx, user.id);
+
+        try {
+            ctx.body = await OktaProvider.performUpdateRequest(ctx, user.id);
+        } catch (error) {
+            if (error instanceof UserNotFoundError) {
+                ctx.throw(404, 'User not found');
+                return;
+            }
+            if (error instanceof PermissionError) {
+                ctx.throw(403, 'Not authorized');
+                return;
+            }
+            logger.error('[OktaProvider] - Error updating my user, ', error);
+            ctx.throw(500, 'Internal server error');
+        }
     }
 
     static async deleteUser(ctx: Context): Promise<void> {
