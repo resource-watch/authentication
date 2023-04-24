@@ -10,7 +10,7 @@ import { getMockOktaUser, mockGetUserById, mockValidJWT } from '../okta/okta.moc
 import { mockDeleteAWSAPIGatewayAPIKey } from "./aws.mocks";
 import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationApplicationModel from "models/organization-application";
-import OrganizationUserModel from "models/organization-user";
+import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
 import { describe } from "mocha";
@@ -91,6 +91,85 @@ describe('Delete application tests', () => {
             new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
         });
 
+        it('Delete a application while being logged in as USER that owns the org that owns the application should be successful', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationApplicationModel({
+                organization: organization._id.toString(),
+                application: application._id.toString()
+            }).save();
+            await new OrganizationUserModel({
+                organization: organization._id.toString(),
+                userId: testUser.profile.legacyId,
+                role: ORGANIZATION_ROLES.ORG_ADMIN
+            }).save();
+
+            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+
+            const response: request.Response = await requester
+                .delete(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(200);
+
+            const responseApplication: Record<string, any> = response.body.data;
+            const databaseApplication: IApplication = await ApplicationModel.findById(responseApplication.id);
+            chai.expect(databaseApplication).to.be.null;
+
+            responseApplication.should.have.property('type').and.equal('applications');
+            responseApplication.should.have.property('id').and.equal(application._id.toString());
+            responseApplication.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+
+        it('Delete a application while being logged in as USER that belongs to the org that owns the application should return a 403 \'Forbidden\' error', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationApplicationModel({
+                organization: organization._id.toString(),
+                application: application._id.toString()
+            }).save();
+            await new OrganizationUserModel({
+                organization: organization._id.toString(),
+                userId: testUser.profile.legacyId,
+                role: ORGANIZATION_ROLES.ORG_MEMBER
+            }).save();
+
+            const response: request.Response = await requester
+                .delete(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+        });
+
         it('Delete a application while being logged in as USER user that does not own the application should return a 403 \'Forbidden\' error', async () => {
             const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
             const token: string = mockValidJWT({
@@ -121,7 +200,7 @@ describe('Delete application tests', () => {
     })
 
     describe('MANAGER role', () => {
-        it('Delete a application while being logged in as USER user that owns the application should be successful', async () => {
+        it('Delete a application while being logged in as MANAGER user that owns the application should be successful', async () => {
             const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
             const token: string = mockValidJWT({
                 id: testUser.profile.legacyId,
@@ -162,6 +241,85 @@ describe('Delete application tests', () => {
             new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
         });
 
+        it('Delete a application while being logged in as MANAGER that owns the org that owns the application should be successful', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationApplicationModel({
+                organization: organization._id.toString(),
+                application: application._id.toString()
+            }).save();
+            await new OrganizationUserModel({
+                organization: organization._id.toString(),
+                userId: testUser.profile.legacyId,
+                role: ORGANIZATION_ROLES.ORG_ADMIN
+            }).save();
+
+            mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
+
+            const response: request.Response = await requester
+                .delete(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(200);
+
+            const responseApplication: Record<string, any> = response.body.data;
+            const databaseApplication: IApplication = await ApplicationModel.findById(responseApplication.id);
+            chai.expect(databaseApplication).to.be.null;
+
+            responseApplication.should.have.property('type').and.equal('applications');
+            responseApplication.should.have.property('id').and.equal(application._id.toString());
+            responseApplication.should.have.property('attributes').and.be.an('object');
+            response.body.data.attributes.should.have.property('name').and.equal(application.name);
+            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(application.apiKeyValue);
+            response.body.data.attributes.should.have.property('createdAt');
+            new Date(response.body.data.attributes.createdAt).should.equalDate(application.createdAt);
+            response.body.data.attributes.should.have.property('updatedAt');
+            new Date(response.body.data.attributes.updatedAt).should.equalDate(application.updatedAt);
+        });
+
+        it('Delete a application while being logged in as MANAGER that belongs to the org that owns the application should return a 403 \'Forbidden\' error', async () => {
+            const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: testUser.profile.legacyId,
+                email: testUser.profile.email,
+                role: testUser.profile.role,
+                extraUserData: { apps: testUser.profile.apps },
+            });
+
+            const application: HydratedDocument<IApplication> = await createApplication();
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+
+            await new OrganizationApplicationModel({
+                organization: organization._id.toString(),
+                application: application._id.toString()
+            }).save();
+            await new OrganizationUserModel({
+                organization: organization._id.toString(),
+                userId: testUser.profile.legacyId,
+                role: ORGANIZATION_ROLES.ORG_MEMBER
+            }).save();
+
+            const response: request.Response = await requester
+                .delete(`/api/v1/application/${application._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({});
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(403);
+            response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+        });
+
         it('Delete a application while being logged in as MANAGER user that does not own the application should return a 403 \'Forbidden\' error', async () => {
             const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
             const token: string = mockValidJWT({
@@ -170,7 +328,7 @@ describe('Delete application tests', () => {
                 role: testUser.profile.role,
                 extraUserData: { apps: testUser.profile.apps },
             });
-            const otherUser: OktaUser = getMockOktaUser({ role: 'USER' });
+            const otherUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
 
             const application: HydratedDocument<IApplication> = await createApplication();
 
@@ -205,7 +363,7 @@ describe('Delete application tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Application not found');
     });
 
-    it('Delete a application while being logged in with that user should return a 200 and the user data (happy case)', async () => {
+    it('Delete a application while being logged in with as ADMIN user should return a 200 and the user data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const application: HydratedDocument<IApplication> = await createApplication();
