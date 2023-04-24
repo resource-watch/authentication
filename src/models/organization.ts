@@ -1,5 +1,5 @@
 import type { Document, Schema as ISchema, Model } from 'mongoose';
-import { model, Schema, PaginateModel, AggregatePaginateModel } from 'mongoose';
+import { model, Schema, AggregatePaginateModel } from 'mongoose';
 import ApplicationModel, { IApplication, IApplicationId } from 'models/application';
 import OrganizationUserModel, { IOrganizationUser, Role } from "models/organization-user";
 import { IUserLegacyId } from "services/okta.interfaces";
