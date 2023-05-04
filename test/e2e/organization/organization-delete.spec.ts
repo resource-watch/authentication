@@ -2,7 +2,7 @@ import nock from 'nock';
 import chai, { expect } from 'chai';
 import OrganizationModel, { IOrganization } from 'models/organization';
 import { getTestAgent } from '../utils/test-server';
-import { assertNoConnection, createApplication, createOrganization } from '../utils/helpers';
+import { assertConnection, assertNoConnection, createApplication, createOrganization } from '../utils/helpers';
 import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import mongoose, { HydratedDocument } from 'mongoose';
@@ -145,7 +145,7 @@ describe('Delete organization tests', () => {
     });
 
     describe('with associated applications', () => {
-        it('Delete a organization with associated application should be successful', async () => {
+        it('Delete a organization with associated application should fail', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
             const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
@@ -160,23 +160,12 @@ describe('Delete organization tests', () => {
                 .set('Authorization', `Bearer ${token}`)
                 .send({});
 
-            response.status.should.equal(200);
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(400);
+            response.body.errors[0].should.have.property('detail').and.equal('Organizations with associated applications cannot be deleted');
 
-            response.body.data.should.have.property('type').and.equal('organizations');
-            response.body.data.should.have.property('id').and.equal(testOrganization._id.toString());
-            response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(testOrganization.name);
-            response.body.data.attributes.should.have.property('applications').and.eql([{
-                id: testApplication.id,
-                name: testApplication.name,
-            }]);
-            response.body.data.attributes.should.have.property('createdAt');
-            new Date(response.body.data.attributes.createdAt).should.equalDate(testOrganization.createdAt);
-            response.body.data.attributes.should.have.property('updatedAt');
-            new Date(response.body.data.attributes.updatedAt).should.equalDate(testOrganization.updatedAt);
-
-            await assertNoConnection({ organization: testOrganization, application: null });
-            await assertNoConnection({ organization: testOrganization, user: null });
+            await assertConnection({ organization: testOrganization, application: testApplication });
         });
     })
 

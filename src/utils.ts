@@ -8,6 +8,7 @@ import { IOrganizationId } from "models/organization";
 import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES, Role } from "models/organization-user";
 import { IApplicationId } from "models/application";
 import ApplicationUserModel, { IApplicationUser } from "models/application-user";
+import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 
 export default class Utils {
 
@@ -117,6 +118,24 @@ export default class Utils {
         else {
             logger.info('Does not own the application');
             ctx.throw(403, 'Not authorized');
+        }
+    }
+
+    static async organizationHasNoApplications(ctx: Context, next: Next): Promise<void> {
+        logger.info('Checking if the organization has no applications');
+        const organizationId: IOrganizationId = ctx.params.id;
+        const organizationApplicationQuery: {
+            organization: IOrganizationId;
+        } = {
+            organization: organizationId,
+        }
+        const organizationApplications: IOrganizationApplication[] = await OrganizationApplicationModel.find(organizationApplicationQuery);
+        if (organizationApplications.length > 0) {
+            logger.info('Organization has applications');
+            ctx.throw(400, 'Organizations with associated applications cannot be deleted');
+        } else {
+            await next();
+            return ;
         }
     }
 

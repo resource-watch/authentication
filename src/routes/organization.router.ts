@@ -226,7 +226,7 @@ organizationRouter.route({
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdmin, handler: OrganizationRouter.deleteOrganization,
+    pre: [Utils.isAdmin, Utils.organizationHasNoApplications], handler: OrganizationRouter.deleteOrganization,
 });
 
 export default organizationRouter;
