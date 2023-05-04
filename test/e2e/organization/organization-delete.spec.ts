@@ -35,7 +35,7 @@ describe('Delete organization tests', () => {
         await OrganizationModel.deleteMany({}).exec();
     });
 
-    it('Delete a organization while not being logged in should return a 401 \'Unauthorized\' error', async () => {
+    it('Delete a organization while not being logged in should return a 401 \'Not authenticated\' error', async () => {
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
@@ -47,7 +47,7 @@ describe('Delete organization tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authenticated');
     });
 
-    it('Delete a organization while being logged in as USER user should return a 403 \'Forbidden\' error', async () => {
+    it('Delete a organization while being logged in as USER user should return a 403 \'Not authorized\' error', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -63,7 +63,7 @@ describe('Delete organization tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
-    it('Delete a organization while being logged in as MANAGER user should return a 403 \'Forbidden\' error', async () => {
+    it('Delete a organization while being logged in as MANAGER user should return a 403 \'Not authorized\' error', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();

@@ -1,17 +1,16 @@
 import Application, { Context, Next } from 'koa';
 import passport from 'koa-passport';
 import jwt, { Options } from 'koa-jwt';
-
 import logger from 'logger';
 import Settings from 'services/settings.service';
 import AuthRouter from 'routes/auth.router';
 import DeletionRouter from 'routes/deletion.router';
-import ApplicationRouter from 'routes/application.router';
 import OktaService from 'services/okta.service';
 import OktaFacebookProvider from 'providers/okta.facebook.provider';
 import OktaGoogleProvider from 'providers/okta.google.provider';
 import OktaTwitterProvider, { registerOktaTwitterStrategies } from 'providers/okta.twitter.provider';
-import OrganizationRouter from "routes/organization.router";
+import OrganizationRouter from 'routes/organization.router';
+import ApplicationRouter from 'routes/application.router';
 
 export function loadRoutes(app: Application): void {
     logger.debug('Loading OAuth middleware...');

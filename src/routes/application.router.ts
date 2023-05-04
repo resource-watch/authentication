@@ -10,7 +10,9 @@ import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import { pick } from 'lodash';
 import Utils from 'utils';
 import { IUser, IUserLegacyId } from 'services/okta.interfaces';
-import PermissionError from "errors/permission.error";
+import PermissionError from 'errors/permission.error';
+import OrganizationNotFoundError from 'errors/organizationNotFound.error';
+import UserNotFoundError from 'errors/userNotFound.error';
 
 const applicationRouter: Router = router();
 applicationRouter.prefix('/api/v1/application');
@@ -50,8 +52,8 @@ const updateApplicationValidation: Record<string, any> = {
     },
     body: Joi.object({
         name: Joi.string().optional(),
-        organization: Joi.alternatives().try(Joi.allow(null), Joi.string()),
-        user: Joi.alternatives().try(Joi.allow(null), Joi.string()),
+        organization: Joi.string(),
+        user: Joi.string(),
         regenApiKey: Joi.boolean().optional()
     }).oxor('user', 'organization')
 };
@@ -141,7 +143,7 @@ class ApplicationRouter {
             const application: IApplication = await ApplicationService.updateApplication(id, newApplicationData, ctx.request.body.regenApiKey);
             ctx.body = ApplicationSerializer.serialize(await application.hydrate());
         } catch (error) {
-            if (error instanceof ApplicationNotFoundError) {
+            if (error instanceof ApplicationNotFoundError || error instanceof OrganizationNotFoundError || error instanceof UserNotFoundError) {
                 ctx.throw(404, error.message);
                 return;
             }

@@ -14,11 +14,12 @@ import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import APIGatewayAWSService from "services/apigateway.aws.service";
 import { CreateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
 import OrganizationService from "services/organization.service";
-import { IOrganization } from "models/organization";
+import organization, { IOrganization } from "models/organization";
 import { pick } from "lodash";
 import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OktaService from "services/okta.service";
 import PermissionError from "errors/permission.error";
+import ApplicationOrphanedError from "errors/applicationOrphaned.error";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<CreateApplicationsDto>, requestUser: IUser): Promise<IApplication> {
@@ -55,6 +56,21 @@ export default class ApplicationService {
         const application: IApplication = await ApplicationService.getApplicationById(id);
 
         if ('organization' in applicationData || 'user' in applicationData) {
+            let futureOrganization: IOrganization
+            let futureUser: IUser
+            if ('organization' in applicationData) {
+                futureOrganization = await OrganizationService.getOrganizationById(applicationData.organization)
+            } else {
+                futureOrganization = application.organization;
+            }
+            if ('user' in applicationData) {
+                futureUser = await OktaService.getUserById(applicationData.user as IUserLegacyId);
+            } else {
+                futureUser = application.user;
+            }
+            if (!futureOrganization && !futureUser) {
+                throw new ApplicationOrphanedError();
+            }
             await application.clearAssociations();
         }
 

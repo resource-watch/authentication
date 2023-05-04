@@ -419,6 +419,35 @@ describe('Update application tests', () => {
         new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
     });
 
+    it('Update a application and setting it to orphaned (no user, no org) should fail', async () => {
+        const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+        const token: string = mockValidJWT({
+            id: user.profile.legacyId,
+            email: user.profile.email,
+            role: user.profile.role,
+            extraUserData: { apps: user.profile.apps },
+        });
+        const testOrganization: IOrganization = await createOrganization();
+        const application: HydratedDocument<IApplication> = await createApplication();
+
+        await new OrganizationApplicationModel({
+            organization: testOrganization._id.toString(),
+            application: application._id.toString()
+        }).save();
+
+        const response: request.Response = await requester
+            .patch(`/api/v1/application/${application._id.toString()}`)
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                organization: new mongoose.Types.ObjectId().toString(),
+            });
+
+        response.status.should.equal(404);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status').and.equal(404);
+        response.body.errors[0].should.have.property('detail').and.equal('Organization not found');
+    });
+
     it('Update a application while being logged in should return a 200 and the updated user data (happy case, regen api key)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
@@ -585,7 +614,7 @@ describe('Update application tests', () => {
             await assertNoConnection({ user, application: testApplication });
         });
 
-        it('Update an application and removing organization should be successful', async () => {
+        it('Update an application and removing organization should fail', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testOrganization: IOrganization = await createOrganization();
             const testApplication: IApplication = await createApplication();
@@ -594,9 +623,6 @@ describe('Update application tests', () => {
                 organization: testOrganization._id.toString(),
                 application: testApplication._id.toString()
             }).save();
-
-            mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
-            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)
@@ -607,23 +633,10 @@ describe('Update application tests', () => {
                     organization: null
                 });
 
-            response.status.should.equal(200);
-
-            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
-
-            response.body.data.should.have.property('type').and.equal('applications');
-            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
-            response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name).and.equal('new application name');
-            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue).and.not.equal(testApplication.apiKeyValue);
-            response.body.data.attributes.should.have.property('organization').and.eql(null);
-            response.body.data.attributes.should.have.property('createdAt');
-            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
-            response.body.data.attributes.should.have.property('updatedAt');
-            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
-
-            const databaseOrganizationApplication: IOrganizationApplication = await OrganizationApplicationModel.findOne({ application: response.body.data.id });
-            expect(databaseOrganizationApplication).to.equal(null);
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(400);
+            response.body.errors[0].should.have.property('detail').and.equal('"organization" must be a string');
         });
 
         it('Update an application and overwriting existing organization should be successful', async () => {
@@ -738,7 +751,7 @@ describe('Update application tests', () => {
                 extraUserData: { apps: user.profile.apps },
             });
 
-            mockGetUserById(user, 2);
+            mockGetUserById(user, 3);
 
             const application: HydratedDocument<IApplication> = await createApplication();
 
@@ -784,7 +797,7 @@ describe('Update application tests', () => {
                 extraUserData: { apps: user.profile.apps },
             });
 
-            mockGetUserById(user, 2);
+            mockGetUserById(user, 3);
 
             const testApplication: IApplication = await createApplication();
             const testOrganization: IOrganization = await createOrganization();
@@ -828,7 +841,7 @@ describe('Update application tests', () => {
             await assertNoConnection({ organization: testOrganization, application: testApplication });
         });
 
-        it('Update an application and removing users should be successful', async () => {
+        it('Update an application and removing users should fail', async () => {
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const token: string = mockValidJWT({
                 id: user.profile.legacyId,
@@ -844,10 +857,6 @@ describe('Update application tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
-            mockGetUserById(user);
-            mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
-            mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -857,22 +866,10 @@ describe('Update application tests', () => {
                     user: null
                 });
 
-            response.status.should.equal(200);
-
-            const databaseApplication: IApplication = await ApplicationModel.findById(response.body.data.id);
-
-            response.body.data.should.have.property('type').and.equal('applications');
-            response.body.data.should.have.property('id').and.equal(databaseApplication._id.toString());
-            response.body.data.should.have.property('attributes').and.be.an('object');
-            response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name).and.equal('new application name');
-            response.body.data.attributes.should.have.property('apiKeyValue').and.equal(databaseApplication.apiKeyValue).and.not.equal(testApplication.apiKeyValue);
-            response.body.data.attributes.should.have.property('user').and.eql(null);
-            response.body.data.attributes.should.have.property('createdAt');
-            new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
-            response.body.data.attributes.should.have.property('updatedAt');
-            new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
-
-            await assertNoConnection({ user, application: testApplication });
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status').and.equal(400);
+            response.body.errors[0].should.have.property('detail').and.equal('"user" must be a string');
         });
 
         it('Update an application and overwriting existing users should be successful', async () => {
@@ -890,6 +887,7 @@ describe('Update application tests', () => {
             }).save();
 
             mockGetUserById(userOne);
+            mockGetUserById(userTwo);
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
