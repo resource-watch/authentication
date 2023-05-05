@@ -14,7 +14,7 @@ import ApplicationNotFoundError from 'errors/applicationNotFound.error';
 import APIGatewayAWSService from "services/apigateway.aws.service";
 import { CreateApiKeyCommandOutput } from "@aws-sdk/client-api-gateway";
 import OrganizationService from "services/organization.service";
-import organization, { IOrganization } from "models/organization";
+import { IOrganization } from "models/organization";
 import { pick } from "lodash";
 import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OktaService from "services/okta.service";
@@ -109,7 +109,7 @@ export default class ApplicationService {
 
         await application.clearAssociations();
 
-        await application.remove();
+        await application.deleteOne();
 
         return returnApplication;
     }
@@ -135,13 +135,18 @@ export default class ApplicationService {
                     $match: {
                         "applicationusers.userId": loggedUserId
                     }
-                }]);
+                }
+            ]);
         }
 
         const aggregate: Aggregate<Array<any>> = ApplicationModel.aggregate(aggregateCriteria)
 
         const applications: AggregatePaginateResult<IApplication> = await ApplicationModel.aggregatePaginate(aggregate, {
             ...paginationOptions,
+            // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/65410
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            useFacet: false,
             populate: ['organization', 'user'],
         });
 

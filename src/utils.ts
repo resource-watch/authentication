@@ -157,11 +157,11 @@ export default class Utils {
         const query: {
             role: "ORG_MEMBER" | "ORG_ADMIN";
             organization: IOrganizationId;
-            user: IUserLegacyId
+            userId: IUserLegacyId
         } = {
             role: ORGANIZATION_ROLES.ORG_ADMIN,
             organization: organizationId,
-            user: user.id
+            userId: user.id
         }
         const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
         if (organizationUser) {
@@ -234,10 +234,10 @@ export default class Utils {
         const organizationId: IOrganizationId = ctx.params.id;
         const query: {
             organization: IOrganizationId;
-            user: IUserLegacyId,
+            userId: IUserLegacyId,
         } = {
             organization: organizationId,
-            user: user.id,
+            userId: user.id,
         }
         const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
         if (organizationUser) {

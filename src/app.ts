@@ -21,7 +21,6 @@ import koaQs from 'koa-qs';
 import logger from 'logger';
 import { loadRoutes } from 'loader';
 import ErrorSerializer from 'serializers/errorSerializer';
-import sleep from 'sleep';
 
 interface IInit {
     server: Server;
@@ -40,109 +39,95 @@ const mongoUri: string =
         'mongodb.port',
     )}/${config.get('mongodb.database')}`;
 
-let retries: number = 10;
 
 const init: () => Promise<IInit> = async (): Promise<IInit> => {
     return new Promise((resolve: (value: IInit | PromiseLike<IInit>) => void,
                         reject: (reason?: any) => void
-        ) => {
-            function onDbReady(mongoConnectionError: CallbackError): void {
-                if (mongoConnectionError) {
-                    if (retries >= 0) {
-                        retries--;
-                        logger.error(
-                            `Failed to connect to MongoDB uri ${mongoUri}, retrying...`,
-                        );
-                        logger.debug(mongoConnectionError);
-                        sleep.sleep(5);
-                        mongoose.connect(mongoUri, mongooseOptions, onDbReady);
-                    } else {
-                        logger.error('MongoURI', mongoUri);
-                        logger.error(mongoConnectionError);
-                        reject(new Error(mongoConnectionError.message));
-                    }
-                }
+    ) => {
 
-                const app: Koa = new Koa();
+        logger.info(`Connecting to MongoDB URL ${mongoUri}`);
 
+        mongoose.connect(mongoUri, mongooseOptions).then(() => {
+            const app: Koa = new Koa();
+
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            koaQs(app, 'extended');
+            app.use(koaBody({
+                multipart: true,
+                jsonLimit: '50mb',
+                formLimit: '50mb',
+                textLimit: '50mb'
+            }));
+            app.use(koaSimpleHealthCheck());
+
+            app.keys = [config.get('server.sessionKey')];
+
+            app.use(session({
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
                 // @ts-ignore
-                koaQs(app, 'extended');
-                app.use(koaBody({
-                    multipart: true,
-                    jsonLimit: '50mb',
-                    formLimit: '50mb',
-                    textLimit: '50mb'
-                }));
-                app.use(koaSimpleHealthCheck());
+                store: redisStore({
+                    url: config.get('redis.url'),
+                    db: 1
+                })
+            }));
 
-                app.keys = [config.get('server.sessionKey')];
+            app.use(flash());
 
-                app.use(session({
-                    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                    // @ts-ignore
-                    store: redisStore({
-                        url: config.get('redis.url'),
-                        db: 1
-                    })
-                }));
+            app.use(views(`${__dirname}/views`, { extension: 'ejs' }));
 
-                app.use(flash());
+            app.use(cors({ credentials: true }));
 
-                app.use(views(`${__dirname}/views`, { extension: 'ejs' }));
+            app.use(async (ctx: { status: number; response: { type: string; }; body: any; }, next: () => any) => {
+                try {
+                    await next();
+                } catch (error) {
 
-                app.use(cors({ credentials: true }));
+                    ctx.status = error.status || 500;
 
-                app.use(async (ctx: { status: number; response: { type: string; }; body: any; }, next: () => any) => {
-                    try {
-                        await next();
-                    } catch (error) {
-
-                        ctx.status = error.status || 500;
-
-                        if (ctx.status >= 500) {
-                            logger.error(error);
-                        } else {
-                            logger.info(error);
-                        }
-
-                        if (process.env.NODE_ENV === 'prod' && ctx.status === 500) {
-                            ctx.response.type = 'application/vnd.api+json';
-                            ctx.body = ErrorSerializer.serializeError(ctx.status, 'Unexpected error');
-                            return;
-                        }
-
-                        ctx.response.type = 'application/vnd.api+json';
-                        ctx.body = ErrorSerializer.serializeError(ctx.status, error.message);
+                    if (ctx.status >= 500) {
+                        logger.error(error);
+                    } else {
+                        logger.info(error);
                     }
-                });
 
-                app.use(RWAPIMicroservice.bootstrap({
-                    logger,
-                    gatewayURL: process.env.GATEWAY_URL,
-                    microserviceToken: process.env.MICROSERVICE_TOKEN,
-                    skipGetLoggedUser: true,
-                    fastlyEnabled: process.env.FASTLY_ENABLED as boolean | 'true' | 'false',
-                    fastlyServiceId: process.env.FASTLY_SERVICEID,
-                    fastlyAPIKey: process.env.FASTLY_APIKEY
-                }));
+                    if (process.env.NODE_ENV === 'prod' && ctx.status === 500) {
+                        ctx.response.type = 'application/vnd.api+json';
+                        ctx.body = ErrorSerializer.serializeError(ctx.status, 'Unexpected error');
+                        return;
+                    }
 
-                app.use(koaLogger());
-                loadRoutes(app);
+                    ctx.response.type = 'application/vnd.api+json';
+                    ctx.body = ErrorSerializer.serializeError(ctx.status, error.message);
+                }
+            });
 
-                const port: string = config.get('server.port') || '9000';
+            app.use(RWAPIMicroservice.bootstrap({
+                logger,
+                gatewayURL: process.env.GATEWAY_URL,
+                microserviceToken: process.env.MICROSERVICE_TOKEN,
+                skipGetLoggedUser: true,
+                fastlyEnabled: process.env.FASTLY_ENABLED as boolean | 'true' | 'false',
+                fastlyServiceId: process.env.FASTLY_SERVICEID,
+                fastlyAPIKey: process.env.FASTLY_APIKEY
+            }));
 
-                const server: Server = app.listen(port);
+            app.use(koaLogger());
+            loadRoutes(app);
 
-                logger.info('Server started in ', port);
-                resolve({ app, server });
-            }
+            const port: string = config.get('server.port') || '9000';
 
-            logger.info(`Connecting to MongoDB URL ${mongoUri}`);
+            const server: Server = app.listen(port);
 
-            mongoose.connect(mongoUri, mongooseOptions, onDbReady);
-        },
-    );
+            logger.info('Server started in ', port);
+            resolve({ app, server });
+
+        }).catch((mongoConnectionError: CallbackError) => {
+            logger.error('MongoURI', mongoUri);
+            logger.error(mongoConnectionError);
+            reject(new Error(mongoConnectionError.message));
+        });
+    });
 };
 
 

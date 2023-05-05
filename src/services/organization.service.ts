@@ -79,7 +79,7 @@ export default class OrganizationService {
 
         await organization.clearAssociations();
 
-        await organization.remove();
+        await organization.deleteOne();
 
         return returnOrganization;
     }
@@ -111,6 +111,10 @@ export default class OrganizationService {
 
         const organizations: AggregatePaginateResult<IOrganization> = await OrganizationModel.aggregatePaginate(aggregate, {
             ...paginationOptions,
+            // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/65410
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            useFacet: false,
             populate: ['applications', 'users'],
         });
 

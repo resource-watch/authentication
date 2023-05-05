@@ -19,7 +19,7 @@ interface IOrganizationMethods {
 
     associateWithApplicationIds(applicationIds: IApplicationId[]): Promise<IOrganization>
 
-    associateWithUsers(userLinksInOrganization: UserLinkInOrganizationDto[]): IOrganization
+    associateWithUsers(userLinksInOrganization: UserLinkInOrganizationDto[]): Promise<IOrganization>
 }
 
 export type IOrganizationId = Id<IOrganization>;
