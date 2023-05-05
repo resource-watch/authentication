@@ -21,7 +21,7 @@ export default class DeletionService {
     static async deleteDeletion(id: string): Promise<IDeletion> {
         const deletion: IDeletion = await DeletionService.getDeletionById(id);
 
-        await deletion.remove();
+        await deletion.deleteOne();
 
         return deletion;
     }

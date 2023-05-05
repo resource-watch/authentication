@@ -110,6 +110,8 @@ export const applicationSchema: ISchema<IApplication, ApplicationModel, IApplica
     },
 });
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore
 applicationSchema.plugin(aggregatePaginate);
 
 interface ApplicationDocument extends Document<IApplicationId>, IApplication, IApplicationMethods {
