@@ -249,6 +249,11 @@ spec:
                   key: FASTLY_SERVICEID
                   name: authorization
                   optional: true
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_REGION
+                  name: authorization
           image: gfwdockerhub/authorization
           imagePullPolicy: Always
           livenessProbe:
