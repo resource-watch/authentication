@@ -13,7 +13,7 @@ import Utils from 'utils';
 import { IUser } from 'services/okta.interfaces';
 
 const deletionRouter: Router = router();
-deletionRouter.prefix('/api/v1/deletion');
+deletionRouter.prefix('/deletion');
 
 const Joi: typeof router.Joi = router.Joi;
 
@@ -97,7 +97,8 @@ class DeletionRouter {
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
         const serializedQuery: string = Utils.serializeObjToQuery(originalQuery) ? `?${Utils.serializeObjToQuery(originalQuery)}&` : '?';
-        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
+        const apiVersion: string = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
+        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;
 
         try {
             const deletions: PaginateResult<PaginateDocument<IDeletion, unknown, PaginateOptions>> = await DeletionService.getDeletions(filters, paginationOptions);
