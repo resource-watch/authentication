@@ -14,7 +14,7 @@ import { ORGANIZATION_ROLES } from "models/organization-user";
 import PermissionError from "errors/permission.error";
 
 const organizationRouter: Router = router();
-organizationRouter.prefix('/api/v1/organization');
+organizationRouter.prefix('/organization');
 
 const Joi: typeof router.Joi = router.Joi;
 
@@ -100,7 +100,8 @@ class OrganizationRouter {
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
         const serializedQuery: string = Utils.serializeObjToQuery(originalQuery) ? `?${Utils.serializeObjToQuery(originalQuery)}&` : '?';
-        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
+        const apiVersion: string = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
+        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;
 
         try {
             const organizations: AggregatePaginateResult<IOrganization> = await OrganizationService.getPaginatedOrganizations(filters, paginationOptions, userIdFilter);

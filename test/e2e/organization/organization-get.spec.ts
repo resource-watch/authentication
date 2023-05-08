@@ -158,11 +158,11 @@ describe('Get organizations tests', () => {
             responsePageOne.status.should.equal(200);
             responsePageOne.body.should.have.property('data').and.be.an('array').and.length(10);
             responsePageOne.body.should.have.property('links').and.be.an('object');
-            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
+            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
 
             const responsePageTwo: request.Response = await requester
                 .get(`/api/v1/organization`)
@@ -172,11 +172,11 @@ describe('Get organizations tests', () => {
             responsePageTwo.status.should.equal(200);
             responsePageTwo.body.should.have.property('data').and.be.an('array').and.length(3);
             responsePageTwo.body.should.have.property('links').and.be.an('object');
-            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
         });
 
         it('Get paginated organizations should return a 200 and the paginated organization data - Different pages, MANAGER role', async () => {
@@ -195,11 +195,11 @@ describe('Get organizations tests', () => {
             responsePageOne.status.should.equal(200);
             responsePageOne.body.should.have.property('data').and.be.an('array').and.length(10);
             responsePageOne.body.should.have.property('links').and.be.an('object');
-            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
+            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
 
             const responsePageTwo: request.Response = await requester
                 .get(`/api/v1/organization`)
@@ -209,11 +209,11 @@ describe('Get organizations tests', () => {
             responsePageTwo.status.should.equal(200);
             responsePageTwo.body.should.have.property('data').and.be.an('array').and.length(10);
             responsePageTwo.body.should.have.property('links').and.be.an('object');
-            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
 
             const responsePageThree: request.Response = await requester
                 .get(`/api/v1/organization`)
@@ -223,11 +223,11 @@ describe('Get organizations tests', () => {
             responsePageThree.status.should.equal(200);
             responsePageThree.body.should.have.property('data').and.be.an('array').and.length(5);
             responsePageThree.body.should.have.property('links').and.be.an('object');
-            responsePageThree.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
-            responsePageThree.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageThree.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
-            responsePageThree.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageThree.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageThree.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageThree.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
         });
 
         it('Get paginated organizations should return a 200 and the paginated organization data - Different pages, ADMIN role', async () => {
@@ -246,11 +246,11 @@ describe('Get organizations tests', () => {
             responsePageOne.status.should.equal(200);
             responsePageOne.body.should.have.property('data').and.be.an('array').and.length(10);
             responsePageOne.body.should.have.property('links').and.be.an('object');
-            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
+            responsePageOne.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageOne.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageOne.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
 
             const responsePageTwo: request.Response = await requester
                 .get(`/api/v1/organization`)
@@ -260,11 +260,11 @@ describe('Get organizations tests', () => {
             responsePageTwo.status.should.equal(200);
             responsePageTwo.body.should.have.property('data').and.be.an('array').and.length(10);
             responsePageTwo.body.should.have.property('links').and.be.an('object');
-            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageTwo.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
 
             const responsePageThree: request.Response = await requester
                 .get(`/api/v1/organization`)
@@ -274,11 +274,11 @@ describe('Get organizations tests', () => {
             responsePageThree.status.should.equal(200);
             responsePageThree.body.should.have.property('data').and.be.an('array').and.length(5);
             responsePageThree.body.should.have.property('links').and.be.an('object');
-            responsePageThree.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
-            responsePageThree.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=2&page[size]=10`);
-            responsePageThree.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
-            responsePageThree.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=1&page[size]=10`);
-            responsePageThree.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/api/v1/organization?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('self').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('prev').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=2&page[size]=10`);
+            responsePageThree.body.links.should.have.property('next').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
+            responsePageThree.body.links.should.have.property('first').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=1&page[size]=10`);
+            responsePageThree.body.links.should.have.property('last').and.equal(`http://127.0.0.1:${config.get('server.port')}/v1/organization?page[number]=3&page[size]=10`);
         });
 
         it('Get paginated organizations with over 100 results per page should return a 400', async () => {

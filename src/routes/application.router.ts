@@ -15,7 +15,7 @@ import OrganizationNotFoundError from 'errors/organizationNotFound.error';
 import UserNotFoundError from 'errors/userNotFound.error';
 
 const applicationRouter: Router = router();
-applicationRouter.prefix('/api/v1/application');
+applicationRouter.prefix('/application');
 
 const Joi: typeof router.Joi = router.Joi;
 
@@ -71,7 +71,8 @@ class ApplicationRouter {
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
         const serializedQuery: string = Utils.serializeObjToQuery(originalQuery) ? `?${Utils.serializeObjToQuery(originalQuery)}&` : '?';
-        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
+        const apiVersion: string = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
+        const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;
 
         try {
             const applications: AggregatePaginateResult<IApplication> = await ApplicationService.getPaginatedApplications(filters, paginationOptions, userIdFilter)
