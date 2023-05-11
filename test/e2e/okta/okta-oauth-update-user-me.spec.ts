@@ -246,7 +246,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 response.status.should.equal(403);
                 response.body.should.have.property('errors').and.be.an('array').and.length(1);
                 response.body.errors[0].should.have.property('status').and.equal(403);
-                response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+                response.body.errors[0].detail.should.equal(`You don't have permissions to associate application ${testApplication.id} with user ${user.profile.legacyId}`);
 
                 await assertConnection({ application: testApplication, user: originalOwnerUser })
                 await assertNoConnection({ application: testApplication, user })
@@ -298,7 +298,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 response.status.should.equal(403);
                 response.body.should.have.property('errors').and.be.an('array').and.length(1);
                 response.body.errors[0].should.have.property('status').and.equal(403);
-                response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
+                response.body.errors[0].detail.should.equal(`You don't have permissions to associate application ${testApplication.id} with user ${user.profile.legacyId}`);
 
                 await assertConnection({ application: testApplication, organization: testOrganization })
                 await assertNoConnection({ application: testApplication, user })
@@ -376,12 +376,258 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             });
         })
 
+        describe('MANAGER role', () => {
+            it('Updating my profile while being logged in as MANAGER and associating an application that\'s associated with a different user should fail', async () => {
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+                const originalOwnerUser: OktaUser = getMockOktaUser();
+
+                await new ApplicationUserModel({
+                    userId: originalOwnerUser.profile.legacyId,
+                    application: testApplication
+                }).save();
+
+                const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                mockGetUserById(originalOwnerUser);
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array').and.length(1);
+                response.body.errors[0].should.have.property('status').and.equal(403);
+                response.body.errors[0].detail.should.equal(`You don't have permissions to associate application ${testApplication.id} with user ${user.profile.legacyId}`);
+
+                await assertConnection({ application: testApplication, user: originalOwnerUser })
+                await assertNoConnection({ application: testApplication, user })
+            });
+
+            it('Updating my profile while being logged in as MANAGER and associating an application that\'s associated with an organization I am member of should fail', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                await new OrganizationUserModel({
+                    organization: testOrganization.id,
+                    userId: user.profile.legacyId,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                }).save();
+                await new OrganizationApplicationModel({
+                    organization: testOrganization.id,
+                    application: testApplication.id
+                }).save();
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        extraUserData: {
+                            foo: 'bar'
+                        },
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array').and.length(1);
+                response.body.errors[0].should.have.property('status').and.equal(403);
+                response.body.errors[0].detail.should.equal(`You don't have permissions to associate application ${testApplication.id} with user ${user.profile.legacyId}`);
+
+                await assertConnection({ application: testApplication, organization: testOrganization })
+                await assertNoConnection({ application: testApplication, user })
+            });
+
+            it('Updating my profile while being logged in as MANAGER and associating an application that\'s associated with an organization I am admin of should be successful', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                await new OrganizationUserModel({
+                    organization: testOrganization.id,
+                    userId: user.profile.legacyId,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+                await new OrganizationApplicationModel({
+                    organization: testOrganization.id,
+                    application: testApplication.id
+                }).save();
+
+                mockGetUserById(user);
+                mockOktaUpdateUser(user, {
+                    displayName: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                });
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        extraUserData: {
+                            foo: 'bar'
+                        },
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(200);
+                response.body.data.should.have.property('name').and.equal('changed name');
+                response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+                response.body.data.should.have.property('extraUserData').and.be.an('object').and.deep.eql({ apps: ['rw'] });
+                response.body.data.should.have.property('role').and.equal('MANAGER');
+                response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+                response.body.data.should.have.property('email').and.equal(user.profile.email);
+                response.body.data.should.have.property('applications').and.eql([{
+                    id: testApplication.id,
+                    name: testApplication.name,
+                }]);
+                response.body.data.should.have.property('createdAt');
+                response.body.data.should.have.property('updatedAt');
+
+                await assertNoConnection({
+                    application: testApplication,
+                    organization: testOrganization
+                });
+                await assertConnection({ user: user, organization: testOrganization });
+                await assertConnection({ application: testApplication, user: user });
+            });
+        })
+
+        it('Updating my profile while being logged in as USER and associating an application that\'s associated with a different user with the current user should fail', async () => {
+            const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+            const originalOwnerUser: OktaUser = getMockOktaUser();
+
+            await new ApplicationUserModel({
+                userId: originalOwnerUser.profile.legacyId,
+                application: testApplication
+            }).save();
+
+            const user: OktaUser = getMockOktaUser({ role: 'USER' });
+            const token: string = mockValidJWT({
+                id: user.profile.legacyId,
+                email: user.profile.email,
+                role: user.profile.role,
+                extraUserData: { apps: user.profile.apps },
+            });
+
+            mockGetUserById(originalOwnerUser);
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/me`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    applications: [testApplication.id],
+                });
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array');
+            response.body.errors[0].status.should.equal(403);
+            response.body.errors[0].detail.should.equal(`You don't have permissions to associate application ${testApplication.id} with user ${user.profile.legacyId}`);
+
+            await assertNoConnection({ application: testApplication, user: user })
+            await assertConnection({ application: testApplication, user: originalOwnerUser })
+        });
+
+        it('Updating my profile while being logged in as MANAGER and associating an application that\'s associated with a different user with the current user should fail', async () => {
+            const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+            const originalOwnerUser: OktaUser = getMockOktaUser();
+
+            await new ApplicationUserModel({
+                userId: originalOwnerUser.profile.legacyId,
+                application: testApplication
+            }).save();
+
+            const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+            const token: string = mockValidJWT({
+                id: user.profile.legacyId,
+                email: user.profile.email,
+                role: user.profile.role,
+                extraUserData: { apps: user.profile.apps },
+            });
+
+            mockGetUserById(originalOwnerUser);
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/me`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    applications: [testApplication.id],
+                });
+
+            response.status.should.equal(403);
+            response.body.should.have.property('errors').and.be.an('array');
+            response.body.errors[0].status.should.equal(403);
+            response.body.errors[0].detail.should.equal(`You don't have permissions to associate application ${testApplication.id} with user ${user.profile.legacyId}`);
+
+            await assertNoConnection({ application: testApplication, user: user })
+            await assertConnection({ application: testApplication, user: originalOwnerUser })
+        });
+
         it('Updating my profile while being logged in as ADMIN and associating an application that\'s associated with a different user with the current user should be successful', async () => {
             const testApplication: HydratedDocument<IApplication> = await createApplication();
 
             const originalOwnerUser: OktaUser = getMockOktaUser();
 
-            await new ApplicationUserModel({ userId: originalOwnerUser.id, application: testApplication }).save();
+            await new ApplicationUserModel({ userId: originalOwnerUser.profile.legacyId, application: testApplication }).save();
 
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const token: string = mockValidJWT({
@@ -514,7 +760,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
 
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
 
-            await new ApplicationUserModel({ userId: user.id, application: testApplicationOne }).save();
+            await new ApplicationUserModel({ userId: user.profile.legacyId, application: testApplicationOne }).save();
 
             const token: string = mockValidJWT({
                 id: user.profile.legacyId,
@@ -632,7 +878,334 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
     })
 
     describe('with associated organizations', () => {
-        it('Updating my profile and associating an organization with an existing user should be successful', async () => {
+        describe('USER role', () => {
+            it('Updating my profile while being logged in as USER and associating an organization with my user should fail', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'USER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testApplication: IApplication = await createApplication();
+                const testOrganization: IOrganization = await createOrganization();
+
+                await new OrganizationApplicationModel({
+                    application: testApplication,
+                    organization: testOrganization
+                }).save();
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        organizations: [{
+                            id: testOrganization.id,
+                            role: 'ORG_ADMIN'
+                        }],
+                    });
+
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(403);
+                response.body.errors[0].detail.should.equal('You don\'t have permissions to change your permissions with this/these organization(s)');
+
+                await assertConnection({ organization: testOrganization, application: testApplication });
+                await assertNoConnection({ user: user, application: testApplication });
+                await assertNoConnection({ organization: testOrganization, user: user });
+            });
+
+            it('Updating my profile while being logged in as USER and escalating an organization association role with my user should fail', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'USER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testOrganization: IOrganization = await createOrganization();
+
+                await new OrganizationUserModel({
+                    userId: user.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER,
+                }).save();
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        organizations: [{
+                            id: testOrganization.id,
+                            role: 'ORG_ADMIN'
+                        }],
+                    });
+
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(403);
+                response.body.errors[0].detail.should.equal('You don\'t have permissions to change your permissions with this/these organization(s)');
+
+                await assertConnection({ organization: testOrganization, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
+            });
+
+            it('Updating my profile while being logged in as USER and removing/downgrading an organization with my user should succeed', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'USER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testOrganizationOne: IOrganization = await createOrganization();
+                const testOrganizationTwo: IOrganization = await createOrganization();
+
+                await new OrganizationUserModel({
+                    userId: user.profile.legacyId,
+                    organization: testOrganizationOne,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+                await new OrganizationUserModel({
+                    userId: user.profile.legacyId,
+                    organization: testOrganizationTwo,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+
+                mockGetUserById(user);
+                mockOktaUpdateUser(user, {
+                    displayName: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                });
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        organizations: [{
+                            id: testOrganizationTwo.id,
+                            role: 'ORG_MEMBER'
+                        }],
+                    });
+
+                response.status.should.equal(200);
+                response.body.data.should.have.property('name').and.equal('changed name');
+                response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+                response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+                response.body.data.should.have.property('email').and.equal(user.profile.email);
+                response.body.data.should.have.property('organizations').and.eql([{
+                    id: testOrganizationTwo.id,
+                    name: testOrganizationTwo.name,
+                    role: 'ORG_MEMBER'
+                }]);
+                response.body.data.should.have.property('createdAt');
+                response.body.data.should.have.property('updatedAt');
+
+                await assertNoConnection({ organization: testOrganizationOne, user: user });
+                await assertConnection({ organization: testOrganizationTwo, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
+            });
+        })
+
+        describe('MANAGER role', () => {
+            it('Updating my profile while being logged in as MANAGER and associating an organization with my user should fail', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testApplication: IApplication = await createApplication();
+                const testOrganization: IOrganization = await createOrganization();
+
+                await new OrganizationApplicationModel({
+                    application: testApplication,
+                    organization: testOrganization
+                }).save();
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        organizations: [{
+                            id: testOrganization.id,
+                            role: 'ORG_ADMIN'
+                        }],
+                    });
+
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(403);
+                response.body.errors[0].detail.should.equal('You don\'t have permissions to change your permissions with this/these organization(s)');
+
+                await assertConnection({ organization: testOrganization, application: testApplication });
+                await assertNoConnection({ user: user, application: testApplication });
+                await assertNoConnection({ organization: testOrganization, user: user });
+            });
+
+            it('Updating my profile while being logged in as MANAGER and escalating an organization association role with my user should fail', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testOrganization: IOrganization = await createOrganization();
+
+                await new OrganizationUserModel({
+                    userId: user.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER,
+                }).save();
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        organizations: [{
+                            id: testOrganization.id,
+                            role: 'ORG_ADMIN'
+                        }],
+                    });
+
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(403);
+                response.body.errors[0].detail.should.equal('You don\'t have permissions to change your permissions with this/these organization(s)');
+
+                await assertConnection({ organization: testOrganization, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
+            });
+
+            it('Updating my profile while being logged in as MANAGER and removing/downgrading an organization with my user should succeed', async () => {
+                const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: user.profile.legacyId,
+                    email: user.profile.email,
+                    role: user.profile.role,
+                    extraUserData: { apps: user.profile.apps },
+                });
+
+                const testOrganizationOne: IOrganization = await createOrganization();
+                const testOrganizationTwo: IOrganization = await createOrganization();
+
+                await new OrganizationUserModel({
+                    userId: user.profile.legacyId,
+                    organization: testOrganizationOne,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+                await new OrganizationUserModel({
+                    userId: user.profile.legacyId,
+                    organization: testOrganizationTwo,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+
+                mockGetUserById(user);
+                mockOktaUpdateUser(user, {
+                    displayName: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                });
+
+                const response: request.Response = await requester
+                    .patch(`/auth/user/me`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        email: 'changed-email@example.com',
+                        password: 'changedPassword',
+                        salt: 'changedSalt',
+                        _id: 'changed-id',
+                        userToken: 'changedToken',
+                        createdAt: '2000-01-01T00:00:00.000Z',
+                        updatedAt: '2000-01-01T00:00:00.000Z',
+                        provider: 'changedProvider',
+                        name: 'changed name',
+                        photo: 'https://www.changed-photo.com',
+                        organizations: [{
+                            id: testOrganizationTwo.id,
+                            role: 'ORG_MEMBER'
+                        }],
+                    });
+
+                response.status.should.equal(200);
+                response.body.data.should.have.property('name').and.equal('changed name');
+                response.body.data.should.have.property('photo').and.equal('https://www.changed-photo.com');
+                response.body.data.should.have.property('id').and.equal(user.profile.legacyId);
+                response.body.data.should.have.property('email').and.equal(user.profile.email);
+                response.body.data.should.have.property('organizations').and.eql([{
+                    id: testOrganizationTwo.id,
+                    name: testOrganizationTwo.name,
+                    role: 'ORG_MEMBER'
+                }]);
+                response.body.data.should.have.property('createdAt');
+                response.body.data.should.have.property('updatedAt');
+
+                await assertNoConnection({ organization: testOrganizationOne, user: user });
+                await assertConnection({ organization: testOrganizationTwo, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
+            });
+        })
+
+
+        it('Updating my profile while being logged in as ADMIN and associating an organization with my user user should be successful', async () => {
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const token: string = mockValidJWT({
                 id: user.profile.legacyId,

@@ -20,6 +20,7 @@ import { IUser, IUserLegacyId } from "services/okta.interfaces";
 import OktaService from "services/okta.service";
 import PermissionError from "errors/permission.error";
 import ApplicationOrphanedError from "errors/applicationOrphaned.error";
+import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES } from "models/organization-user";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<CreateApplicationsDto>, requestUser: IUser): Promise<IApplication> {
@@ -28,7 +29,18 @@ export default class ApplicationService {
         }
 
         if (requestUser.role !== 'ADMIN' && 'user' in applicationData && applicationData.user !== null && applicationData.user !== requestUser.id) {
-            throw new PermissionError('User can only create applications for themselves');
+            throw new PermissionError('User can only create applications for themselves or organizations they own');
+        }
+
+        if (requestUser.role !== 'ADMIN' && 'organization' in applicationData && applicationData.organization !== null) {
+            const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne({
+                organization: applicationData.organization,
+                userId: requestUser.id,
+                role: ORGANIZATION_ROLES.ORG_ADMIN
+            });
+            if (!organizationUser) {
+                throw new PermissionError('User can only create applications for themselves or organizations they own');
+            }
         }
 
         const apiKeyResponse: CreateApiKeyCommandOutput = await APIGatewayAWSService.createApiKey(applicationData.name);
