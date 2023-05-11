@@ -189,7 +189,7 @@ applicationRouter.route({
     path: '/:id',
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    pre: Utils.isAdminOrAppOwner, handler: ApplicationRouter.getApplicationById,
+    pre: Utils.isAdminOrManagerOrAppReader, handler: ApplicationRouter.getApplicationById,
 });
 applicationRouter.route({
     method: 'post',

@@ -27,7 +27,8 @@ import DeleteUserResourcesService from "services/delete-user-resources.service";
 import { UserModelStub } from "models/user.model.stub";
 import ApplicationModel, { IApplication, IApplicationId } from "models/application";
 import PermissionError from "errors/permission.error";
-import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES } from "models/organization-user";
+import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES, Role } from "models/organization-user";
+import { IOrganizationId } from "models/organization";
 
 export class OktaProvider {
 
@@ -313,14 +314,14 @@ export class OktaProvider {
         ctx.body = { data };
     }
 
-    private static async performUpdateRequest(ctx: Context, id: IUserLegacyId): Promise<Record<string, any>> {
+    private static async performUpdateRequest(ctx: Context, userProfileId: IUserLegacyId): Promise<Record<string, any>> {
         const requestUser: IUser = Utils.getUser(ctx);
         const { body } = ctx.request;
 
         if ('applications' in body) {
             if (requestUser.role !== 'ADMIN') {
                 const organizations: IOrganizationUser[] = await OrganizationUserModel.find({
-                    userId: id,
+                    userId: userProfileId,
                     role: ORGANIZATION_ROLES.ORG_ADMIN
                 }).populate('organization');
                 const organizationIds: IOrganizationUser[] = organizations.map((organization: IOrganizationUser) => organization.organization.id);
@@ -332,16 +333,35 @@ export class OktaProvider {
                     const canAssociateWithOrg: boolean = application.user?.id === requestUser.id || organizationIds.includes(application.organization?.id);
 
                     if (!canAssociateWithOrg) {
-                        throw new PermissionError(`You don't have permissions to associate application ${application.name} with user ${id}`);
+                        throw new PermissionError(`You don't have permissions to associate application ${applicationId} with user ${userProfileId}`);
                     }
                 }));
             }
 
-            await UserModelStub.clearApplicationAssociations(id);
+            await UserModelStub.clearApplicationAssociations(userProfileId);
         }
 
         if ('organizations' in body) {
-            await UserModelStub.clearOrganizationAssociations(id);
+            if (requestUser.role !== 'ADMIN') {
+                await Promise.all(body.organizations.map(async (organizationAssociation: {
+                    id: IOrganizationId,
+                    role: Role
+                }) => {
+                    const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne({
+                        userId: userProfileId,
+                        organization: organizationAssociation.id,
+                    });
+                    if (!organizationUser) {
+                        throw new PermissionError(`You don't have permissions to change your permissions with this/these organization(s)`);
+                    } else {
+                        if (organizationUser.role !== organizationAssociation.role && organizationUser.role !== ORGANIZATION_ROLES.ORG_ADMIN) {
+                            throw new PermissionError(`You don't have permissions to change your permissions with this/these organization(s)`);
+                        }
+                    }
+                }));
+            }
+
+            await UserModelStub.clearOrganizationAssociations(userProfileId);
         }
 
         const updateData: OktaUpdateUserPayload = {
@@ -352,14 +372,14 @@ export class OktaProvider {
         };
 
         if ('applications' in body && Array.isArray(body.applications) && body.applications.length > 0) {
-            await UserModelStub.associateWithApplicationIds(id, body.applications);
+            await UserModelStub.associateWithApplicationIds(userProfileId, body.applications);
         }
 
         if ('organizations' in body && Array.isArray(body.organizations) && body.organizations.length > 0) {
-            await UserModelStub.associateWithOrganizations(id, body.organizations);
+            await UserModelStub.associateWithOrganizations(userProfileId, body.organizations);
         }
 
-        const updatedUser: IUser = await OktaService.updateUser(id, updateData);
+        const updatedUser: IUser = await OktaService.updateUser(userProfileId, updateData);
 
         return UserSerializer.serialize(await UserModelStub.hydrate(updatedUser));
     }
@@ -396,7 +416,7 @@ export class OktaProvider {
                 return;
             }
             if (error instanceof PermissionError) {
-                ctx.throw(403, 'Not authorized');
+                ctx.throw(403, error.message);
                 return;
             }
             logger.error('[OktaProvider] - Error updating my user, ', error);
