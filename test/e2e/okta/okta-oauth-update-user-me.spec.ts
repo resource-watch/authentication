@@ -627,7 +627,10 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
 
             const originalOwnerUser: OktaUser = getMockOktaUser();
 
-            await new ApplicationUserModel({ userId: originalOwnerUser.profile.legacyId, application: testApplication }).save();
+            await new ApplicationUserModel({
+                userId: originalOwnerUser.profile.legacyId,
+                application: testApplication
+            }).save();
 
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const token: string = mockValidJWT({
@@ -913,7 +916,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                         photo: 'https://www.changed-photo.com',
                         organizations: [{
                             id: testOrganization.id,
-                            role: 'ORG_ADMIN'
+                            role: ORGANIZATION_ROLES.ORG_MEMBER
                         }],
                     });
 
@@ -925,52 +928,6 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 await assertConnection({ organization: testOrganization, application: testApplication });
                 await assertNoConnection({ user: user, application: testApplication });
                 await assertNoConnection({ organization: testOrganization, user: user });
-            });
-
-            it('Updating my profile while being logged in as USER and escalating an organization association role with my user should fail', async () => {
-                const user: OktaUser = getMockOktaUser({ role: 'USER' });
-                const token: string = mockValidJWT({
-                    id: user.profile.legacyId,
-                    email: user.profile.email,
-                    role: user.profile.role,
-                    extraUserData: { apps: user.profile.apps },
-                });
-
-                const testOrganization: IOrganization = await createOrganization();
-
-                await new OrganizationUserModel({
-                    userId: user.profile.legacyId,
-                    organization: testOrganization,
-                    role: ORGANIZATION_ROLES.ORG_MEMBER,
-                }).save();
-
-                const response: request.Response = await requester
-                    .patch(`/auth/user/me`)
-                    .set('Content-Type', 'application/json')
-                    .set('Authorization', `Bearer ${token}`)
-                    .send({
-                        email: 'changed-email@example.com',
-                        password: 'changedPassword',
-                        salt: 'changedSalt',
-                        _id: 'changed-id',
-                        userToken: 'changedToken',
-                        createdAt: '2000-01-01T00:00:00.000Z',
-                        updatedAt: '2000-01-01T00:00:00.000Z',
-                        provider: 'changedProvider',
-                        name: 'changed name',
-                        photo: 'https://www.changed-photo.com',
-                        organizations: [{
-                            id: testOrganization.id,
-                            role: 'ORG_ADMIN'
-                        }],
-                    });
-
-                response.status.should.equal(403);
-                response.body.should.have.property('errors').and.be.an('array');
-                response.body.errors[0].status.should.equal(403);
-                response.body.errors[0].detail.should.equal('You don\'t have permissions to change your permissions with this/these organization(s)');
-
-                await assertConnection({ organization: testOrganization, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
             });
 
             it('Updating my profile while being logged in as USER and removing/downgrading an organization with my user should succeed', async () => {
@@ -1037,7 +994,11 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 response.body.data.should.have.property('updatedAt');
 
                 await assertNoConnection({ organization: testOrganizationOne, user: user });
-                await assertConnection({ organization: testOrganizationTwo, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
+                await assertConnection({
+                    organization: testOrganizationTwo,
+                    user: user,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                });
             });
         })
 
@@ -1076,7 +1037,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                         photo: 'https://www.changed-photo.com',
                         organizations: [{
                             id: testOrganization.id,
-                            role: 'ORG_ADMIN'
+                            role: ORGANIZATION_ROLES.ORG_MEMBER
                         }],
                     });
 
@@ -1088,52 +1049,6 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 await assertConnection({ organization: testOrganization, application: testApplication });
                 await assertNoConnection({ user: user, application: testApplication });
                 await assertNoConnection({ organization: testOrganization, user: user });
-            });
-
-            it('Updating my profile while being logged in as MANAGER and escalating an organization association role with my user should fail', async () => {
-                const user: OktaUser = getMockOktaUser({ role: 'MANAGER' });
-                const token: string = mockValidJWT({
-                    id: user.profile.legacyId,
-                    email: user.profile.email,
-                    role: user.profile.role,
-                    extraUserData: { apps: user.profile.apps },
-                });
-
-                const testOrganization: IOrganization = await createOrganization();
-
-                await new OrganizationUserModel({
-                    userId: user.profile.legacyId,
-                    organization: testOrganization,
-                    role: ORGANIZATION_ROLES.ORG_MEMBER,
-                }).save();
-
-                const response: request.Response = await requester
-                    .patch(`/auth/user/me`)
-                    .set('Content-Type', 'application/json')
-                    .set('Authorization', `Bearer ${token}`)
-                    .send({
-                        email: 'changed-email@example.com',
-                        password: 'changedPassword',
-                        salt: 'changedSalt',
-                        _id: 'changed-id',
-                        userToken: 'changedToken',
-                        createdAt: '2000-01-01T00:00:00.000Z',
-                        updatedAt: '2000-01-01T00:00:00.000Z',
-                        provider: 'changedProvider',
-                        name: 'changed name',
-                        photo: 'https://www.changed-photo.com',
-                        organizations: [{
-                            id: testOrganization.id,
-                            role: 'ORG_ADMIN'
-                        }],
-                    });
-
-                response.status.should.equal(403);
-                response.body.should.have.property('errors').and.be.an('array');
-                response.body.errors[0].status.should.equal(403);
-                response.body.errors[0].detail.should.equal('You don\'t have permissions to change your permissions with this/these organization(s)');
-
-                await assertConnection({ organization: testOrganization, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
             });
 
             it('Updating my profile while being logged in as MANAGER and removing/downgrading an organization with my user should succeed', async () => {
@@ -1182,7 +1097,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                         photo: 'https://www.changed-photo.com',
                         organizations: [{
                             id: testOrganizationTwo.id,
-                            role: 'ORG_MEMBER'
+                            role: ORGANIZATION_ROLES.ORG_MEMBER
                         }],
                     });
 
@@ -1200,10 +1115,60 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 response.body.data.should.have.property('updatedAt');
 
                 await assertNoConnection({ organization: testOrganizationOne, user: user });
-                await assertConnection({ organization: testOrganizationTwo, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
+                await assertConnection({
+                    organization: testOrganizationTwo,
+                    user: user,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                });
             });
         })
 
+        it('Updating my profile and associating an organization as ORG_ADMIN should fail', async () => {
+            const userToBeUpdated: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testApplication: IApplication = await createApplication();
+            const testOrganization: IOrganization = await createOrganization();
+
+            await new OrganizationApplicationModel({
+                application: testApplication,
+                organization: testOrganization
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/me`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'changed-email@example.com',
+                    password: 'changedPassword',
+                    salt: 'changedSalt',
+                    extraUserData: {
+                        apps: ['changed-apps'],
+                        foo: 'bar'
+                    },
+                    _id: 'changed-id',
+                    userToken: 'changedToken',
+                    createdAt: '2000-01-01T00:00:00.000Z',
+                    updatedAt: '2000-01-01T00:00:00.000Z',
+                    role: 'MANAGER',
+                    provider: 'changedProvider',
+                    name: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                    organizations: [{
+                        id: testOrganization.id,
+                        role: ORGANIZATION_ROLES.ORG_ADMIN
+                    }],
+                });
+
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array');
+            response.body.errors[0].status.should.equal(400);
+            response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
+
+            await assertConnection({ organization: testOrganization, application: testApplication });
+            await assertNoConnection({ user: userToBeUpdated, organization: testOrganization });
+        });
 
         it('Updating my profile while being logged in as ADMIN and associating an organization with my user user should be successful', async () => {
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
@@ -1252,7 +1217,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     photo: 'https://www.changed-photo.com',
                     organizations: [{
                         id: testOrganization.id,
-                        role: 'ORG_ADMIN'
+                        role: ORGANIZATION_ROLES.ORG_MEMBER
                     }],
                 });
 
@@ -1266,14 +1231,14 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
-            await assertConnection({ organization: testOrganization, application: testApplication });
             await assertNoConnection({ user: user, application: testApplication });
-            await assertConnection({ organization: testOrganization, user: user });
+            await assertConnection({ organization: testOrganization, application: testApplication });
+            await assertConnection({ organization: testOrganization, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER });
         });
 
         it('Updating my profile and associating an organization that\'s associated with a different user with the current user should be successful not remove previous user association', async () => {
@@ -1284,7 +1249,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             await new OrganizationUserModel({
                 userId: originalUser.profile.legacyId,
                 organization: testOrganization,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_ADMIN
             }).save();
 
             const user: OktaUser = getMockOktaUser({ role: 'ADMIN' });
@@ -1323,7 +1288,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
+                    organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
                 });
 
             response.status.should.equal(200);
@@ -1336,12 +1301,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
-            await assertConnection({ organization: testOrganization, user: user })
+            await assertConnection({ organization: testOrganization, user: user, role: ORGANIZATION_ROLES.ORG_MEMBER })
             await assertConnection({ organization: testOrganization, user: originalUser })
         });
 
@@ -1398,7 +1363,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
+                    organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
                 });
 
             response.status.should.equal(200);
@@ -1411,7 +1376,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
@@ -1468,7 +1433,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organizations: [{ id: testOrganizationTwo.id, role: 'ORG_ADMIN' }],
+                    organizations: [{ id: testOrganizationTwo.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
                 });
 
             response.status.should.equal(200);
@@ -1481,7 +1446,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganizationTwo.id,
                 name: testOrganizationTwo.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');

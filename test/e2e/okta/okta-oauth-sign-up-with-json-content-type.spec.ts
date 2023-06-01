@@ -58,6 +58,8 @@ describe('[OKTA] OAuth endpoints tests - Sign up with JSON content type', () => 
         response.body.data.should.have.property('email').and.equal(user.profile.email);
         response.body.data.should.have.property('role').and.equal(user.profile.role);
         response.body.data.should.have.property('extraUserData').and.be.an('object');
+        response.body.data.should.have.property('organizations').and.be.an('array').and.be.empty;
+        response.body.data.should.have.property('applications').and.be.an('array').and.be.empty;
         response.body.data.extraUserData.should.have.property('apps').and.be.an('array').and.be.empty;
     });
 

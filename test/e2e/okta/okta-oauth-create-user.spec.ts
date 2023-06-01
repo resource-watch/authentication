@@ -6,10 +6,10 @@ import type request from 'superagent';
 import { OktaOAuthProvider, OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import {
-    getMockOktaUser,
+    getMockOktaUser, mockGetUserById,
     mockOktaCreateUser,
     mockOktaFailedSignUp,
-    mockOktaSendActivationEmail,
+    mockOktaSendActivationEmail, mockOktaUpdateUser,
     mockValidJWT
 } from './okta.mocks';
 import OrganizationModel, { IOrganization } from "models/organization";
@@ -18,7 +18,9 @@ import ApplicationModel, { IApplication } from "models/application";
 import OrganizationApplicationModel from "models/organization-application";
 import { HydratedDocument } from "mongoose";
 import ApplicationUserModel from "models/application-user";
-import OrganizationUserModel from "models/organization-user";
+import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
+import { describe } from "mocha";
+import application from "models/application";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -133,7 +135,7 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         response.body.errors[0].detail.should.equal('Forbidden');
     });
 
-    it('Creating an user with valid data ("name") should return 200 OK and the created user data', async () => {
+    it('Creating an user with valid data while being logged in as a MANAGER should return 200 OK and the created user data', async () => {
         const apps: string[] = ['rw'];
         const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
         const user: OktaUser = getMockOktaUser({ apps });
@@ -170,567 +172,974 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
         response.body.should.have.property('photo').and.eql(user.profile.photo);
     });
 
+    it('Creating an user with valid data while being logged in as an ADMIN should return 200 OK and the created user data', async () => {
+        const apps: string[] = ['rw'];
+        const token: string = mockValidJWT({ role: 'ADMIN', extraUserData: { apps } });
+        const user: OktaUser = getMockOktaUser({ apps });
+
+        mockOktaCreateUser(user, {
+            email: user.profile.email,
+            name: 'Test User',
+            role: user.profile.role,
+            photo: user.profile.photo,
+            apps,
+            provider: OktaOAuthProvider.LOCAL,
+        });
+        mockOktaSendActivationEmail(user);
+
+        const response: request.Response = await requester
+            .post(`/auth/user`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${token}`)
+            .send({
+                role: user.profile.role,
+                extraUserData: { apps },
+                email: user.profile.email,
+                photo: user.profile.photo,
+                name: 'Test User',
+            });
+
+        response.status.should.equal(200);
+        response.body.should.be.an('object');
+        response.body.should.have.property('id').and.eql(user.profile.legacyId);
+        response.body.should.have.property('email').and.eql(user.profile.email);
+        response.body.should.have.property('name').and.eql(user.profile.displayName);
+        response.body.should.have.property('role').and.eql(user.profile.role);
+        response.body.should.have.property('extraUserData').and.eql({ apps });
+        response.body.should.have.property('photo').and.eql(user.profile.photo);
+    });
+
     describe('with associated applications', () => {
-        it('Create an user and associating an application with an existing user should be successful', async () => {
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
+        describe('MANAGER role', () => {
+            it('Creating a user while being logged in as MANAGER and associating an application that\'s associated with the current user should be successful', async () => {
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
 
-            const testOrganization: IOrganization = await createOrganization();
-            const testApplication: IApplication = await createApplication();
-
-            await new OrganizationApplicationModel({
-                organization: testOrganization,
-                application: testApplication
-            }).save();
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
-            });
-            mockOktaSendActivationEmail(user);
-
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
-                    name: 'Test User',
-                    applications: [testApplication.id],
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('applications').and.eql([{
-                id: testApplication.id,
-                name: testApplication.name,
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
 
-            await assertNoConnection({
-                application: testApplication,
-                organization: testOrganization
-            });
-            await assertNoConnection({ user: user, organization: testOrganization });
-            await assertConnection({ application: testApplication, user: user });
-        });
+                const newUser: OktaUser = getMockOktaUser();
 
-        it('Create an user and associating an application that\'s associated with a different user with the current user should be successful', async () => {
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
+                await new ApplicationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    application: testApplication
+                }).save();
 
-            const testApplication: HydratedDocument<IApplication> = await createApplication();
-
-            const originalOwnerUser: OktaUser = getMockOktaUser();
-
-            await new ApplicationUserModel({ userId: originalOwnerUser.id, application: testApplication }).save();
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
-            });
-            mockOktaSendActivationEmail(user);
-
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
+                mockGetUserById(requestUser);
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
                     name: 'Test User',
-                    applications: [testApplication.id],
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ application: testApplication, user: newUser })
+                await assertNoConnection({ application: testApplication, user: requestUser })
+            });
+
+            it('Creating a user while being logged in as MANAGER and associating an application that\'s associated with a different user should fail', async () => {
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('applications').and.eql([{
-                id: testApplication.id,
-                name: testApplication.name
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
+                const appUser: OktaUser = getMockOktaUser();
+                const newUser: OktaUser = getMockOktaUser();
 
-            await assertConnection({ application: testApplication, user: user })
-            await assertNoConnection({ application: testApplication, user: originalOwnerUser })
-        });
+                await new ApplicationUserModel({
+                    userId: appUser.profile.legacyId,
+                    application: testApplication
+                }).save();
 
-        it('Create an user and associating an application that\'s associated with an organization user should be successful and remove association with organization', async () => {
-            const testApplication: IApplication = await createApplication();
-            const testOrganization: IOrganization = await createOrganization();
+                mockGetUserById(appUser);
 
-            const originalOwnerUser: OktaUser = getMockOktaUser();
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
 
-            await new OrganizationApplicationModel({
-                userId: originalOwnerUser.id,
-                organization: testOrganization
-            }).save();
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(403);
+                response.body.errors[0].detail.should.equal(`You don't have permissions to associate this/these application(s)`);
 
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
+                await assertConnection({ application: testApplication, user: appUser })
+                await assertNoConnection({ application: testApplication, user: requestUser })
             });
-            mockOktaSendActivationEmail(user);
 
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
-                    name: 'Test User',
-                    applications: [testApplication.id],
+            it('Creating a user while being logged in as MANAGER and associating an application that\'s associated with an organization I am member of should fail', async () => {
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('applications').and.eql([{
-                id: testApplication.id,
-                name: testApplication.name
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
 
-            await assertConnection({ application: testApplication, user: user })
-            await assertNoConnection({ organization: testOrganization, user: originalOwnerUser })
-        });
+                const newUser: OktaUser = getMockOktaUser();
 
-        it('Create an user and overwriting existing applications should be successful', async () => {
-            const testApplicationOne: HydratedDocument<IApplication> = await createApplication();
-            const testApplicationTwo: HydratedDocument<IApplication> = await createApplication();
+                await new OrganizationUserModel({
+                    organization: testOrganization.id,
+                    userId: requestUser.profile.legacyId,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                }).save();
+                await new OrganizationApplicationModel({
+                    organization: testOrganization.id,
+                    application: testApplication.id
+                }).save();
 
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
 
-            await new ApplicationUserModel({ userId: user.id, application: testApplicationOne }).save();
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array').and.length(1);
+                response.body.errors[0].should.have.property('status').and.equal(403);
+                response.body.errors[0].detail.should.equal(`You don't have permissions to associate this/these application(s)`);
 
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
+                await assertConnection({ application: testApplication, organization: testOrganization })
             });
-            mockOktaSendActivationEmail(user);
 
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
-                    name: 'Test User',
-                    applications: [testApplicationTwo.id],
+            it('Creating a user while being logged in as MANAGER and associating an application that\'s associated with an organization I am admin of should be successful', async () => {
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('applications').and.eql([{
-                id: testApplicationTwo.id,
-                name: testApplicationTwo.name,
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
 
-            await assertNoConnection({ application: testApplicationOne, user: user })
-            await assertConnection({ application: testApplicationTwo, user: user })
-        });
+                const newUser: OktaUser = getMockOktaUser();
 
-        it('Create an user and removing applications should be successful', async () => {
-            const testApplication: HydratedDocument<IApplication> = await createApplication();
+                await new OrganizationUserModel({
+                    organization: testOrganization.id,
+                    userId: requestUser.profile.legacyId,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+                await new OrganizationApplicationModel({
+                    organization: testOrganization.id,
+                    application: testApplication.id
+                }).save();
 
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
-
-            await new ApplicationUserModel({ userId: user.id, application: testApplication }).save();
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
-            });
-            mockOktaSendActivationEmail(user);
-
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
                     name: 'Test User',
-                    applications: [],
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ application: testApplication, user: newUser })
+                await assertNoConnection({ application: testApplication, organization: testOrganization })
+            });
+        })
+
+        describe('ADMIN role', () => {
+            it('Creating a user while being logged in as ADMIN and associating an application that\'s associated with the current user should be successful', async () => {
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('applications').and.eql([]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
 
-            await assertNoConnection({ application: testApplication, user: null });
-        });
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new ApplicationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    application: testApplication
+                }).save();
+
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
+                    name: 'Test User',
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ application: testApplication, user: newUser })
+                await assertNoConnection({ application: testApplication, user: requestUser })
+            });
+
+            it('Creating a user while being logged in as ADMIN and associating an application that\'s associated with a different user should be successful', async () => {
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+                const appUser: OktaUser = getMockOktaUser();
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new ApplicationUserModel({
+                    userId: appUser.profile.legacyId,
+                    application: testApplication
+                }).save();
+
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
+                    name: 'Test User',
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ application: testApplication, user: newUser })
+                await assertNoConnection({ application: testApplication, user: requestUser })
+            });
+
+            it('Creating a user while being logged in as ADMIN and associating an application that\'s associated with an organization I am member of should be successful', async () => {
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new OrganizationUserModel({
+                    organization: testOrganization.id,
+                    userId: requestUser.profile.legacyId,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                }).save();
+                await new OrganizationApplicationModel({
+                    organization: testOrganization.id,
+                    application: testApplication.id
+                }).save();
+
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
+                    name: 'Test User',
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertNoConnection({ application: testApplication, organization: testOrganization })
+                await assertConnection({ application: testApplication, user: newUser })
+            });
+
+            it('Creating a user while being logged in as ADMIN and associating an application that\'s associated with an organization I am admin of should be successful', async () => {
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+                const testApplication: HydratedDocument<IApplication> = await createApplication();
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new OrganizationUserModel({
+                    organization: testOrganization.id,
+                    userId: requestUser.profile.legacyId,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+                await new OrganizationApplicationModel({
+                    organization: testOrganization.id,
+                    application: testApplication.id
+                }).save();
+
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
+                    name: 'Test User',
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        applications: [testApplication.id],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ application: testApplication, user: newUser })
+                await assertNoConnection({ application: testApplication, organization: testOrganization })
+            });
+        })
     })
 
     describe('with associated organizations', () => {
-        it('Create an user and associating an organization with an existing user should be successful', async () => {
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
+        describe('MANAGER role', () => {
+            it('Creating a user while being logged in as MANAGER and associating with ORG_MEMBER with an organization that the current user is a member of should fail', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
 
-            const testApplication: IApplication = await createApplication();
-            const testOrganization: IOrganization = await createOrganization();
-
-            await new OrganizationApplicationModel({
-                application: testApplication,
-                organization: testOrganization
-            }).save();
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
-            });
-            mockOktaSendActivationEmail(user);
-
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
-                    name: 'Test User',
-                    organizations: [{
-                        id: testOrganization.id,
-                        role: 'ORG_ADMIN'
-                    }],
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('organizations').and.eql([{
-                id: testOrganization.id,
-                name: testOrganization.name,
-                role: 'ORG_ADMIN'
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
 
-            await assertConnection({ organization: testOrganization, application: testApplication });
-            await assertNoConnection({ user: user, application: testApplication });
-            await assertConnection({ organization: testOrganization, user: user });
-        });
+                const newUser: OktaUser = getMockOktaUser();
 
-        it('Create an user and associating an organization that\'s associated with a different user should be successful and not remove previous user association', async () => {
-            const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                }).save();
 
-            const originalUser: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
+                    });
 
-            await new OrganizationUserModel({
-                userId: originalUser.profile.legacyId,
-                organization: testOrganization,
-                role: 'ORG_ADMIN'
-            }).save();
-
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(403);
+                response.body.errors[0].detail.should.equal('You don\'t have permissions to associate this/these organization(s)');
             });
-            mockOktaSendActivationEmail(user);
 
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
-                    name: 'Test User',
-                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
+            it('Creating a user while being logged in as MANAGER and associating with ORG_ADMIN with an organization that the current user is a member of should fail', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('organizations').and.eql([{
-                id: testOrganization.id,
-                name: testOrganization.name,
-                role: 'ORG_ADMIN'
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
+                const newUser: OktaUser = getMockOktaUser();
 
-            await assertConnection({ organization: testOrganization, user: user })
-            await assertConnection({ organization: testOrganization, user: originalUser })
-        });
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                }).save();
 
-        it('Create an user and associating an organization that\'s associated with an application user should be successful and not remove association with application', async () => {
-            const testOrganization: IOrganization = await createOrganization();
-            const testOrganizationApplication: IApplication = await createApplication();
-            const testUserApplication: IApplication = await createApplication();
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_ADMIN }],
+                    });
 
-            const originalOwnerUser: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
+                response.status.should.equal(400);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(400);
+                response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
 
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
-
-            await new OrganizationApplicationModel({
-                organization: testOrganization,
-                application: testOrganizationApplication
-            }).save();
-
-            await new ApplicationUserModel({
-                userId: user.profile.legacyId,
-                application: testUserApplication
-            }).save();
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
+                await assertNoConnection({ organization: testOrganization, user: newUser })
+                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
             });
-            mockOktaSendActivationEmail(user);
 
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
-                    name: 'Test User',
-                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
+            it('Creating a user while being logged in as MANAGER and associating with ORG_MEMBER with an organization that the current user is an admin of should succeed', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('organizations').and.eql([{
-                id: testOrganization.id,
-                name: testOrganization.name,
-                role: 'ORG_ADMIN'
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
+                const newUser: OktaUser = getMockOktaUser();
 
-            await assertConnection({ organization: testOrganization, user: user })
-            await assertConnection({ application: testUserApplication, user: user })
-            await assertNoConnection({ application: testOrganizationApplication, user: originalOwnerUser })
-        });
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
 
-        it('Create an user and overwriting existing organizations should be successful', async () => {
-            const testOrganizationOne: HydratedDocument<IOrganization> = await createOrganization();
-            const testOrganizationTwo: HydratedDocument<IOrganization> = await createOrganization();
-
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
-
-            await new OrganizationUserModel({
-                userId: user.id,
-                organization: testOrganizationOne,
-                role: 'ADMIN'
-            }).save();
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
-            });
-            mockOktaSendActivationEmail(user);
-
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
                     name: 'Test User',
-                    organizations: [{ id: testOrganizationTwo.id, role: 'ORG_ADMIN' }],
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ organization: testOrganization, user: newUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
+            });
+
+            it('Creating a user while being logged in as MANAGER and associating with ORG_ADMIN with an organization that the current user is an admin of should fail', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('organizations').and.eql([{
-                id: testOrganizationTwo.id,
-                name: testOrganizationTwo.name,
-                role: 'ORG_ADMIN'
-            }]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
+                const newUser: OktaUser = getMockOktaUser();
 
-            await assertNoConnection({ organization: testOrganizationOne, user: user })
-            await assertConnection({ organization: testOrganizationTwo, user: user })
-        });
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
 
-        it('Create an user and removing organizations should be successful', async () => {
-            const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_ADMIN }],
+                    });
 
-            const apps: string[] = ['rw'];
-            const token: string = mockValidJWT({ role: 'MANAGER', extraUserData: { apps } });
-            const user: OktaUser = getMockOktaUser({ apps });
+                response.status.should.equal(400);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(400);
+                response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
 
-            await new OrganizationUserModel({
-                userId: user.id,
-                organization: testOrganization,
-                role: 'ADMIN'
-            }).save();
-
-            mockOktaCreateUser(user, {
-                email: user.profile.email,
-                name: 'Test User',
-                role: user.profile.role,
-                photo: user.profile.photo,
-                apps,
-                provider: OktaOAuthProvider.LOCAL,
+                await assertNoConnection({ organization: testOrganization, user: newUser })
+                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
             });
-            mockOktaSendActivationEmail(user);
 
-            const response: request.Response = await requester
-                .post(`/auth/user`)
-                .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`)
-                .send({
-                    role: user.profile.role,
-                    extraUserData: { apps },
-                    email: user.profile.email,
-                    photo: user.profile.photo,
-                    name: 'Test User',
-                    organizations: [],
+            it('Creating a user while being logged in as MANAGER and associating an organization that\'s not associated with the current user should fail', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
                 });
 
-            response.status.should.equal(200);
-            response.body.should.be.an('object');
-            response.body.should.have.property('id').and.eql(user.profile.legacyId);
-            response.body.should.have.property('email').and.eql(user.profile.email);
-            response.body.should.have.property('name').and.eql(user.profile.displayName);
-            response.body.should.have.property('role').and.eql(user.profile.role);
-            response.body.should.have.property('extraUserData').and.eql({ apps });
-            response.body.should.have.property('photo').and.eql(user.profile.photo);
-            response.body.should.have.property('organizations').and.eql([]);
-            response.body.should.have.property('createdAt');
-            response.body.should.have.property('updatedAt');
+                const appUser: OktaUser = getMockOktaUser();
+                const newUser: OktaUser = getMockOktaUser();
 
-            await assertNoConnection({ organization: testOrganization, user: null });
-        });
+                await new OrganizationUserModel({
+                    userId: appUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
+                    });
+
+                response.status.should.equal(403);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(403);
+                response.body.errors[0].detail.should.equal(`You don't have permissions to associate this/these organization(s)`);
+
+                await assertConnection({ organization: testOrganization, user: appUser })
+                await assertNoConnection({ organization: testOrganization, user: requestUser })
+            });
+        })
+
+        describe('ADMIN role', () => {
+            it('Creating a user while being logged in as ADMIN and associating with ORG_MEMBER with an organization that the current user is a member of should succeed', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                }).save();
+
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
+                    name: 'Test User',
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ organization: testOrganization, user: newUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+            });
+
+            it('Creating a user while being logged in as ADMIN and associating with ORG_ADMIN with an organization that the current user is a member of should succeed', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                }).save();
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_ADMIN }],
+                    });
+
+                response.status.should.equal(400);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(400);
+                response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
+
+                await assertNoConnection({ organization: testOrganization, user: newUser })
+                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+            });
+
+            it('Creating a user while being logged in as ADMIN and associating with ORG_MEMBER with an organization that the current user is an admin of should succeed', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
+                    name: 'Test User',
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ organization: testOrganization, user: newUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
+            });
+
+            it('Creating a user while being logged in as ADMIN and associating with ORG_ADMIN with an organization that the current user is an admin of should fail', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new OrganizationUserModel({
+                    userId: requestUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_ADMIN }],
+                    });
+
+                response.status.should.equal(400);
+                response.body.should.have.property('errors').and.be.an('array');
+                response.body.errors[0].status.should.equal(400);
+                response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
+
+                await assertNoConnection({ organization: testOrganization, user: newUser })
+                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
+            });
+
+            it('Creating a user while being logged in as ADMIN and associating an organization that\'s not associated with the current user should succeed', async () => {
+                const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+                const apps: string[] = ['rw'];
+                const requestUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+                const token: string = mockValidJWT({
+                    id: requestUser.profile.legacyId,
+                    email: requestUser.profile.email,
+                    role: requestUser.profile.role,
+                    extraUserData: { apps: requestUser.profile.apps },
+                });
+
+                const appUser: OktaUser = getMockOktaUser();
+                const newUser: OktaUser = getMockOktaUser();
+
+                await new OrganizationUserModel({
+                    userId: appUser.profile.legacyId,
+                    organization: testOrganization,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                }).save();
+
+                mockOktaCreateUser(newUser, {
+                    email: newUser.profile.email,
+                    name: 'Test User',
+                    role: newUser.profile.role,
+                    photo: newUser.profile.photo,
+                    apps,
+                    provider: OktaOAuthProvider.LOCAL,
+                });
+                mockOktaSendActivationEmail(newUser);
+
+                const response: request.Response = await requester
+                    .post(`/auth/user`)
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', `Bearer ${token}`)
+                    .send({
+                        role: newUser.profile.role,
+                        extraUserData: { apps },
+                        email: newUser.profile.email,
+                        photo: newUser.profile.photo,
+                        name: 'Test User',
+                        organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
+                    });
+
+                response.status.should.equal(200);
+                response.body.should.be.an('object');
+                response.body.should.have.property('id').and.eql(newUser.profile.legacyId);
+                response.body.should.have.property('email').and.eql(newUser.profile.email);
+                response.body.should.have.property('name').and.eql(newUser.profile.displayName);
+                response.body.should.have.property('role').and.eql(newUser.profile.role);
+                response.body.should.have.property('extraUserData').and.eql({ apps });
+                response.body.should.have.property('photo').and.eql(newUser.profile.photo);
+
+                await assertConnection({ organization: testOrganization, user: appUser })
+                await assertConnection({ organization: testOrganization, user: newUser })
+                await assertNoConnection({ organization: testOrganization, user: requestUser })
+            });
+        })
     })
 
 
