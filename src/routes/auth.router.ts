@@ -272,7 +272,7 @@ authRouter.route({
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
-authRouter.delete('/user/:id', Utils.isLogged, Utils.isAdminOrMicroserviceOrSameUserToDelete, OktaProvider.deleteUser);
+authRouter.delete('/user/:id', Utils.isLogged, Utils.isAdminOrMicroserviceOrSameUserToDelete, Utils.isNotOrgAdmin, OktaProvider.deleteUser);
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
