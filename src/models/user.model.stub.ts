@@ -47,27 +47,4 @@ export class UserModelStub {
 
         return user;
     }
-
-    // static async removeApplicationLinkForUser(userId: string, applicationId?: IApplicationId): Promise<IUser> {
-    //     let user: IUser;
-    //     try {
-    //         user = await OktaService.getUserById(userId);
-    //     } catch (error) {
-    //         if (error instanceof UserNotFoundError) {
-    //             return user;
-    //         } else {
-    //             throw error
-    //         }
-    //     }
-    //
-    //     if (!applicationId) {
-    //         return OktaService.updateUser(userId, { applications: [] });
-    //     } else {
-    //         return OktaService.updateUser(userId, {
-    //             applications: user.applications.filter((userApplicationId: IApplicationId) => {
-    //                 return userApplicationId !== applicationId;
-    //             })
-    //         });
-    //     }
-    // }
 }

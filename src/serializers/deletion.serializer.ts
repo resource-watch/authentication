@@ -15,6 +15,7 @@ const deletionSerializer: Serializer = new Serializer('deletion', {
         'collectionsDeleted',
         'favouritesDeleted',
         'areasDeleted',
+        'applicationsDeleted',
         'storiesDeleted',
         'subscriptionsDeleted',
         'dashboardsDeleted',

@@ -1,15 +1,15 @@
 import { RWAPIMicroservice } from "rw-api-microservice-node";
 import logger from "logger";
 
-type DeleteResourceResult = {
-    deletedData?: Record<string, any>[]
-    protectedData?: Record<string, any>[]
+export type DeleteResourceResult<T> = {
+    deletedData?: T[]
+    protectedData?: T[]
     count: number
     error?: string
 }
 
 export default class DeleteUserResourcesService {
-    static async deleteDatasets(userId: string): Promise<DeleteResourceResult> {
+    static async deleteDatasets(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/dataset/by-user/${userId}`,
@@ -33,7 +33,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteLayers(userId: string): Promise<DeleteResourceResult> {
+    static async deleteLayers(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/layer/by-user/${userId}`,
@@ -57,7 +57,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteWidgets(userId: string): Promise<DeleteResourceResult> {
+    static async deleteWidgets(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/widget/by-user/${userId}`,
@@ -81,7 +81,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteUserData(userId: string): Promise<DeleteResourceResult> {
+    static async deleteUserData(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v2/user/${userId}`,
@@ -108,7 +108,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteCollectionsData(userId: string): Promise<DeleteResourceResult> {
+    static async deleteCollectionsData(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/collection/by-user/${userId}`,
@@ -129,7 +129,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteFavouritesData(userId: string): Promise<DeleteResourceResult> {
+    static async deleteFavouritesData(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/favourite/by-user/${userId}`,
@@ -150,7 +150,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteAreas(userId: string): Promise<DeleteResourceResult> {
+    static async deleteAreas(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v2/area/by-user/${userId}`,
@@ -171,7 +171,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteStories(userId: string): Promise<DeleteResourceResult> {
+    static async deleteStories(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/story/by-user/${userId}`,
@@ -192,7 +192,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteSubscriptions(userId: string): Promise<DeleteResourceResult> {
+    static async deleteSubscriptions(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/subscriptions/by-user/${userId}`,
@@ -214,7 +214,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteDashboards(userId: string): Promise<DeleteResourceResult> {
+    static async deleteDashboards(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/dashboard/by-user/${userId}`,
@@ -235,7 +235,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteProfile(userId: string): Promise<DeleteResourceResult> {
+    static async deleteProfile(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/profile/${userId}`,
@@ -262,7 +262,7 @@ export default class DeleteUserResourcesService {
         }
     }
 
-    static async deleteTopics(userId: string): Promise<DeleteResourceResult> {
+    static async deleteTopics(userId: string): Promise<DeleteResourceResult<Record<string, any>>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/topic/by-user/${userId}`,
