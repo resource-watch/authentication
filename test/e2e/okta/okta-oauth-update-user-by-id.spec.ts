@@ -1,7 +1,6 @@
 import nock from 'nock';
 import chai from 'chai';
 import chaiDateTime from 'chai-datetime';
-
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
@@ -485,6 +484,53 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
     })
 
     describe('with associated organizations', () => {
+        it('Updating an user and associating an organization as ORG_ADMIN should fail', async () => {
+            const userToBeUpdated: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+
+            const testApplication: IApplication = await createApplication();
+            const testOrganization: IOrganization = await createOrganization();
+
+            await new OrganizationApplicationModel({
+                application: testApplication,
+                organization: testOrganization
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    email: 'changed-email@example.com',
+                    password: 'changedPassword',
+                    salt: 'changedSalt',
+                    extraUserData: {
+                        apps: ['changed-apps'],
+                        foo: 'bar'
+                    },
+                    _id: 'changed-id',
+                    userToken: 'changedToken',
+                    createdAt: '2000-01-01T00:00:00.000Z',
+                    updatedAt: '2000-01-01T00:00:00.000Z',
+                    role: 'MANAGER',
+                    provider: 'changedProvider',
+                    name: 'changed name',
+                    photo: 'https://www.changed-photo.com',
+                    organizations: [{
+                        id: testOrganization.id,
+                        role: ORGANIZATION_ROLES.ORG_ADMIN
+                    }],
+                });
+
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array');
+            response.body.errors[0].status.should.equal(400);
+            response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
+
+            await assertConnection({ organization: testOrganization, application: testApplication });
+            await assertNoConnection({ user: userToBeUpdated, organization: testOrganization });
+        });
+
         it('Updating an user and associating an organization with an existing user should be successful', async () => {
             const userToBeUpdated: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
@@ -527,7 +573,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                     photo: 'https://www.changed-photo.com',
                     organizations: [{
                         id: testOrganization.id,
-                        role: 'ORG_ADMIN'
+                        role: ORGANIZATION_ROLES.ORG_MEMBER
                     }],
                 });
 
@@ -541,7 +587,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
@@ -551,7 +597,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ organization: testOrganization, user: userToBeUpdated });
         });
 
-        it('Updating an user and associating an organization that\'s associated with a different user should be successful and not remove previous user association', async () => {
+        it('Updating an user and associating an organization as ORG_MEMBER that\'s associated with a different user should be successful and not remove previous user association', async () => {
             const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
 
             const originalUser: OktaUser = getMockOktaUser({ organizations: [testOrganization.id] });
@@ -559,7 +605,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await new OrganizationUserModel({
                 userId: originalUser.profile.legacyId,
                 organization: testOrganization,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_ADMIN
             }).save();
 
             const userToBeUpdated: OktaUser = getMockOktaUser();
@@ -593,7 +639,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
+                    organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
                 });
 
             response.status.should.equal(200);
@@ -606,7 +652,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
@@ -615,7 +661,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertConnection({ organization: testOrganization, user: originalUser })
         });
 
-        it('Updating an user and associating an organization that\'s associated with an application user should be successful and not remove association with application', async () => {
+        it('Updating an user and associating an organization as ORG_MEMBER that\'s associated with an application user should be successful and not remove association with application', async () => {
             const testOrganization: IOrganization = await createOrganization();
             const testOrganizationApplication: IApplication = await createApplication();
             const testUserApplication: IApplication = await createApplication();
@@ -663,7 +709,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organizations: [{ id: testOrganization.id, role: 'ORG_ADMIN' }],
+                    organizations: [{ id: testOrganization.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
                 });
 
             response.status.should.equal(200);
@@ -676,12 +722,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
-            await assertConnection({ organization: testOrganization, user: userToBeUpdated })
+            await assertConnection({ organization: testOrganization, user: userToBeUpdated, role: ORGANIZATION_ROLES.ORG_MEMBER })
             await assertConnection({ application: testUserApplication, user: userToBeUpdated })
             await assertNoConnection({ application: testOrganizationApplication, user: originalOwnerUser })
         });
@@ -728,7 +774,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                     provider: 'changedProvider',
                     name: 'changed name',
                     photo: 'https://www.changed-photo.com',
-                    organizations: [{ id: testOrganizationTwo.id, role: 'ORG_ADMIN' }],
+                    organizations: [{ id: testOrganizationTwo.id, role: ORGANIZATION_ROLES.ORG_MEMBER }],
                 });
 
             response.status.should.equal(200);
@@ -741,13 +787,13 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganizationTwo.id,
                 name: testOrganizationTwo.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
             await assertNoConnection({ organization: testOrganizationOne, user: userToBeUpdated })
-            await assertConnection({ organization: testOrganizationTwo, user: userToBeUpdated })
+            await assertConnection({ organization: testOrganizationTwo, user: userToBeUpdated, role: ORGANIZATION_ROLES.ORG_MEMBER })
         });
 
         it('Updating an user and removing organizations should be successful', async () => {
@@ -807,7 +853,6 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             await assertNoConnection({ organization: testOrganization, user: null });
         });
     })
-
 
     after(async () => {
         await closeTestAgent();

@@ -515,6 +515,50 @@ export class OktaProvider {
         }
 
         try {
+            if ('applications' in body) {
+                if (user.role !== 'ADMIN') {
+                    const organizations: IOrganizationUser[] = await OrganizationUserModel.find({
+                        userId: user.id,
+                        role: ORGANIZATION_ROLES.ORG_ADMIN
+                    }).populate('organization');
+                    const organizationIds: IOrganizationUser[] = organizations.map((organization: IOrganizationUser) => organization.organization.id);
+
+                    await Promise.all(body.applications.map(async (applicationId: IApplicationId) => {
+                        let application: IApplication = await ApplicationModel.findById(applicationId);
+                        application = await ApplicationModel.hydrate(application.toObject()).hydrate();
+
+                        const canAssociateWithOrg: boolean = application.user?.id === user.id || organizationIds.includes(application.organization?.id);
+
+                        if (!canAssociateWithOrg) {
+                            throw new PermissionError(`You don't have permissions to associate this/these application(s)`);
+                        }
+                    }));
+                }
+
+                await UserModelStub.clearApplicationAssociations(user.id);
+            }
+
+            if ('organizations' in body) {
+                if (user.role !== 'ADMIN') {
+                    await Promise.all(body.organizations.map(async (organizationAssociation: {
+                        id: IOrganizationId,
+                        role: Role
+                    }) => {
+                        const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne({
+                            userId: user.id,
+                            organization: organizationAssociation.id,
+                        });
+                        if (!organizationUser) {
+                            throw new PermissionError(`You don't have permissions to associate this/these organization(s)`);
+                        } else {
+                            if (organizationUser.role !== ORGANIZATION_ROLES.ORG_ADMIN) {
+                                throw new PermissionError(`You don't have permissions to associate this/these organization(s)`);
+                            }
+                        }
+                    }));
+                }
+            }
+
             const createdUser: IUser = await OktaService.createUserWithoutPassword({
                 name: body.name,
                 email: body.email,
@@ -542,11 +586,13 @@ export class OktaProvider {
                 organizations: serializedUser.data.organizations
             };
         } catch (err) {
+            if (err instanceof PermissionError) {
+                return ctx.throw(403, err.message);
+            }
             logger.error('[OktaProvider] - Error creating user, ', err);
             if (err.response?.data?.errorCauses[0]?.errorSummary === 'login: An object with this field already exists in the current organization') {
                 return ctx.throw(400, 'Email exists');
             }
-
             return ctx.throw(500, 'Internal server error');
         }
     }

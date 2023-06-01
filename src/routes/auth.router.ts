@@ -25,7 +25,7 @@ const createUserValidation: Record<string, any> = {
     body: Joi.object({
         organizations: Joi.array().items(Joi.object({
             id: Joi.string().required(),
-            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
+            role: Joi.string().valid(ORGANIZATION_ROLES.ORG_MEMBER).required()
         })).optional(),
         applications: Joi.array().items(Joi.string()).optional(),
     }).unknown(true)
@@ -44,7 +44,7 @@ const updateUserValidation: Record<string, any> = {
         role: Joi.string().optional(),
         organizations: Joi.array().items(Joi.object({
             id: Joi.string().required(),
-            role: Joi.string().valid(...Object.values(ORGANIZATION_ROLES)).required()
+            role: Joi.string().valid(ORGANIZATION_ROLES.ORG_MEMBER).required()
         })).optional(),
         applications: Joi.array().items(Joi.string()).optional(),
     }).unknown(true)

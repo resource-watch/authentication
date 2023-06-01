@@ -20,7 +20,7 @@ export default class UserSerializer {
                 id: organization.organization._id.toString(),
                 name: organization.organization.name,
                 role: organization.role,
-            })) : null,
+            })) : [],
             applications: user.applications ? user.applications.map((application: IApplication) => ({
                 id: application._id.toString(),
                 name: application.name,
