@@ -16,11 +16,11 @@ import config from 'config';
 import DeletionModel, { IDeletion } from 'models/deletion';
 import { mockDeleteResourcesCalls } from "../utils/mocks";
 import OrganizationModel, { IOrganization } from "models/organization";
-import { assertNoConnection, createApplication, createOrganization } from "../utils/helpers";
+import { assertConnection, assertNoConnection, createApplication, createOrganization } from "../utils/helpers";
 import ApplicationModel, { IApplication } from "models/application";
 import OrganizationApplicationModel from "models/organization-application";
 import ApplicationUserModel from "models/application-user";
-import OrganizationUserModel from "models/organization-user";
+import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 
 const should: Should = chai.should();
 
@@ -280,7 +280,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
     })
 
     describe('with associated organizations', () => {
-        it('Deleting an user with associated organizations should be successful and delete the association', async () => {
+        it('Deleting an user with associated organizations as ORG_MEMBER should be successful and delete the association', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
@@ -289,7 +289,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
             await new OrganizationUserModel({
                 userId: user.profile.legacyId,
                 organization: testOrganization,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }).save();
 
             mockGetUserById(user, 2);
@@ -312,12 +312,41 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
             response.body.data.should.have.property('organizations').and.eql([{
                 id: testOrganization.id,
                 name: testOrganization.name,
-                role: 'ORG_ADMIN'
+                role: ORGANIZATION_ROLES.ORG_MEMBER
             }]);
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
             await assertNoConnection({ userId: user.profile.legacyId, organization: null });
+        });
+
+        it('Deleting an user with associated organizations as ORG_ADMIN should be successful and delete the association', async () => {
+            const user: OktaUser = getMockOktaUser();
+            const token: string = mockValidJWT({
+                id: user.profile.legacyId,
+                email: user.profile.email,
+                role: 'ADMIN',
+                extraUserData: { apps: user.profile.apps },
+            });
+            const testOrganization: IOrganization = await createOrganization();
+
+            await new OrganizationUserModel({
+                userId: user.profile.legacyId,
+                organization: testOrganization,
+                role: ORGANIZATION_ROLES.ORG_ADMIN
+            }).save();
+
+            const response: request.Response = await requester
+                .delete(`/auth/user/${user.profile.legacyId}`)
+                .set('Content-Type', 'application/json')
+                .set('Authorization', `Bearer ${token}`);
+
+            response.status.should.equal(400);
+            response.body.should.have.property('errors').and.be.an('array');
+            response.body.errors[0].status.should.equal(400);
+            response.body.errors[0].detail.should.equal('Cannot delete user that is admin of an organization');
+
+            await assertConnection({ userId: user.profile.legacyId, organization: testOrganization });
         });
     })
 

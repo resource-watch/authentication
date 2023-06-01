@@ -73,7 +73,7 @@ export default class Utils {
         if (user.role === 'ADMIN') {
             logger.info('User is admin');
             await next();
-            return ;
+            return;
         }
 
         const applicationId: IApplicationId = ctx.params.id;
@@ -88,7 +88,7 @@ export default class Utils {
         if (applicationUser) {
             logger.info('User owns the application');
             await next();
-            return ;
+            return;
         }
 
         const aggregateCriteria: PipelineStage[] = [
@@ -114,8 +114,7 @@ export default class Utils {
         if (aggregate.length > 0) {
             logger.info('User owns the application through the organization');
             await next();
-        }
-        else {
+        } else {
             logger.info('Does not own the application');
             ctx.throw(403, 'Not authorized');
         }
@@ -132,12 +131,12 @@ export default class Utils {
         if (user.role === 'ADMIN') {
             logger.info('User is admin');
             await next();
-            return ;
+            return;
         }
         if (user.role === 'MANAGER') {
             logger.info('User is manager');
             await next();
-            return ;
+            return;
         }
 
         const applicationId: IApplicationId = ctx.params.id;
@@ -152,7 +151,7 @@ export default class Utils {
         if (applicationUser) {
             logger.info('User owns the application');
             await next();
-            return ;
+            return;
         }
 
         const aggregateCriteria: PipelineStage[] = [
@@ -178,8 +177,7 @@ export default class Utils {
         if (aggregate.length > 0) {
             logger.info('User has read access to the application through the organization');
             await next();
-        }
-        else {
+        } else {
             logger.info('Does not have read access to the application');
             ctx.throw(403, 'Not authorized');
         }
@@ -199,7 +197,7 @@ export default class Utils {
             ctx.throw(400, 'Organizations with associated applications cannot be deleted');
         } else {
             await next();
-            return ;
+            return;
         }
     }
 
@@ -214,7 +212,7 @@ export default class Utils {
         if (user.role === 'ADMIN') {
             logger.info('User is admin');
             await next();
-            return ;
+            return;
         }
 
         const organizationId: IOrganizationId = ctx.params.id;
@@ -248,12 +246,12 @@ export default class Utils {
         if (user.role === 'ADMIN') {
             logger.info('User is admin');
             await next();
-            return ;
+            return;
         }
         if (user.role === 'MANAGER') {
             logger.info('User is manager');
             await next();
-            return ;
+            return;
         }
 
         const organizationId: IOrganizationId = ctx.params.id;
@@ -287,12 +285,12 @@ export default class Utils {
         if (user.role === 'ADMIN') {
             logger.info('User is admin');
             await next();
-            return ;
+            return;
         }
         if (user.role === 'MANAGER') {
             logger.info('User is manager');
             await next();
-            return ;
+            return;
         }
 
         const organizationId: IOrganizationId = ctx.params.id;
@@ -310,6 +308,32 @@ export default class Utils {
         } else {
             logger.info('Does not belong to organization');
             ctx.throw(403, 'Not authorized');
+        }
+    }
+
+    static async isNotOrgAdmin(ctx: Context, next: Next): Promise<void> {
+        logger.info('Checking if user is not ORG_ADMIN');
+        const user: IUser = Utils.getUser(ctx);
+        if (!user) {
+            logger.info('Not authenticated');
+            ctx.throw(401, 'Not authenticated');
+            return;
+        }
+
+        const query: {
+            role: Role;
+            userId: IUserLegacyId,
+        } = {
+            role: ORGANIZATION_ROLES.ORG_ADMIN,
+            userId: user.id,
+        }
+        const organizationUser: IOrganizationUser = await OrganizationUserModel.findOne(query);
+        if (organizationUser) {
+            logger.info('User is admin of an organization');
+            ctx.throw(400, 'Cannot delete user that is admin of an organization');
+        } else {
+            logger.info('Does not admin an organization');
+            await next();
         }
     }
 
