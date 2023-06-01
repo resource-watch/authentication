@@ -106,6 +106,7 @@ describe('Update deletion tests', () => {
         responseDeletion.attributes.should.have.property('collectionsDeleted').and.equal(deletion.collectionsDeleted);
         responseDeletion.attributes.should.have.property('favouritesDeleted').and.equal(deletion.favouritesDeleted);
         responseDeletion.attributes.should.have.property('areasDeleted').and.equal(deletion.areasDeleted);
+        responseDeletion.attributes.should.have.property('applicationsDeleted').and.equal(deletion.applicationsDeleted);
         responseDeletion.attributes.should.have.property('storiesDeleted').and.equal(deletion.storiesDeleted);
         responseDeletion.attributes.should.have.property('subscriptionsDeleted').and.equal(deletion.subscriptionsDeleted);
         responseDeletion.attributes.should.have.property('dashboardsDeleted').and.equal(deletion.dashboardsDeleted);
@@ -130,6 +131,7 @@ describe('Update deletion tests', () => {
                 collectionsDeleted: true,
                 favouritesDeleted: true,
                 areasDeleted: true,
+                applicationsDeleted: true,
                 storiesDeleted: true,
                 subscriptionsDeleted: true,
                 dashboardsDeleted: true,
@@ -159,6 +161,7 @@ describe('Update deletion tests', () => {
         response.body.data.attributes.should.have.property('collectionsDeleted').and.equal(databaseDeletion.collectionsDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('favouritesDeleted').and.equal(databaseDeletion.favouritesDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('areasDeleted').and.equal(databaseDeletion.areasDeleted).and.equal(true);
+        response.body.data.attributes.should.have.property('applicationsDeleted').and.equal(databaseDeletion.applicationsDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('storiesDeleted').and.equal(databaseDeletion.storiesDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('subscriptionsDeleted').and.equal(databaseDeletion.subscriptionsDeleted).and.equal(true);
         response.body.data.attributes.should.have.property('dashboardsDeleted').and.equal(databaseDeletion.dashboardsDeleted).and.equal(true);

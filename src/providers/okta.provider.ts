@@ -23,12 +23,14 @@ import PasswordRecoveryNotAllowedError from 'errors/passwordRecoveryNotAllowed.e
 import { DELETION_STATUS_DONE, DELETION_STATUS_PENDING, IDeletion } from 'models/deletion';
 import DeletionService from 'services/deletion.service';
 import GetUserResourcesService from 'services/get-user-resources.service';
-import DeleteUserResourcesService from "services/delete-user-resources.service";
+import DeleteUserResourcesService, { DeleteResourceResult } from "services/delete-user-resources.service";
 import { UserModelStub } from "models/user.model.stub";
 import ApplicationModel, { IApplication, IApplicationId } from "models/application";
 import PermissionError from "errors/permission.error";
 import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES, Role } from "models/organization-user";
-import { IOrganizationId } from "models/organization";
+import { IOrganization, IOrganizationId } from "models/organization";
+import ApplicationService from "services/application.service";
+import OrganizationService from "services/organization.service";
 
 export class OktaProvider {
 
@@ -264,6 +266,9 @@ export class OktaProvider {
             return;
         }
 
+        const userApplications: IApplication[] = await ApplicationService.getApplications({}, user.id);
+        const userOrganizations: IOrganization[] = await OrganizationService.getOrganizations({}, user.id);
+
         const result: Record<string, any> = {
             datasets: await GetUserResourcesService.getDatasets(user.id),
             layers: await GetUserResourcesService.getLayers(user.id),
@@ -271,6 +276,14 @@ export class OktaProvider {
             userAccount: {
                 data: user,
                 count: 1
+            },
+            applications: {
+                data: userApplications,
+                count: userApplications.length
+            },
+            organizations: {
+                data: userOrganizations,
+                count: userOrganizations.length
             },
             userData: await GetUserResourcesService.getUserData(user.id),
             collections: await GetUserResourcesService.getCollectionsData(user.id),
@@ -438,6 +451,7 @@ export class OktaProvider {
             ctx.throw(500, 'Internal server error');
         }
 
+        const deletedApplications: DeleteResourceResult<IApplication> = await ApplicationService.deleteApplicationsByUser(ctx.params.id);
         const deletionData: Partial<IDeletion> = {
             userId: ctx.params.id,
             requestorUserId: Utils.getUser(ctx).id,
@@ -448,6 +462,7 @@ export class OktaProvider {
             collectionsDeleted: (await DeleteUserResourcesService.deleteCollectionsData(ctx.params.id)).count >= 0,
             favouritesDeleted: (await DeleteUserResourcesService.deleteFavouritesData(ctx.params.id)).count >= 0,
             areasDeleted: (await DeleteUserResourcesService.deleteAreas(ctx.params.id)).count >= 0,
+            applicationsDeleted: (await ApplicationService.deleteApplicationsByUser(ctx.params.id)).count >= 0,
             storiesDeleted: (await DeleteUserResourcesService.deleteStories(ctx.params.id)).count >= 0,
             dashboardsDeleted: (await DeleteUserResourcesService.deleteSubscriptions(ctx.params.id)).count >= 0,
             subscriptionsDeleted: (await DeleteUserResourcesService.deleteDashboards(ctx.params.id)).count >= 0,
@@ -463,6 +478,7 @@ export class OktaProvider {
             && deletionData.collectionsDeleted
             && deletionData.favouritesDeleted
             && deletionData.areasDeleted
+            && deletionData.applicationsDeleted
             && deletionData.storiesDeleted
             && deletionData.dashboardsDeleted
             && deletionData.subscriptionsDeleted
@@ -473,7 +489,9 @@ export class OktaProvider {
         let deletedUser: IUser = null;
         try {
             deletedUser = await OktaService.deleteUser(ctx.params.id);
-            ctx.body = await UserSerializer.serialize(await UserModelStub.hydrate(deletedUser));
+            deletedUser = await UserModelStub.hydrate(deletedUser);
+            deletedUser.applications = deletedApplications.deletedData;
+            ctx.body = await UserSerializer.serialize(deletedUser);
             deletionData.userAccountDeleted = (deletedUser !== null);
             deletionData.status = (allDataDeleted && deletionData.userDataDeleted) ? DELETION_STATUS_DONE : DELETION_STATUS_PENDING;
         } catch (err) {

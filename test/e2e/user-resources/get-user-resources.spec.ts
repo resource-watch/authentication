@@ -1,10 +1,16 @@
 import nock from 'nock';
 import type request from 'superagent';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
-import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from "../okta/okta.mocks";
+import { getMockOktaUser, mockGetUserById, mockOktaListUsers, mockValidJWT } from "../okta/okta.mocks";
 import { OktaUser } from "services/okta.interfaces";
 import chai from "chai";
 import { mockGetResourcesCalls } from "../utils/mocks";
+import { HydratedDocument } from "mongoose";
+import { IApplication } from "models/application";
+import { createApplication, createOrganization } from "../utils/helpers";
+import ApplicationUserModel from "models/application-user";
+import { IOrganization } from "models/organization";
+import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 
 let requester: ChaiHttp.Agent;
 chai.should();
@@ -53,6 +59,21 @@ describe('GET user resources', () => {
 
         mockGetResourcesCalls(user.profile.legacyId);
 
+        const testApplication: HydratedDocument<IApplication> = await createApplication();
+        const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
+
+        await new ApplicationUserModel({
+            userId: user.profile.legacyId,
+            application: testApplication
+        }).save();
+        await new OrganizationUserModel({
+            role: ORGANIZATION_ROLES.ORG_MEMBER,
+            userId: user.profile.legacyId,
+            organization: testOrganization
+        }).save();
+
+        mockGetUserById(user, 2);
+
         const response: request.Response = await requester
             .get(`/auth/user/${user.profile.legacyId}/resources`)
             .set('Content-Type', 'application/json')
@@ -71,6 +92,10 @@ describe('GET user resources', () => {
         response.body.should.have.property('userData').and.be.an('object').and.have.property('count').and.equal(1);
         response.body.should.have.property('collections').and.be.an('object').and.have.property('data').and.have.length(1);
         response.body.should.have.property('collections').and.be.an('object').and.have.property('count').and.equal(2);
+        response.body.should.have.property('applications').and.be.an('object').and.have.property('data').and.have.length(1);
+        response.body.should.have.property('applications').and.be.an('object').and.have.property('count').and.equal(1);
+        response.body.should.have.property('organizations').and.be.an('object').and.have.property('data').and.have.length(1);
+        response.body.should.have.property('organizations').and.be.an('object').and.have.property('count').and.equal(1);
         response.body.should.have.property('areas').and.be.an('object').and.have.property('data').and.have.length(3);
         response.body.should.have.property('areas').and.be.an('object').and.have.property('count').and.equal(3);
         response.body.should.have.property('stories').and.be.an('object').and.have.property('data').and.have.length(2);

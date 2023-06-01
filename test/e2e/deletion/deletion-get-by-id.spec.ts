@@ -86,6 +86,7 @@ describe('Get deletion by id tests', () => {
         response.body.data.attributes.should.have.property('collectionsDeleted').and.equal(deletion.collectionsDeleted);
         response.body.data.attributes.should.have.property('favouritesDeleted').and.equal(deletion.favouritesDeleted);
         response.body.data.attributes.should.have.property('areasDeleted').and.equal(deletion.areasDeleted);
+        response.body.data.attributes.should.have.property('applicationsDeleted').and.equal(deletion.applicationsDeleted);
         response.body.data.attributes.should.have.property('storiesDeleted').and.equal(deletion.storiesDeleted);
         response.body.data.attributes.should.have.property('subscriptionsDeleted').and.equal(deletion.subscriptionsDeleted);
         response.body.data.attributes.should.have.property('dashboardsDeleted').and.equal(deletion.dashboardsDeleted);

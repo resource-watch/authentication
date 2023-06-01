@@ -26,6 +26,7 @@ export interface IDeletion extends Document {
     collectionsDeleted?: boolean;
     favouritesDeleted?: boolean;
     areasDeleted?: boolean;
+    applicationsDeleted?: boolean;
     storiesDeleted?: boolean;
     subscriptionsDeleted?: boolean;
     dashboardsDeleted?: boolean;
@@ -49,6 +50,7 @@ export const Deletion: ISchema<IDeletion> = new Schema<IDeletion>({
     collectionsDeleted: { type: Boolean, required: false, default: false },
     favouritesDeleted: { type: Boolean, required: false, default: false },
     areasDeleted: { type: Boolean, required: false, default: false },
+    applicationsDeleted: { type: Boolean, required: false, default: false },
     storiesDeleted: { type: Boolean, required: false, default: false },
     subscriptionsDeleted: { type: Boolean, required: false, default: false },
     dashboardsDeleted: { type: Boolean, required: false, default: false },

@@ -95,6 +95,7 @@ describe('Create deletion tests', () => {
         response.body.data.attributes.should.have.property('collectionsDeleted').and.equal(databaseDeletion.collectionsDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('favouritesDeleted').and.equal(databaseDeletion.favouritesDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('areasDeleted').and.equal(databaseDeletion.areasDeleted).and.equal(false);
+        response.body.data.attributes.should.have.property('applicationsDeleted').and.equal(databaseDeletion.applicationsDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('storiesDeleted').and.equal(databaseDeletion.storiesDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('subscriptionsDeleted').and.equal(databaseDeletion.subscriptionsDeleted).and.equal(false);
         response.body.data.attributes.should.have.property('dashboardsDeleted').and.equal(databaseDeletion.dashboardsDeleted).and.equal(false);

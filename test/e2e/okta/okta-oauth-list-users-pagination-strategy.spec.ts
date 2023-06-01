@@ -11,10 +11,10 @@ import {
     ensureHasPaginationElements
 } from '../utils/helpers';
 import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
-import { IApplication } from "../../../src/models/application";
-import ApplicationUserModel from "../../../src/models/application-user";
-import { IOrganization } from "../../../src/models/organization";
-import OrganizationUserModel from "../../../src/models/organization-user";
+import { IApplication } from "models/application";
+import ApplicationUserModel from "models/application-user";
+import { IOrganization } from "models/organization";
+import OrganizationUserModel from "models/organization-user";
 
 chai.should();
 

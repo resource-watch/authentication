@@ -111,14 +111,43 @@ export default class OrganizationService {
 
         const organizations: AggregatePaginateResult<IOrganization> = await OrganizationModel.aggregatePaginate(aggregate, {
             ...paginationOptions,
-            // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/65410
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
             useFacet: false,
             populate: ['applications', 'users'],
         });
 
         organizations.docs = await Promise.all(organizations.docs.map((organization: IOrganization) => {
+            return (new OrganizationModel(organization)).hydrate();
+        }));
+
+        return organizations;
+    }
+
+    static async getOrganizations(query: FilterQuery<IOrganization>, loggedUserId: IUserLegacyId = null): Promise<Array<IOrganization>> {
+        let aggregateCriteria: PipelineStage[] = [
+            { $match: query },
+        ];
+
+        if (loggedUserId !== null) {
+            aggregateCriteria = aggregateCriteria.concat([
+                {
+                    $lookup: {
+                        from: "organizationusers",
+                        localField: "_id",
+                        foreignField: "organization",
+                        as: "organizationusers"
+                    }
+                },
+                { $unwind: "$organizationusers" },
+                {
+                    $match: {
+                        "organizationusers.userId": loggedUserId
+                    }
+                }]);
+        }
+
+        let organizations: Array<IOrganization> = await OrganizationModel.aggregate(aggregateCriteria).exec();
+
+        organizations = await Promise.all(organizations.map((organization: IOrganization) => {
             return (new OrganizationModel(organization)).hydrate();
         }));
 

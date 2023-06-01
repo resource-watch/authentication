@@ -1479,10 +1479,10 @@
   resolved "https://registry.yarnpkg.com/@types/mocha/-/mocha-10.0.0.tgz#3d9018c575f0e3f7386c1de80ee66cc21fbb7a52"
   integrity sha512-rADY+HtTOA52l9VZWtgQfn4p+UDVM2eDVkMZT1I6syp0YKxW2F9v+0pbRZLsvskhQv/vMb6ZfCay81GHbz5SHg==
 
-"@types/mongoose-aggregate-paginate-v2@^1.0.8":
-  version "1.0.8"
-  resolved "https://registry.yarnpkg.com/@types/mongoose-aggregate-paginate-v2/-/mongoose-aggregate-paginate-v2-1.0.8.tgz#904d1dad761d3dbb2fc3d62da24b1a0d373f53c7"
-  integrity sha512-vIUWdinh9Z4+eFVC78k6/NRCzc0paouwN/KK7Z9gx9DSEN6DMFhbDJQiumdRx2ZqU9W+U3RY7C0onkmgM6/9Zw==
+"@types/mongoose-aggregate-paginate-v2@^1.0.9":
+  version "1.0.9"
+  resolved "https://registry.yarnpkg.com/@types/mongoose-aggregate-paginate-v2/-/mongoose-aggregate-paginate-v2-1.0.9.tgz#3c823a67f17b6ce6b11784a059a23fe71399e5b0"
+  integrity sha512-YKDKtSuE1vzMY/SAtlDTWJr52UhTYdrOypCqyx7T2xFYEWfybLnV98m4ZoVgYJH0XowVl7Y2Gnn6p1sF+3NbLA==
   dependencies:
     mongoose ">=6.3.0"
 

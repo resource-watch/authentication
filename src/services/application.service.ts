@@ -21,6 +21,8 @@ import OktaService from "services/okta.service";
 import PermissionError from "errors/permission.error";
 import ApplicationOrphanedError from "errors/applicationOrphaned.error";
 import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES } from "models/organization-user";
+import { DeleteResourceResult } from "services/delete-user-resources.service";
+import ApplicationUserModel from "models/application-user";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<CreateApplicationsDto>, requestUser: IUser): Promise<IApplication> {
@@ -126,6 +128,17 @@ export default class ApplicationService {
         return returnApplication;
     }
 
+    static async deleteApplicationsByUser(userId: IUserLegacyId): Promise<DeleteResourceResult<IApplication>> {
+        const applications: IApplication[] = await ApplicationService.getApplications({}, userId);
+        await ApplicationModel.deleteMany({ _id: { $in: applications.map((application: IApplication) => application.id.toString()) } });
+        await ApplicationUserModel.deleteMany({ userId });
+
+        return {
+            count: applications.length,
+            deletedData: applications
+        }
+    }
+
     static async getPaginatedApplications(query: FilterQuery<IApplication>, paginationOptions: PaginateOptions, loggedUserId: IUserLegacyId = null): Promise<AggregatePaginateResult<IApplication>> {
 
         let aggregateCriteria: PipelineStage[] = [
@@ -155,14 +168,44 @@ export default class ApplicationService {
 
         const applications: AggregatePaginateResult<IApplication> = await ApplicationModel.aggregatePaginate(aggregate, {
             ...paginationOptions,
-            // https://github.com/DefinitelyTyped/DefinitelyTyped/pull/65410
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
             useFacet: false,
             populate: ['organization', 'user'],
         });
 
         applications.docs = await Promise.all(applications.docs.map((application: IApplication) => {
+            return (new ApplicationModel(application)).hydrate();
+        }));
+
+        return applications;
+    }
+
+    static async getApplications(query: FilterQuery<IApplication>, loggedUserId: IUserLegacyId = null): Promise<Array<IApplication>> {
+        let aggregateCriteria: PipelineStage[] = [
+            { $match: query },
+        ];
+
+        if (loggedUserId !== null) {
+            aggregateCriteria = aggregateCriteria.concat([
+                {
+                    $lookup: {
+                        from: "applicationusers",
+                        localField: "_id",
+                        foreignField: "application",
+                        as: "applicationusers"
+                    }
+                },
+                { $unwind: "$applicationusers" },
+                {
+                    $match: {
+                        "applicationusers.userId": loggedUserId
+                    }
+                }
+            ]);
+        }
+
+        let applications: Array<IApplication> = await ApplicationModel.aggregate(aggregateCriteria).exec();
+
+        applications = await Promise.all(applications.map((application: IApplication) => {
             return (new ApplicationModel(application)).hydrate();
         }));
 

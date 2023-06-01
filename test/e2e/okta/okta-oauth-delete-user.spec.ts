@@ -1,5 +1,5 @@
 import nock from 'nock';
-import chai from 'chai';
+import chai, { expect } from 'chai';
 import type request from 'superagent';
 import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
@@ -249,10 +249,10 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
                 application: testApplication
             }).save();
 
-            mockGetUserById(user, 2);
-            mockOktaDeleteUser(user);
+            mockGetUserById(user, 3);
+            mockOktaDeleteUser(user, 2);
             mockGetUserByOktaId(user.id, user, 1);
-            mockOktaDeleteUser(user);
+            mockDeleteResourcesCalls(user.profile.legacyId);
 
             const response: request.Response = await requester
                 .delete(`/auth/user/${user.profile.legacyId}`)
@@ -274,6 +274,8 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
             response.body.data.should.have.property('updatedAt');
 
             await assertNoConnection({ userId: user.profile.legacyId, application: null });
+            expect(await ApplicationModel.findById(testApplication.id).exec()).to.not.exist;
+            (await ApplicationUserModel.find({ userId: testApplication.id }).exec()).should.be.an('array').and.have.length(0);
         });
     })
 
