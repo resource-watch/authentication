@@ -451,6 +451,10 @@ export class OktaProvider {
             ctx.throw(500, 'Internal server error');
         }
 
+        const user: IUser = Utils.getUser(ctx)
+        const hydratedUser: IUser = await UserModelStub.hydrate(user);
+
+        await UserModelStub.clearOrganizationAssociations(ctx.params.id);
         const deletedApplications: DeleteResourceResult<IApplication> = await ApplicationService.deleteApplicationsByUser(ctx.params.id);
         const deletionData: Partial<IDeletion> = {
             userId: ctx.params.id,
@@ -462,7 +466,7 @@ export class OktaProvider {
             collectionsDeleted: (await DeleteUserResourcesService.deleteCollectionsData(ctx.params.id)).count >= 0,
             favouritesDeleted: (await DeleteUserResourcesService.deleteFavouritesData(ctx.params.id)).count >= 0,
             areasDeleted: (await DeleteUserResourcesService.deleteAreas(ctx.params.id)).count >= 0,
-            applicationsDeleted: (await ApplicationService.deleteApplicationsByUser(ctx.params.id)).count >= 0,
+            applicationsDeleted: deletedApplications.count >= 0,
             storiesDeleted: (await DeleteUserResourcesService.deleteStories(ctx.params.id)).count >= 0,
             dashboardsDeleted: (await DeleteUserResourcesService.deleteSubscriptions(ctx.params.id)).count >= 0,
             subscriptionsDeleted: (await DeleteUserResourcesService.deleteDashboards(ctx.params.id)).count >= 0,
@@ -489,8 +493,9 @@ export class OktaProvider {
         let deletedUser: IUser = null;
         try {
             deletedUser = await OktaService.deleteUser(ctx.params.id);
-            deletedUser = await UserModelStub.hydrate(deletedUser);
-            deletedUser.applications = deletedApplications.deletedData;
+            deletedUser.applications = hydratedUser.applications;
+            deletedUser.organizations = hydratedUser.organizations;
+
             ctx.body = await UserSerializer.serialize(deletedUser);
             deletionData.userAccountDeleted = (deletedUser !== null);
             deletionData.status = (allDataDeleted && deletionData.userDataDeleted) ? DELETION_STATUS_DONE : DELETION_STATUS_PENDING;

@@ -240,7 +240,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
     describe('with associated applications', () => {
         it('Deleting an user with associated applications should be successful and delete the association', async () => {
             const user: OktaUser = getMockOktaUser();
-            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const token: string = mockValidJWT({
+                id: user.profile.legacyId,
+                email: user.profile.email,
+                role: 'ADMIN',
+                extraUserData: { apps: user.profile.apps },
+            });
 
             const testApplication: IApplication = await createApplication();
 
@@ -282,8 +287,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
     describe('with associated organizations', () => {
         it('Deleting an user with associated organizations as ORG_MEMBER should be successful and delete the association', async () => {
             const user: OktaUser = getMockOktaUser();
-            const token: string = mockValidJWT({ role: 'ADMIN' });
-
+            const token: string = mockValidJWT({
+                id: user.profile.legacyId,
+                email: user.profile.email,
+                role: 'ADMIN',
+                extraUserData: { apps: user.profile.apps },
+            });
             const testOrganization: IOrganization = await createOrganization();
 
             await new OrganizationUserModel({
@@ -317,10 +326,10 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
-            await assertNoConnection({ userId: user.profile.legacyId, organization: null });
+            await assertNoConnection({ userId: user.profile.legacyId, organization: testOrganization });
         });
 
-        it('Deleting an user with associated organizations as ORG_ADMIN should be successful and delete the association', async () => {
+        it('Deleting an user with associated organizations as ORG_ADMIN should fail', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({
                 id: user.profile.legacyId,
