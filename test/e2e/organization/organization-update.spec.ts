@@ -1103,6 +1103,38 @@ describe('Update organization tests', () => {
             await assertConnection({ userId: testUser.profile.legacyId, organization });
         });
 
+        it('Update an organization and setting more than one ORG_ADMIN should fail', async () => {
+            const token: string = mockValidJWT({ role: 'ADMIN' });
+            const testUserOne: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+            const testUserTwo: OktaUser = getMockOktaUser({ role: 'ADMIN' });
+
+            const organization: HydratedDocument<IOrganization> = await createOrganization();
+            await new OrganizationUserModel({
+                userId: testUserOne.profile.legacyId,
+                organization,
+                role: 'ORG_ADMIN'
+            }).save();
+
+            const response: request.Response = await requester
+                .patch(`/api/v1/organization/${organization._id.toString()}`)
+                .set('Authorization', `Bearer ${token}`)
+                .send({
+                    name: 'new organization name',
+                    users: [
+                        { id: testUserOne.profile.legacyId, role: ORGANIZATION_ROLES.ORG_ADMIN },
+                        { id: testUserTwo.profile.legacyId, role: ORGANIZATION_ROLES.ORG_ADMIN },
+                    ]
+                });
+
+            response.status.should.equal(400);
+
+            response.body.should.have.property('errors').and.be.an('array').and.length(1);
+            response.body.errors[0].should.have.property('status', 400);
+            response.body.errors[0].should.have.property('detail', '"users" must contain single a user with role ORG_ADMIN');
+
+            await assertConnection({ userId: testUserOne.profile.legacyId, organization });
+        });
+
         it('Update an organization and removing some users while retaining an admin should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testUserOne: OktaUser = getMockOktaUser({ role: 'ADMIN' });
@@ -1177,10 +1209,10 @@ describe('Update organization tests', () => {
                     name: 'new organization name',
                     users: [{
                         id: testUserOne.profile.legacyId,
-                        role: 'ORG_ADMIN'
+                        role: ORGANIZATION_ROLES.ORG_ADMIN
                     }, {
                         id: testUserTwo.profile.legacyId,
-                        role: 'ORG_ADMIN'
+                        role: ORGANIZATION_ROLES.ORG_MEMBER
                     }],
                 });
 
@@ -1200,15 +1232,15 @@ describe('Update organization tests', () => {
             }, {
                 id: testUserTwo.profile.legacyId,
                 name: testUserTwo.profile.displayName,
-                role: 'ORG_ADMIN'
+                role: 'ORG_MEMBER'
             }].sort(sortByNestedName));
             response.body.data.attributes.should.have.property('createdAt');
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseOrganization.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseOrganization.updatedAt);
 
-            await assertConnection({ userId: testUserOne.profile.legacyId, organization });
-            await assertConnection({ userId: testUserTwo.profile.legacyId, organization });
+            await assertConnection({ userId: testUserOne.profile.legacyId, organization, role: ORGANIZATION_ROLES.ORG_ADMIN });
+            await assertConnection({ userId: testUserTwo.profile.legacyId, organization, role: ORGANIZATION_ROLES.ORG_MEMBER });
         });
     })
 

@@ -50,9 +50,11 @@ const createOrganizationValidation: Record<string, any> = {
                     role: Joi.string().valid(ORGANIZATION_ROLES.ORG_ADMIN).required()
                 })
             )
+            .unique((a: any, b: any) => a.role === ORGANIZATION_ROLES.ORG_ADMIN && b.role === ORGANIZATION_ROLES.ORG_ADMIN)
             .required()
             .messages({
                 'array.hasUnknown': `"users" must contain a user with role ORG_ADMIN`,
+                'array.unique': `"users" must contain single a user with role ORG_ADMIN`,
             })
     }
 };
@@ -80,9 +82,11 @@ const updateOrganizationValidation: Record<string, any> = {
                     id: Joi.string().required(),
                     role: Joi.string().valid(ORGANIZATION_ROLES.ORG_ADMIN).required()
                 }))
+            .unique((a: any, b: any) => a.role === ORGANIZATION_ROLES.ORG_ADMIN && b.role === ORGANIZATION_ROLES.ORG_ADMIN)
             .optional()
             .messages({
                 'array.hasUnknown': `"users" must contain a user with role ORG_ADMIN`,
+                'array.unique': `"users" must contain single a user with role ORG_ADMIN`,
             })
     }
 };
