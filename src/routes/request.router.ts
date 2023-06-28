@@ -23,7 +23,7 @@ const validateRequestValidation: Config["validate"] = {
         authorization: Joi.string().required(),
     }).unknown(true),
     body: Joi.object({
-        userToken: Joi.string().required(),
+        userToken: Joi.string().optional(),
         apiKey: Joi.string().optional(),
     })
 };
@@ -32,35 +32,35 @@ const validateRequestValidation: Config["validate"] = {
 class RequestRouter {
     static async validateRequest(ctx: Context): Promise<void> {
         const { userToken, apiKey } = ctx.request.body;
-        logger.debug(`[RequestRouter] Validating userToken: ${userToken} and apiKey ${apiKey ? apiKey : '<not provided>'}`);
-        let decodedUserToken: JWTPayload
-        try {
-            decodedUserToken = (jwt.verify(userToken, Settings.getSettings().jwt.secret) as JWTPayload);
-        } catch (error) {
-            if (error instanceof jwt.JsonWebTokenError) {
-                ctx.throw(401, 'Invalid userToken');
-            } else {
-                ctx.throw(500, 'Internal server error validating userToken');
+        const response: { user?: Record<string, any>, application?: Record<string, any> } = {};
+
+        if (userToken) {
+            logger.debug(`[RequestRouter] Validating userToken: ${userToken} and apiKey ${apiKey ? apiKey : '<not provided>'}`);
+            let decodedUserToken: JWTPayload
+            try {
+                decodedUserToken = (jwt.verify(userToken, Settings.getSettings().jwt.secret) as JWTPayload);
+            } catch (error) {
+                if (error instanceof jwt.JsonWebTokenError) {
+                    ctx.throw(401, 'Invalid userToken');
+                } else {
+                    ctx.throw(500, 'Internal server error validating userToken');
+                }
+                return;
             }
-            return;
-        }
 
-        const isRevoked: boolean = await OktaService.checkRevokedToken(ctx, decodedUserToken);
-        if (isRevoked) {
-            ctx.throw(401, 'Token revoked');
-            return;
-        }
+            const isRevoked: boolean = await OktaService.checkRevokedToken(ctx, decodedUserToken);
+            if (isRevoked) {
+                ctx.throw(401, 'Token revoked');
+                return;
+            }
 
-        const user: IUser = await OktaService.getUserById(decodedUserToken.id);
-        if (!user) {
-            ctx.throw(404, 'User not found');
-            return;
+            const user: IUser = await OktaService.getUserById(decodedUserToken.id);
+            if (!user) {
+                ctx.throw(404, 'User not found');
+                return;
+            }
+            response.user = await UserSerializer.serialize(await UserModelStub.hydrate(user));
         }
-        const serializedUser: Record<string, any> = await UserSerializer.serialize(await UserModelStub.hydrate(user));
-
-        const response: { user: Record<string, any>, application?: Record<string, any> } = {
-            user: serializedUser
-        };
 
         if (apiKey) {
             const application: IApplication = await ApplicationService.getApplicationByApiKey(apiKey);
