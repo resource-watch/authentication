@@ -6,14 +6,15 @@ import request from 'superagent';
 import { getMockOktaUser, mockGetUserById, mockInvalidJWT, mockValidJWT } from '../okta/okta.mocks';
 import { describe } from "mocha";
 import { TOKENS } from "../utils/test.constants";
-import { OktaUser } from "../../../src/services/okta.interfaces";
-import application, { IApplication } from "../../../src/models/application";
+import { OktaUser } from "services/okta.interfaces";
+import application, { IApplication } from "models/application";
 import { createApplication, createOrganization } from "../utils/helpers";
-import ApplicationModel from "../../../src/models/application";
-import OrganizationModel, { IOrganization } from "../../../src/models/organization";
-import OrganizationApplicationModel from "../../../src/models/organization-application";
-import ApplicationUserModel from "../../../src/models/application-user";
-import OrganizationUserModel from "../../../src/models/organization-user";
+import ApplicationModel from "models/application";
+import OrganizationModel, { IOrganization } from "models/organization";
+import OrganizationApplicationModel from "models/organization-application";
+import ApplicationUserModel from "models/application-user";
+import OrganizationUserModel from "models/organization-user";
+import { HydratedDocument } from "mongoose";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -36,7 +37,7 @@ describe('Request validation tests', () => {
     beforeEach(async () => {
     });
 
-    describe('is only accessible to MICROSERVICE', () => {
+    describe('is not accessible to non-MICROSERVICE users', () => {
         it('Request validation while not being logged in should return a 401 \'Unauthorized\' error', async () => {
             const response: request.Response = await requester
                 .post(`/api/v1/request/validate`)
@@ -92,22 +93,48 @@ describe('Request validation tests', () => {
     })
 
     describe('body validation', () => {
-        it('Request validation without required "userToken" body value returns a 400 error', async () => {
+        it('Request validation with body values other than "application" or "userToken" returns a 400 error', async () => {
             const microserviceToken: string = TOKENS.MICROSERVICE
 
             const response: request.Response = await requester
                 .post(`/api/v1/request/validate`)
                 .set('Authorization', `Bearer ${microserviceToken}`)
-                .send({});
+                .send({ "potato": "potato" });
 
             response.status.should.equal(400);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
             response.body.errors[0].should.have.property('status', 400);
-            response.body.errors[0].should.have.property('detail', '"userToken" is required');
+            response.body.errors[0].should.have.property('detail', '"potato" is not allowed');
         });
     })
 
-    it('Request validation while being logged as MICROSERVICE and with a valid userToken should return a 200 (happy case)', async () => {
+    it('Request validation with a valid apiKey and no userToken should return a 200 (happy case)', async () => {
+        const microserviceToken: string = TOKENS.MICROSERVICE
+        const testApplication: HydratedDocument<IApplication> = await createApplication();
+
+        const response: request.Response = await requester
+            .post(`/api/v1/request/validate`)
+            .set('Authorization', `Bearer ${microserviceToken}`)
+            .send({
+                apiKey: testApplication.apiKeyValue
+            });
+
+        response.status.should.equal(200);
+
+        response.body.should.have.property('application')
+        const responseApplication = response.body.application.data;
+        responseApplication.should.have.property('id').and.be.a('string');
+        responseApplication.should.have.property('type').and.equal('applications');
+        responseApplication.should.have.property('attributes').and.be.an('object');
+        responseApplication.attributes.should.have.property('name').and.equal(testApplication.name);
+        responseApplication.attributes.should.have.property('organization').and.equal(null);
+        responseApplication.attributes.should.have.property('user').and.equal(null);
+        responseApplication.attributes.should.have.property('apiKeyValue').and.equal(testApplication.apiKeyValue);
+        responseApplication.attributes.should.have.property('createdAt');
+        responseApplication.attributes.should.have.property('updatedAt');
+    });
+
+    it('Request validation with a valid userToken and no apiKey should return a 200 (happy case)', async () => {
         const microserviceToken: string = TOKENS.MICROSERVICE
         const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
         const token: string = mockValidJWT({
@@ -140,7 +167,7 @@ describe('Request validation tests', () => {
         responseUser.should.have.property('updatedAt');
     });
 
-    it('Request validation while being logged as MICROSERVICE and with an invalid userToken field should return a 401 error', async () => {
+    it('Request validation with an invalid userToken field should return a 401 error', async () => {
         const microserviceToken: string = TOKENS.MICROSERVICE
         const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
         const token: string = mockInvalidJWT({
@@ -163,7 +190,23 @@ describe('Request validation tests', () => {
         response.body.errors[0].should.have.property('detail', 'Invalid userToken');
     });
 
-    it('Request validation while being logged as MICROSERVICE and with valid userToken and apiKey should return a 200 with user and application data', async () => {
+    it('Request validation with an invalid apiKey field should return a 404 error', async () => {
+        const microserviceToken: string = TOKENS.MICROSERVICE
+
+        const response: request.Response = await requester
+            .post(`/api/v1/request/validate`)
+            .set('Authorization', `Bearer ${microserviceToken}`)
+            .send({
+                apiKey: "invalidApiKey"
+            });
+
+        response.status.should.equal(404);
+        response.body.should.have.property('errors').and.be.an('array').and.length(1);
+        response.body.errors[0].should.have.property('status', 404);
+        response.body.errors[0].should.have.property('detail', 'Application not found');
+    });
+
+    it('Request validation with valid userToken and apiKey should return a 200 with user and application data', async () => {
         const microserviceToken: string = TOKENS.MICROSERVICE
         const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
         const token: string = mockValidJWT({
@@ -211,7 +254,7 @@ describe('Request validation tests', () => {
         new Date(responseApplication.attributes.updatedAt).should.equalDate(testApplication.updatedAt);
     });
 
-    it('Request validation while being logged as MICROSERVICE and with valid userToken and apiKey should return a 200 with user and application data - including organization data', async () => {
+    it('Request validation with valid userToken and apiKey should return a 200 with user and application data - including organization data', async () => {
         const microserviceToken: string = TOKENS.MICROSERVICE
         const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
         const token: string = mockValidJWT({
@@ -269,7 +312,7 @@ describe('Request validation tests', () => {
         new Date(responseApplication.attributes.updatedAt).should.equalDate(testApplication.updatedAt);
     });
 
-    it('Request validation while being logged as MICROSERVICE and with valid userToken and apiKey should return a 200 with user and application data - including user data', async () => {
+    it('Request validation with valid userToken and apiKey should return a 200 with user and application data - including user data', async () => {
         const microserviceToken: string = TOKENS.MICROSERVICE
         const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
         const applicationUser: OktaUser = getMockOktaUser({ role: 'USER' });
