@@ -11,8 +11,8 @@ import OktaGoogleProvider from 'providers/okta.google.provider';
 import OktaTwitterProvider, { registerOktaTwitterStrategies } from 'providers/okta.twitter.provider';
 import OrganizationRouter from 'routes/organization.router';
 import ApplicationRouter from 'routes/application.router';
+import RequestRouter from 'routes/request.router';
 import mount from 'koa-mount';
-import RequestRouter from "routes/request.router";
 
 export function loadRoutes(app: Application): void {
     logger.debug('Loading OAuth middleware...');

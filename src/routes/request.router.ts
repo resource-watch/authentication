@@ -38,7 +38,22 @@ class RequestRouter {
             logger.debug(`[RequestRouter] Validating userToken: ${userToken} and apiKey ${apiKey ? apiKey : '<not provided>'}`);
             let decodedUserToken: JWTPayload
             try {
-                decodedUserToken = (jwt.verify(userToken, Settings.getSettings().jwt.secret) as JWTPayload);
+                let splitUserToken: string;
+                const parts: string[] = userToken.split(' ');
+
+                if (parts.length === 2) {
+                    const scheme: string = parts[0];
+                    const credentials: string = parts[1];
+
+                    if (/^Bearer$/i.test(scheme)) {
+                        splitUserToken = credentials;
+                    }
+                } else {
+                    splitUserToken = userToken;
+                }
+
+                const secret: string = Settings.getSettings().jwt.secret;
+                decodedUserToken = (jwt.verify(splitUserToken, secret) as JWTPayload);
             } catch (error) {
                 if (error instanceof jwt.JsonWebTokenError) {
                     ctx.throw(401, 'Invalid userToken');
@@ -48,18 +63,22 @@ class RequestRouter {
                 return;
             }
 
-            const isRevoked: boolean = await OktaService.checkRevokedToken(ctx, decodedUserToken);
-            if (isRevoked) {
-                ctx.throw(401, 'Token revoked');
-                return;
-            }
+            if (decodedUserToken.id === 'microservice') {
+                response.user = { data: { id: 'microservice' } };
+            } else {
+                const isRevoked: boolean = await OktaService.checkRevokedToken(ctx, decodedUserToken);
+                if (isRevoked) {
+                    ctx.throw(401, 'Token revoked');
+                    return;
+                }
 
-            const user: IUser = await OktaService.getUserById(decodedUserToken.id);
-            if (!user) {
-                ctx.throw(404, 'User not found');
-                return;
+                const user: IUser = await OktaService.getUserById(decodedUserToken.id);
+                if (!user) {
+                    ctx.throw(404, 'User not found');
+                    return;
+                }
+                response.user = await UserSerializer.serialize(await UserModelStub.hydrate(user));
             }
-            response.user = await UserSerializer.serialize(await UserModelStub.hydrate(user));
         }
 
         if (apiKey) {

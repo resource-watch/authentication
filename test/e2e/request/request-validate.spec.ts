@@ -167,6 +167,23 @@ describe('Request validation tests', () => {
         responseUser.should.have.property('updatedAt');
     });
 
+    it('Request validation with a valid MICROSERVICE userToken and no apiKey should return a 200 (happy case)', async () => {
+        const microserviceToken: string = TOKENS.MICROSERVICE
+
+        const response: request.Response = await requester
+            .post(`/api/v1/request/validate`)
+            .set('Authorization', `Bearer ${microserviceToken}`)
+            .send({
+                userToken: `Bearer ${microserviceToken}`
+            });
+
+        response.status.should.equal(200);
+
+        response.body.should.have.property('user')
+        const responseUser = response.body.user.data;
+        responseUser.should.have.property('id').and.be.a('string').and.equal('microservice');
+    });
+
     it('Request validation with an invalid userToken field should return a 401 error', async () => {
         const microserviceToken: string = TOKENS.MICROSERVICE
         const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
