@@ -9,6 +9,7 @@ import request from 'superagent';
 import { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
 import { describe } from 'mocha';
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -33,8 +34,11 @@ describe('Get deletions tests', () => {
     });
 
     it('Get deletions while not being logged in should return a 401 error', async () => {
+        mockValidateRequestWithApiKey({});
+
         const response: request.Response = await requester
-            .get(`/api/v1/deletion`);
+            .get(`/api/v1/deletion`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -45,8 +49,11 @@ describe('Get deletions tests', () => {
     it('Get deletions while being logged in as USER should return a 403 error', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/deletion`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -60,8 +67,11 @@ describe('Get deletions tests', () => {
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/deletion`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -98,9 +108,13 @@ describe('Get deletions tests', () => {
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const pendingResponse: request.Response = await requester
             .get(`/api/v1/deletion`)
             .query({ status: 'pending' })
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         pendingResponse.status.should.equal(200);
@@ -111,6 +125,7 @@ describe('Get deletions tests', () => {
         const doneResponse: request.Response = await requester
             .get(`/api/v1/deletion`)
             .query({ status: 'done' })
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         doneResponse.status.should.equal(200);
@@ -128,10 +143,15 @@ describe('Get deletions tests', () => {
 
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const responsePageOne: request.Response = await requester
                 .get(`/api/v1/deletion`)
                 .query({ 'page[size]': 10, 'page[number]': 1 })
-                .set('Authorization', `Bearer ${token}`);
+                .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             responsePageOne.status.should.equal(200);
             responsePageOne.body.should.have.property('data').and.be.an('array').and.length(10);
@@ -145,7 +165,8 @@ describe('Get deletions tests', () => {
             const responsePageTwo: request.Response = await requester
                 .get(`/api/v1/deletion`)
                 .query({ 'page[size]': 10, 'page[number]': 2 })
-                .set('Authorization', `Bearer ${token}`);
+                .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             responsePageTwo.status.should.equal(200);
             responsePageTwo.body.should.have.property('data').and.be.an('array').and.length(10);
@@ -159,7 +180,8 @@ describe('Get deletions tests', () => {
             const responsePageThree: request.Response = await requester
                 .get(`/api/v1/deletion`)
                 .query({ 'page[size]': 10, 'page[number]': 3 })
-                .set('Authorization', `Bearer ${token}`);
+                .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             responsePageThree.status.should.equal(200);
             responsePageThree.body.should.have.property('data').and.be.an('array').and.length(5);
@@ -174,10 +196,13 @@ describe('Get deletions tests', () => {
         it('Get paginated deletions with over 100 results per page should return a 400', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .get(`/api/v1/deletion`)
                 .query({ 'page[size]': 101 })
-                .set('Authorization', `Bearer ${token}`);
+                .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(400);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);

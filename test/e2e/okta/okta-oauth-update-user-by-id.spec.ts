@@ -21,6 +21,7 @@ import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-u
 import ApplicationUserModel from "models/application-user";
 import OrganizationApplicationModel from "models/organization-application";
 import { describe } from "mocha";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 const should: Should = chai.should();
 chai.use(chaiDateTime);
@@ -41,8 +42,10 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
     });
 
     it('Updating a user while not logged in should return a 401', async () => {
+        mockValidateRequestWithApiKey({});
         const response: request.Response = await requester
             .patch(`/auth/user/1`)
+            .set('x-api-key', 'api-key-test')
             .set('Content-Type', 'application/json');
 
         response.status.should.equal(401);
@@ -59,10 +62,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/auth/user/1`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -79,10 +84,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/auth/user/1`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -94,10 +101,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
     it('Updating a user with an id that does not match an existing user should return a 404', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
         mockGetUserByIdNotFound('1234');
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/auth/user/1234`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -117,10 +126,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             role: 'MANAGER',
             apps: ['changed-apps'],
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 email: 'changed-email@example.com',
@@ -159,6 +170,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
 
         mockGetUserById(userToBeUpdated);
         mockOktaUpdateUser(userToBeUpdated, { displayName: 'changed name' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         // Assert value does not exist in cache before
         const value: OktaUser = await CacheService.get(`okta-user-${userToBeUpdated.profile.legacyId}`);
@@ -172,6 +184,7 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
         const response: request.Response = await requester
             .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({ name: 'changed name' });
 
@@ -202,10 +215,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps']
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -265,10 +280,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -328,10 +345,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -387,10 +406,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -444,10 +465,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -495,10 +518,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 application: testApplication,
                 organization: testOrganization
             }).save();
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -550,10 +575,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps']
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -618,10 +645,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -688,10 +717,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -727,7 +758,11 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('createdAt');
             response.body.data.should.have.property('updatedAt');
 
-            await assertConnection({ organization: testOrganization, user: userToBeUpdated, role: ORGANIZATION_ROLES.ORG_MEMBER })
+            await assertConnection({
+                organization: testOrganization,
+                user: userToBeUpdated,
+                role: ORGANIZATION_ROLES.ORG_MEMBER
+            })
             await assertConnection({ application: testUserApplication, user: userToBeUpdated })
             await assertNoConnection({ application: testOrganizationApplication, user: originalOwnerUser })
         });
@@ -753,10 +788,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -793,7 +830,11 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
             response.body.data.should.have.property('updatedAt');
 
             await assertNoConnection({ organization: testOrganizationOne, user: userToBeUpdated })
-            await assertConnection({ organization: testOrganizationTwo, user: userToBeUpdated, role: ORGANIZATION_ROLES.ORG_MEMBER })
+            await assertConnection({
+                organization: testOrganizationTwo,
+                user: userToBeUpdated,
+                role: ORGANIZATION_ROLES.ORG_MEMBER
+            })
         });
 
         it('Updating an user and removing organizations should be successful', async () => {
@@ -815,10 +856,12 @@ describe('[OKTA] Auth endpoints tests - Update user by id', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/${userToBeUpdated.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',

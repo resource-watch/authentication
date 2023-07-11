@@ -14,6 +14,7 @@ import OrganizationApplicationModel from "models/organization-application";
 import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -38,8 +39,10 @@ describe('Get organizations tests', () => {
     });
 
     it('Get organizations while not being logged in should return a 401 error', async () => {
+        mockValidateRequestWithApiKey({});
         const response: request.Response = await requester
-            .get(`/api/v1/organization`);
+            .get(`/api/v1/organization`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -55,6 +58,7 @@ describe('Get organizations tests', () => {
             role: testUser.profile.role,
             extraUserData: { apps: testUser.profile.apps },
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const testUserOrganization: HydratedDocument<IOrganization> = await createOrganization();
         await createOrganization();
@@ -68,6 +72,7 @@ describe('Get organizations tests', () => {
 
         const response: request.Response = await requester
             .get(`/api/v1/organization`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -87,9 +92,11 @@ describe('Get organizations tests', () => {
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/organization`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -109,9 +116,11 @@ describe('Get organizations tests', () => {
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/organization`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -149,10 +158,13 @@ describe('Get organizations tests', () => {
             }
 
             mockGetUserById(testUser, 13);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const responsePageOne: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 1 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageOne.status.should.equal(200);
@@ -167,6 +179,7 @@ describe('Get organizations tests', () => {
             const responsePageTwo: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 2 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageTwo.status.should.equal(200);
@@ -186,10 +199,14 @@ describe('Get organizations tests', () => {
             }
 
             const token: string = mockValidJWT({ role: 'MANAGER' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const responsePageOne: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 1 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageOne.status.should.equal(200);
@@ -204,6 +221,7 @@ describe('Get organizations tests', () => {
             const responsePageTwo: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 2 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageTwo.status.should.equal(200);
@@ -218,6 +236,7 @@ describe('Get organizations tests', () => {
             const responsePageThree: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 3 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageThree.status.should.equal(200);
@@ -237,10 +256,14 @@ describe('Get organizations tests', () => {
             }
 
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const responsePageOne: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 1 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageOne.status.should.equal(200);
@@ -255,6 +278,7 @@ describe('Get organizations tests', () => {
             const responsePageTwo: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 2 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageTwo.status.should.equal(200);
@@ -269,6 +293,7 @@ describe('Get organizations tests', () => {
             const responsePageThree: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 10, 'page[number]': 3 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             responsePageThree.status.should.equal(200);
@@ -283,10 +308,12 @@ describe('Get organizations tests', () => {
 
         it('Get paginated organizations with over 100 results per page should return a 400', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization`)
                 .query({ 'page[size]': 101 })
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(400);
@@ -306,9 +333,11 @@ describe('Get organizations tests', () => {
                 organization: testOrganization,
                 application: testApplication
             }).save();
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -337,6 +366,7 @@ describe('Get organizations tests', () => {
             const testOrganization: IOrganization = await createOrganization();
 
             mockGetUserById(testUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             await new OrganizationUserModel({
                 organization: testOrganization,
@@ -346,6 +376,7 @@ describe('Get organizations tests', () => {
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);

@@ -11,6 +11,8 @@ import OrganizationApplicationModel from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
+import organization from "models/organization";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -20,10 +22,14 @@ let requester: ChaiHttp.Agent;
 nock.disableNetConnect();
 nock.enableNetConnect(process.env.HOST_IP);
 
-const sendCreateOrganizationRequest: (token: string, organization?: Partial<CreateOrganizationsDto>) => Promise<request.Response> = async (token: string, organization: Partial<CreateOrganizationsDto> = {}) => requester
-    .post(`/api/v1/organization`)
-    .set('Authorization', `Bearer ${token}`)
-    .send({ ...organization });
+const sendCreateOrganizationRequest: (token: string, organization?: Partial<CreateOrganizationsDto>) => Promise<request.Response> = async (token: string, organization: Partial<CreateOrganizationsDto> = {}) => {
+    mockValidateRequestWithApiKeyAndUserToken({ token });
+    return requester
+        .post(`/api/v1/organization`)
+        .set('Authorization', `Bearer ${token}`)
+        .set('x-api-key', 'api-key-test')
+        .send({ ...organization });
+}
 
 describe('Create organization tests', () => {
 
@@ -40,8 +46,10 @@ describe('Create organization tests', () => {
     });
 
     it('Create a organization while not being logged in should return a 401 \'Unauthorized\' error', async () => {
+        mockValidateRequestWithApiKey({});
         const response: request.Response = await requester
             .post(`/api/v1/organization`)
+            .set('x-api-key', 'api-key-test')
             .send({});
 
         response.status.should.equal(401);

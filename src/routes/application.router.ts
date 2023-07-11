@@ -22,6 +22,7 @@ const Joi: typeof router.Joi = router.Joi;
 const getApplicationsValidation: Record<string, any> = {
     query: {
         loggedUser: Joi.any().optional(),
+        requestApplication: Joi.any().optional(),
         userId: Joi.string().optional(),
         page: Joi.object({
             number: Joi.number().integer().min(1).default(1),
@@ -32,21 +33,17 @@ const getApplicationsValidation: Record<string, any> = {
 
 const createApplicationValidation: Record<string, any> = {
     type: 'json',
-    query: {
-        loggedUser: Joi.any().optional(),
-    },
     body: Joi.object({
         name: Joi.string().required(),
         organization: Joi.string().optional(),
-        user: Joi.string().optional()
+        user: Joi.string().optional(),
+        loggedUser: Joi.any().optional(),
+        requestApplication: Joi.any().optional(),
     }).oxor('user', 'organization')
 };
 
 const updateApplicationValidation: Record<string, any> = {
     type: 'json',
-    query: {
-        loggedUser: Joi.any().optional(),
-    },
     params: {
         id: Joi.string().required(),
     },
@@ -54,7 +51,9 @@ const updateApplicationValidation: Record<string, any> = {
         name: Joi.string().optional(),
         organization: Joi.string(),
         user: Joi.string(),
-        regenApiKey: Joi.boolean().optional()
+        regenApiKey: Joi.boolean().optional(),
+        loggedUser: Joi.any().optional(),
+        requestApplication: Joi.any().optional(),
     }).oxor('user', 'organization')
 };
 
@@ -70,6 +69,8 @@ class ApplicationRouter {
 
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
+        delete originalQuery.loggedUser;
+        delete originalQuery.requestApplication;
         const serializedQuery: string = Utils.serializeObjToQuery(originalQuery) ? `?${Utils.serializeObjToQuery(originalQuery)}&` : '?';
         const apiVersion: string = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;

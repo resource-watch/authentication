@@ -11,6 +11,7 @@ import { createApplication, createOrganization } from "../utils/helpers";
 import ApplicationUserModel from "models/application-user";
 import { IOrganization } from "models/organization";
 import OrganizationUserModel from "models/organization-user";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 
@@ -30,8 +31,10 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users without being logged in returns a 401', async () => {
+        mockValidateRequestWithApiKey({});
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .send({});
 
         response.status.should.equal(401);
@@ -39,9 +42,11 @@ describe('[OKTA] Find users by id', () => {
 
     it('Find users while being logged in as a regular user returns a 401 error', async () => {
         const token: string = mockValidJWT();
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 
@@ -51,8 +56,10 @@ describe('[OKTA] Find users by id', () => {
     });
 
     it('Find users without ids in body returns a 400 error', async () => {
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({});
 
@@ -63,9 +70,11 @@ describe('[OKTA] Find users by id', () => {
 
     it('Find users with id list containing non-object ids returns an empty list (invalid ids are ignored)', async () => {
         mockOktaListUsers({ limit: 200, search: `((profile.legacyId eq "123"))` }, []);
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({ ids: ['123'] });
 
@@ -75,9 +84,11 @@ describe('[OKTA] Find users by id', () => {
 
     it('Find users with id list containing user that does not exist returns an empty list (empty db)', async () => {
         mockOktaListUsers({ limit: 200, search: `((profile.legacyId eq "58333dcfd9f39b189ca44c75"))` }, []);
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({ ids: ['58333dcfd9f39b189ca44c75'] });
 
@@ -88,9 +99,11 @@ describe('[OKTA] Find users by id', () => {
     it('Find users with id list containing a user that exists returns only the listed user', async () => {
         const user: OktaUser = getMockOktaUser();
         mockOktaListUsers({ limit: 200, search: `((profile.legacyId eq "${user.id}"))` }, [user]);
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({ ids: [user.id] });
 
@@ -115,9 +128,11 @@ describe('[OKTA] Find users by id', () => {
             { limit: 200, search: `((profile.legacyId eq "${userOne.id}") or (profile.legacyId eq "${userTwo.id}"))` },
             [userOne, userTwo]
         );
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({ ids: [userOne.id, userTwo.id] });
 
@@ -150,9 +165,11 @@ describe('[OKTA] Find users by id', () => {
             { limit: 200, search: `((profile.legacyId eq "${userOne.id}"))` },
             [userOne]
         );
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .post(`/auth/user/find-by-ids?ids=123333`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
             .send({ ids: [userOne.id] });
 
@@ -185,9 +202,11 @@ describe('[OKTA] Find users by id', () => {
                 { limit: 200, search: `((profile.legacyId eq "${user.id}"))` },
                 [user]
             );
+            mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
             const response: request.Response = await requester
                 .post(`/auth/user/find-by-ids`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
                 .send({ ids: [user.id] });
 
@@ -223,9 +242,11 @@ describe('[OKTA] Find users by id', () => {
                 { limit: 200, search: `((profile.legacyId eq "${user.id}"))` },
                 [user]
             );
-            
+            mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
+
             const response: request.Response = await requester
                 .post(`/auth/user/find-by-ids`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`)
                 .send({ ids: [user.id] });
 

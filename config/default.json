@@ -1,4 +1,7 @@
 {
+  "service": {
+    "name": "authorization"
+  },
   "redis": {
     "url": "redis://localhost:6379",
     "defaultTTL": 86400

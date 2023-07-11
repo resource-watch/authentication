@@ -21,6 +21,9 @@ services:
       HOST_IP: 127.0.0.1
       FASTLY_ENABLED: "false"
       GFW_APPLE_AUTH_KEY: "test"
+      AWS_REGION: "us-east-1"
+      AWS_ACCESS_KEY_ID: "test"
+      AWS_SECRET_ACCESS_KEY: "test"
       MONGO_HOST: mongo
     command: test
     depends_on:

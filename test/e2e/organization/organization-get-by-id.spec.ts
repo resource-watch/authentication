@@ -13,6 +13,7 @@ import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-u
 import ApplicationUserModel from "models/application-user";
 import { describe } from "mocha";
 import { OktaUser } from "services/okta.interfaces";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -37,10 +38,12 @@ describe('Get organization by id tests', () => {
     });
 
     it('Get organization by id without being authenticated should return a 401 \'Not authenticated\' error', async () => {
+        mockValidateRequestWithApiKey({});
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
-            .get(`/api/v1/organization/${organization._id.toString()}`);
+            .get(`/api/v1/organization/${organization._id.toString()}`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -51,12 +54,14 @@ describe('Get organization by id tests', () => {
     describe('USER role', () => {
         it('Get organization by id while being authenticated as user with USER role that does not belong to the organization should return a 403 \'Not authorized\' error', async () => {
             const token: string = mockValidJWT({ role: 'USER' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization/${organization._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+               .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(403);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -73,6 +78,7 @@ describe('Get organization by id tests', () => {
                 extraUserData: { apps: testUser.profile.apps },
             });
             mockGetUserById(testUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -84,7 +90,8 @@ describe('Get organization by id tests', () => {
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization/${organization._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+               .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
 
@@ -110,6 +117,7 @@ describe('Get organization by id tests', () => {
                 extraUserData: { apps: testUser.profile.apps },
             });
             mockGetUserById(testUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -121,7 +129,8 @@ describe('Get organization by id tests', () => {
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization/${organization._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+               .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
 
@@ -141,11 +150,13 @@ describe('Get organization by id tests', () => {
 
     it('Get organization by id while being authenticated as a MANAGER user should return a 200 and the organization data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
             .get(`/api/v1/organization/${organization._id.toString()}`)
+           .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -163,11 +174,13 @@ describe('Get organization by id tests', () => {
 
     it('Get organization by id while being authenticated as an ADMIN user should return a 200 and the organization data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
             .get(`/api/v1/organization/${organization._id.toString()}`)
+           .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -186,9 +199,11 @@ describe('Get organization by id tests', () => {
 
     it('Get organization by id for an invalid id should return a 404 \'User not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/organization/1234`)
+           .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -199,9 +214,11 @@ describe('Get organization by id tests', () => {
 
     it('Get organization by id for an valid id that does not exist on the database should return a 404 \'User not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/organization/${new mongoose.Types.ObjectId()}`)
+           .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -213,6 +230,7 @@ describe('Get organization by id tests', () => {
     describe('with associated applications', () => {
         it('Get organization by id with associated application should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
             const testApplication: IApplication = await createApplication();
 
             const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
@@ -220,7 +238,8 @@ describe('Get organization by id tests', () => {
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization/${testOrganization._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+               .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
 
@@ -248,6 +267,7 @@ describe('Get organization by id tests', () => {
             const testOrganization: IOrganization = await createOrganization();
 
             mockGetUserById(testUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             await new OrganizationUserModel({
                 organization: testOrganization,
@@ -257,7 +277,8 @@ describe('Get organization by id tests', () => {
 
             const response: request.Response = await requester
                 .get(`/api/v1/organization/${testOrganization._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+               .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
             response.body.data.should.have.property('type').and.equal('organizations');
