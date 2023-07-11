@@ -21,6 +21,7 @@ import ApplicationUserModel from "models/application-user";
 import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 import { describe } from "mocha";
 import application from "models/application";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -41,8 +42,11 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
     });
 
     it('Creating an user while not logged in should return 401 Unauthorized', async () => {
+        mockValidateRequestWithApiKey({});
+
         const response: request.Response = await requester
             .post(`/auth/user`)
+            .set('x-api-key', 'api-key-test')
             .set('Content-Type', 'application/json');
 
         response.status.should.equal(401);
@@ -53,9 +57,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
 
     it('Creating an user while logged in as a USER should return 403 Forbidden', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -66,9 +73,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
 
     it('Creating an ADMIN user while logged in as a MANAGER should return 403 Forbidden', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({ role: 'ADMIN' });
 
@@ -80,9 +90,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
 
     it('Creating an user while logged in as a MANAGER not providing apps should return 400 Bad Request', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({ role: 'USER' });
 
@@ -100,10 +113,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
             email
         });
         mockOktaFailedSignUp('login: An object with this field already exists in the current organization');
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 role: 'USER',
@@ -119,9 +134,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
 
     it('Creating an user with apps that the current user does not manage should return 403 Forbidden', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 role: 'USER',
@@ -149,10 +167,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
             provider: OktaOAuthProvider.LOCAL,
         });
         mockOktaSendActivationEmail(user);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 role: user.profile.role,
@@ -186,10 +206,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
             provider: OktaOAuthProvider.LOCAL,
         });
         mockOktaSendActivationEmail(user);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .post(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 role: user.profile.role,
@@ -241,11 +263,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -289,11 +313,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 }).save();
 
                 mockGetUserById(appUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -337,10 +363,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     application: testApplication.id
                 }).save();
 
+                mockValidateRequestWithApiKeyAndUserToken({ token });
+
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -392,11 +421,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -433,7 +464,6 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     extraUserData: { apps: requestUser.profile.apps },
                 });
 
-
                 const newUser: OktaUser = getMockOktaUser();
 
                 await new ApplicationUserModel({
@@ -450,11 +480,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -506,10 +538,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         role: newUser.profile.role,
@@ -567,11 +601,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -628,10 +664,12 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         role: newUser.profile.role,
@@ -679,11 +717,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     organization: testOrganization,
                     role: ORGANIZATION_ROLES.ORG_MEMBER
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -718,11 +758,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     organization: testOrganization,
                     role: ORGANIZATION_ROLES.ORG_MEMBER
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -738,7 +780,11 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
 
                 await assertNoConnection({ organization: testOrganization, user: newUser })
-                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: requestUser,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                })
             });
 
             it('Creating a user while being logged in as MANAGER and associating with ORG_MEMBER with an organization that the current user is an admin of should succeed', async () => {
@@ -770,11 +816,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -793,8 +841,16 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 response.body.should.have.property('extraUserData').and.eql({ apps });
                 response.body.should.have.property('photo').and.eql(newUser.profile.photo);
 
-                await assertConnection({ organization: testOrganization, user: newUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
-                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: newUser,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: requestUser,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                })
             });
 
             it('Creating a user while being logged in as MANAGER and associating with ORG_ADMIN with an organization that the current user is an admin of should fail', async () => {
@@ -816,11 +872,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     organization: testOrganization,
                     role: ORGANIZATION_ROLES.ORG_ADMIN
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -836,7 +894,11 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
 
                 await assertNoConnection({ organization: testOrganization, user: newUser })
-                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: requestUser,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                })
             });
 
             it('Creating a user while being logged in as MANAGER and associating an organization that\'s not associated with the current user should fail', async () => {
@@ -859,11 +921,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     organization: testOrganization,
                     role: ORGANIZATION_ROLES.ORG_ADMIN
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -896,7 +960,6 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     extraUserData: { apps: requestUser.profile.apps },
                 });
 
-
                 const newUser: OktaUser = getMockOktaUser();
 
                 await new OrganizationUserModel({
@@ -914,11 +977,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -937,8 +1002,16 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 response.body.should.have.property('extraUserData').and.eql({ apps });
                 response.body.should.have.property('photo').and.eql(newUser.profile.photo);
 
-                await assertConnection({ organization: testOrganization, user: newUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
-                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: newUser,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: requestUser,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                })
             });
 
             it('Creating a user while being logged in as ADMIN and associating with ORG_ADMIN with an organization that the current user is a member of should succeed', async () => {
@@ -953,7 +1026,6 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     extraUserData: { apps: requestUser.profile.apps },
                 });
 
-
                 const newUser: OktaUser = getMockOktaUser();
 
                 await new OrganizationUserModel({
@@ -961,11 +1033,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     organization: testOrganization,
                     role: ORGANIZATION_ROLES.ORG_MEMBER
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -981,7 +1055,11 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
 
                 await assertNoConnection({ organization: testOrganization, user: newUser })
-                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: requestUser,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                })
             });
 
             it('Creating a user while being logged in as ADMIN and associating with ORG_MEMBER with an organization that the current user is an admin of should succeed', async () => {
@@ -1013,11 +1091,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -1036,8 +1116,16 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 response.body.should.have.property('extraUserData').and.eql({ apps });
                 response.body.should.have.property('photo').and.eql(newUser.profile.photo);
 
-                await assertConnection({ organization: testOrganization, user: newUser, role: ORGANIZATION_ROLES.ORG_MEMBER })
-                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: newUser,
+                    role: ORGANIZATION_ROLES.ORG_MEMBER
+                })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: requestUser,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                })
             });
 
             it('Creating a user while being logged in as ADMIN and associating with ORG_ADMIN with an organization that the current user is an admin of should fail', async () => {
@@ -1059,11 +1147,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     organization: testOrganization,
                     role: ORGANIZATION_ROLES.ORG_ADMIN
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },
@@ -1079,7 +1169,11 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                 response.body.errors[0].detail.should.equal('"organizations[0].role" must be [ORG_MEMBER]');
 
                 await assertNoConnection({ organization: testOrganization, user: newUser })
-                await assertConnection({ organization: testOrganization, user: requestUser, role: ORGANIZATION_ROLES.ORG_ADMIN })
+                await assertConnection({
+                    organization: testOrganization,
+                    user: requestUser,
+                    role: ORGANIZATION_ROLES.ORG_ADMIN
+                })
             });
 
             it('Creating a user while being logged in as ADMIN and associating an organization that\'s not associated with the current user should succeed', async () => {
@@ -1112,11 +1206,13 @@ describe('[OKTA] User management endpoints tests - Create user', () => {
                     provider: OktaOAuthProvider.LOCAL,
                 });
                 mockOktaSendActivationEmail(newUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .post(`/auth/user`)
                     .set('Content-Type', 'application/json')
                     .set('Authorization', `Bearer ${token}`)
+                    .set('x-api-key', 'api-key-test')
                     .send({
                         role: newUser.profile.role,
                         extraUserData: { apps },

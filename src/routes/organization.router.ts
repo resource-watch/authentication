@@ -21,6 +21,7 @@ const Joi: typeof router.Joi = router.Joi;
 const getOrganizationsValidation: Record<string, any> = {
     query: {
         loggedUser: Joi.any().optional(),
+        requestApplication: Joi.any().optional(),
         userId: Joi.string().optional(),
         page: Joi.object({
             number: Joi.number().integer().min(1).default(1),
@@ -31,9 +32,6 @@ const getOrganizationsValidation: Record<string, any> = {
 
 const createOrganizationValidation: Record<string, any> = {
     type: 'json',
-    query: {
-        loggedUser: Joi.any().optional(),
-    },
     body: {
         name: Joi.string().required(),
         applications: Joi.array().items(Joi.string()).optional(),
@@ -55,15 +53,14 @@ const createOrganizationValidation: Record<string, any> = {
             .messages({
                 'array.hasUnknown': `"users" must contain a user with role ORG_ADMIN`,
                 'array.unique': `"users" must contain single a user with role ORG_ADMIN`,
-            })
+            }),
+        loggedUser: Joi.any().optional(),
+        requestApplication: Joi.any().optional(),
     }
 };
 
 const updateOrganizationValidation: Record<string, any> = {
     type: 'json',
-    query: {
-        loggedUser: Joi.any().optional(),
-    },
     params: {
         id: Joi.string().required(),
     },
@@ -87,7 +84,9 @@ const updateOrganizationValidation: Record<string, any> = {
             .messages({
                 'array.hasUnknown': `"users" must contain a user with role ORG_ADMIN`,
                 'array.unique': `"users" must contain single a user with role ORG_ADMIN`,
-            })
+            }),
+        loggedUser: Joi.any().optional(),
+        requestApplication: Joi.any().optional(),
     }
 };
 
@@ -103,6 +102,8 @@ class OrganizationRouter {
 
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
+        delete originalQuery.loggedUser;
+        delete originalQuery.requestApplication;
         const serializedQuery: string = Utils.serializeObjToQuery(originalQuery) ? `?${Utils.serializeObjToQuery(originalQuery)}&` : '?';
         const apiVersion: string = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;

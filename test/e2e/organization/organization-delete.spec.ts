@@ -12,6 +12,7 @@ import OrganizationApplicationModel from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -37,9 +38,11 @@ describe('Delete organization tests', () => {
 
     it('Delete a organization while not being logged in should return a 401 \'Not authenticated\' error', async () => {
         const organization: HydratedDocument<IOrganization> = await createOrganization();
+        mockValidateRequestWithApiKey({});
 
         const response: request.Response = await requester
-            .delete(`/api/v1/organization/${organization._id.toString()}`);
+            .delete(`/api/v1/organization/${organization._id.toString()}`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -49,11 +52,13 @@ describe('Delete organization tests', () => {
 
     it('Delete a organization while being logged in as USER user should return a 403 \'Not authorized\' error', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
             .delete(`/api/v1/organization/${organization._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 
@@ -65,11 +70,13 @@ describe('Delete organization tests', () => {
 
     it('Delete a organization while being logged in as MANAGER user should return a 403 \'Not authorized\' error', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
             .delete(`/api/v1/organization/${organization._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 
@@ -81,9 +88,11 @@ describe('Delete organization tests', () => {
 
     it('Delete a organization that does not exist while being logged in as ADMIN user should return a 404 \'Organization not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
-            .patch(`/api/v1/organization/${new mongoose.Types.ObjectId().toString()}`)
+            .delete(`/api/v1/organization/${new mongoose.Types.ObjectId().toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 
@@ -95,11 +104,13 @@ describe('Delete organization tests', () => {
 
     it('Delete a organization while being logged in with that user should return a 200 and the user data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
             .delete(`/api/v1/organization/${organization._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 
@@ -129,11 +140,13 @@ describe('Delete organization tests', () => {
                 role: testUser.profile.role,
                 extraUserData: { apps: testUser.profile.apps },
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
             const response: request.Response = await requester
                 .delete(`/api/v1/organization/${organization._id.toString()}`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({});
 
@@ -154,9 +167,11 @@ describe('Delete organization tests', () => {
                 organization: testOrganization,
                 application: testApplication
             }).save();
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/organization/${testOrganization._id.toString()}`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({});
 
@@ -176,6 +191,7 @@ describe('Delete organization tests', () => {
             const testOrganization: HydratedDocument<IOrganization> = await createOrganization();
 
             mockGetUserById(testUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             await new OrganizationUserModel({
                 organization: testOrganization,
@@ -185,6 +201,7 @@ describe('Delete organization tests', () => {
 
             const response: request.Response = await requester
                 .delete(`/api/v1/organization/${testOrganization._id.toString()}`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({});
 

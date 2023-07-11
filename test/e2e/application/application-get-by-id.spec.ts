@@ -13,6 +13,7 @@ import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-u
 import ApplicationUserModel from "models/application-user";
 import { describe } from "mocha";
 import { OktaUser } from "services/okta.interfaces";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -39,8 +40,11 @@ describe('Get application by id tests', () => {
     it('Get application by id without being authenticated should return a 401 \'Unauthorized\' error', async () => {
         const application: HydratedDocument<IApplication> = await createApplication();
 
+        mockValidateRequestWithApiKey({});
+
         const response: request.Response = await requester
-            .get(`/api/v1/application/${application._id.toString()}`);
+            .get(`/api/v1/application/${application._id.toString()}`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -53,9 +57,12 @@ describe('Get application by id tests', () => {
 
         const application: HydratedDocument<IApplication> = await createApplication();
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/application/${application._id.toString()}`)
-            .set('Authorization', `Bearer ${token}`);
+            .set('Authorization', `Bearer ${token}`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(403);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -63,7 +70,7 @@ describe('Get application by id tests', () => {
         response.body.errors[0].should.have.property('detail').and.equal('Not authorized');
     });
 
-    describe('USER role' , () => {
+    describe('USER role', () => {
         it('Get application by id while being logged in as USER that owns the application should return a 200 and application data', async () => {
             const testUser: OktaUser = getMockOktaUser({ role: 'USER' });
             const token: string = mockValidJWT({
@@ -81,10 +88,12 @@ describe('Get application by id tests', () => {
             }).save();
 
             mockGetUserById(testUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+                .set('Authorization', `Bearer ${token}`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(200);
             response.body.data.should.have.property('type').and.equal('applications');
@@ -121,9 +130,12 @@ describe('Get application by id tests', () => {
                 role: ORGANIZATION_ROLES.ORG_MEMBER
             }).save();
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+                .set('Authorization', `Bearer ${token}`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(200);
             response.body.data.should.have.property('type').and.equal('applications');
@@ -154,9 +166,12 @@ describe('Get application by id tests', () => {
                 application: application._id.toString()
             }).save();
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
-                .set('Authorization', `Bearer ${token}`);
+                .set('Authorization', `Bearer ${token}`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(403);
             response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -165,7 +180,7 @@ describe('Get application by id tests', () => {
         });
     });
 
-    describe('MANAGER role' , () => {
+    describe('MANAGER role', () => {
         it('Get application by id while being logged in as MANAGER that owns the application should return a 200 and application data', async () => {
             const testUser: OktaUser = getMockOktaUser({ role: 'MANAGER' });
             const token: string = mockValidJWT({
@@ -184,8 +199,11 @@ describe('Get application by id tests', () => {
 
             mockGetUserById(testUser);
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -219,8 +237,11 @@ describe('Get application by id tests', () => {
 
             mockGetUserById(otherUser);
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -241,8 +262,11 @@ describe('Get application by id tests', () => {
 
         const application: HydratedDocument<IApplication> = await createApplication();
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/application/${application._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -262,8 +286,11 @@ describe('Get application by id tests', () => {
     it('Get application by id for an invalid id should return a 404 \'Application not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/application/1234`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -275,8 +302,11 @@ describe('Get application by id tests', () => {
     it('Get application by id for an valid id that does not exist on the database should return a 404 \'Application not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/application/${new mongoose.Types.ObjectId()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -296,8 +326,11 @@ describe('Get application by id tests', () => {
                 organization: testOrganization
             }).save();
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .get(`/api/v1/application/${testApplication._id.toString()}`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -337,8 +370,11 @@ describe('Get application by id tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .get(`/api/v1/application/${testApplication._id.toString()}`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);

@@ -1,5 +1,9 @@
 import nock from "nock";
 import { IUserLegacyId } from "services/okta.interfaces";
+import { mockCloudWatchLogRequestsSequence, mockValidateRequest } from "rw-api-microservice-node/dist/test-mocks";
+import config from "config";
+import { ApplicationValidationResponse, UserValidationResponse } from "rw-api-microservice-node/dist/types";
+import * as constants from "constants";
 
 export const mockGetResourcesCalls =
     (userId: IUserLegacyId) => {
@@ -1006,3 +1010,95 @@ export const mockDeleteResourcesCalls = (userId: IUserLegacyId) => {
             ]
         });
 }
+
+const USER: UserValidationResponse = {
+    id: '1a10d7c6e0a37126611fd7a5',
+    name: 'test user',
+    role: 'USER',
+    provider: 'local',
+    email: 'user@control-tower.org',
+    extraUserData: {
+        apps: [
+            'rw',
+            'gfw',
+            'gfw-climate',
+            'prep',
+            'aqueduct',
+            'forest-atlas',
+            'data4sdgs'
+        ]
+    }
+};
+
+const APPLICATION: ApplicationValidationResponse = {
+    data: {
+        type: "applications",
+        id: "649c4b204967792f3a4e52c9",
+        attributes: {
+            name: "grouchy-armpit",
+            organization: null,
+            user: null,
+            apiKeyValue: "a1a9e4c3-bdff-4b6b-b5ff-7a60a0454e13",
+            createdAt: "2023-06-28T15:00:48.149Z",
+            updatedAt: "2023-06-28T15:00:48.149Z"
+        }
+    }
+};
+
+const USER_TOKEN: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjFhMTBkN2M2ZTBhMzcxMjY2MTFmZDdhNSIsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJyb2xlIjoiVVNFUiIsInByb3ZpZGVyIjoibG9jYWwiLCJlbWFpbCI6InVzZXJAY29udHJvbC10b3dlci5vcmciLCJleHRyYVVzZXJEYXRhIjp7ImFwcHMiOlsicnciLCJnZnciLCJnZnctY2xpbWF0ZSIsInByZXAiLCJhcXVlZHVjdCIsImZvcmVzdC1hdGxhcyIsImRhdGE0c2RncyJdfX0.R_RT47-wVCLtXNmDyfy7KGhSASUayVBW6KKsdxtphPc';
+
+export const mockValidateRequestWithUserToken = (apiKey: string): void => {
+    mockValidateRequest({
+        gatewayUrl: process.env.GATEWAY_URL,
+        microserviceToken: process.env.MICROSERVICE_TOKEN,
+        application: APPLICATION,
+        apiKey
+    });
+    mockCloudWatchLogRequestsSequence({
+        application: APPLICATION,
+        awsRegion: process.env.AWS_REGION,
+        logGroupName: process.env.CLOUDWATCH_LOG_GROUP_NAME,
+        logStreamName: config.get('service.name')
+    });
+};
+
+export const mockValidateRequestWithApiKey = ({
+                                                  apiKey = 'api-key-test',
+                                                  application = APPLICATION
+                                              }): void => {
+    mockValidateRequest({
+        gatewayUrl: process.env.GATEWAY_URL,
+        microserviceToken: process.env.MICROSERVICE_TOKEN,
+        application,
+        apiKey
+    });
+    mockCloudWatchLogRequestsSequence({
+        application,
+        awsRegion: process.env.AWS_REGION,
+        logGroupName: process.env.CLOUDWATCH_LOG_GROUP_NAME,
+        logStreamName: config.get('service.name')
+    });
+};
+
+export const mockValidateRequestWithApiKeyAndUserToken = ({
+                                                              apiKey = 'api-key-test',
+                                                              token = USER_TOKEN,
+                                                              application = APPLICATION,
+                                                              user = USER
+                                                          }): void => {
+    mockValidateRequest({
+        gatewayUrl: process.env.GATEWAY_URL,
+        microserviceToken: process.env.MICROSERVICE_TOKEN,
+        user,
+        application,
+        token,
+        apiKey
+    });
+    mockCloudWatchLogRequestsSequence({
+        user,
+        application,
+        awsRegion: process.env.AWS_REGION,
+        logGroupName: process.env.CLOUDWATCH_LOG_GROUP_NAME,
+        logStreamName: config.get('service.name')
+    });
+};

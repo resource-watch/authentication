@@ -7,6 +7,7 @@ import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { createDeletion } from '../utils/helpers';
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -18,6 +19,7 @@ nock.enableNetConnect(process.env.HOST_IP);
 
 const sendCreateDeletionRequest: (token: string, deletion?: Partial<IDeletion>) => Promise<request.Response> = async (token: string, deletion: Partial<IDeletion> = {}) => requester
     .post(`/api/v1/deletion`)
+    .set('x-api-key', 'api-key-test')
     .set('Authorization', `Bearer ${token}`)
     .send({ ...deletion });
 
@@ -36,8 +38,11 @@ describe('Create deletion tests', () => {
     });
 
     it('Create a deletion while not being logged in should return a 401 \'Unauthorized\' error', async () => {
+        mockValidateRequestWithApiKey({});
+
         const response: request.Response = await requester
             .post(`/api/v1/deletion`)
+            .set('x-api-key', 'api-key-test')
             .send({});
 
         response.status.should.equal(401);
@@ -48,6 +53,8 @@ describe('Create deletion tests', () => {
 
     it('Create a deletion while being logged in as USER should return a 403', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
+
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await sendCreateDeletionRequest(token);
 
@@ -61,6 +68,9 @@ describe('Create deletion tests', () => {
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
         const token: string = mockValidJWT({ id: deletion.userId, role: 'ADMIN' });
+
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await sendCreateDeletionRequest(token);
 
         response.status.should.equal(400);
@@ -71,6 +81,8 @@ describe('Create deletion tests', () => {
 
     it('Create a deletion while being logged in as ADMIN should return a 200 (happy case - no deletion data)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await sendCreateDeletionRequest(token);
         response.status.should.equal(200);
@@ -105,6 +117,8 @@ describe('Create deletion tests', () => {
 
     it('Create a deletion while being logged as ADMIN in should return a 200 (happy case - complete deletion data)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await sendCreateDeletionRequest(token, {
             userId: new mongoose.Types.ObjectId().toString(),
@@ -155,6 +169,8 @@ describe('Create deletion tests', () => {
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await sendCreateDeletionRequest(token, { userId: deletion.userId });
         response.status.should.equal(400);

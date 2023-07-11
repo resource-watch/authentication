@@ -14,7 +14,11 @@ import CacheService from 'services/cache.service';
 import Should = Chai.Should;
 import config from 'config';
 import DeletionModel, { IDeletion } from 'models/deletion';
-import { mockDeleteResourcesCalls } from "../utils/mocks";
+import {
+    mockDeleteResourcesCalls,
+    mockValidateRequestWithApiKey,
+    mockValidateRequestWithApiKeyAndUserToken
+} from "../utils/mocks";
 import OrganizationModel, { IOrganization } from "models/organization";
 import { assertConnection, assertNoConnection, createApplication, createOrganization } from "../utils/helpers";
 import ApplicationModel, { IApplication } from "models/application";
@@ -40,8 +44,10 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
     });
 
     it('Deleting a user while not logged in should return 401 Unauthorized', async () => {
+        mockValidateRequestWithApiKey({});
         const response: request.Response = await requester
             .delete(`/auth/user/123`)
+            .set('x-api-key', 'api-key-test')
             .set('Content-Type', 'application/json');
 
         response.status.should.equal(401);
@@ -52,9 +58,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
 
     it('Deleting a user while logged in as a USER should return 403 Forbidden', async () => {
         const token: string = mockValidJWT({ role: 'USER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .delete(`/auth/user/123`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -65,9 +74,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
 
     it('Deleting a user while logged in as a MANAGER should return 403 Forbidden', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .delete(`/auth/user/123`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -79,10 +91,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
     it('Deleting a non-existing user while logged in as an ADMIN should return 404 Not Found', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
         mockGetUserByIdNotFound('123');
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .delete(`/auth/user/123`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -100,10 +114,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         mockGetUserByOktaId(user.id, user, 1);
         mockOktaDeleteUser(user);
         mockDeleteResourcesCalls(user.profile.legacyId);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .delete(`/auth/user/${user.profile.legacyId}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -137,10 +153,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         mockGetUserByOktaId(user.id, user, 1);
         mockOktaDeleteUser(user);
         mockDeleteResourcesCalls(user.profile.legacyId);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .delete(`/auth/user/${user.profile.legacyId}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -160,10 +178,12 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         mockGetUserByOktaId(user.id, user, 1);
         mockOktaDeleteUser(user);
         mockDeleteResourcesCalls(user.profile.legacyId);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .delete(`/auth/user/${user.profile.legacyId}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -181,6 +201,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         mockGetUserById(user, 2);
         mockOktaDeleteUser(user);
         mockDeleteResourcesCalls(user.profile.legacyId);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         nock(config.get('okta.url'))
             .get(`/api/v1/users/${user.id}`)
@@ -195,6 +216,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         const response: request.Response = await requester
             .delete(`/auth/user/${user.profile.legacyId}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -213,6 +235,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         mockGetUserByOktaId(user.id, user, 1);
         mockOktaDeleteUser(user);
         mockDeleteResourcesCalls(user.profile.legacyId);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         // Assert value does not exist in cache before
         const value: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
@@ -226,6 +249,7 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
         const response: request.Response = await requester
             .delete(`/auth/user/${user.profile.legacyId}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -258,11 +282,13 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
             mockOktaDeleteUser(user, 2);
             mockGetUserByOktaId(user.id, user, 1);
             mockDeleteResourcesCalls(user.profile.legacyId);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/auth/user/${user.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`);
+                .set('Authorization', `Bearer ${token}`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(200);
             response.body.data.should.have.property('name').and.equal(user.profile.displayName);
@@ -305,11 +331,13 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
             mockOktaDeleteUser(user);
             mockGetUserByOktaId(user.id, user, 1);
             mockOktaDeleteUser(user);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/auth/user/${user.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`);
+                .set('Authorization', `Bearer ${token}`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(200);
             response.body.data.should.have.property('name').and.equal(user.profile.displayName);
@@ -345,10 +373,13 @@ describe('[OKTA] User management endpoints tests - Delete user', () => {
                 role: ORGANIZATION_ROLES.ORG_ADMIN
             }).save();
 
+            mockValidateRequestWithApiKeyAndUserToken({ token });
+
             const response: request.Response = await requester
                 .delete(`/auth/user/${user.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
-                .set('Authorization', `Bearer ${token}`);
+                .set('Authorization', `Bearer ${token}`)
+                .set('x-api-key', 'api-key-test');
 
             response.status.should.equal(400);
             response.body.should.have.property('errors').and.be.an('array');

@@ -1,3 +1,7 @@
+## 11/07/2023
+
+- Update `rw-api-microservice-node` to add API Key support.
+
 ## 29/06/2022
 
 - Add `deletion` model and CRUD endpoints

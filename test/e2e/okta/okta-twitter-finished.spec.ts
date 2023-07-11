@@ -54,8 +54,6 @@ describe('[OKTA] Twitter migrate endpoint tests - Finish page', () => {
             search: `(profile.provider eq "${OktaOAuthProvider.TWITTER}") and (profile.providerId eq "${providerId}")`
         }, [user]);
 
-        mockGetUserById(user);
-
         // Mock update password request
         const updateData: Record<string, any> = {
             profile: {
@@ -65,9 +63,6 @@ describe('[OKTA] Twitter migrate endpoint tests - Finish page', () => {
             },
             credentials: { password: { value: 'bar' } },
         };
-        nock(config.get('okta.url'))
-            .post(`/api/v1/users/${user.id}`, (body) => isEqual(body, updateData))
-            .reply(200, { ...user, profile: { ...user.profile, ...updateData } });
 
         nock('https://api.twitter.com')
             .get('/oauth/authenticate?oauth_token=OAUTH_TOKEN')

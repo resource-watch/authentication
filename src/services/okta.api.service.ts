@@ -1,4 +1,4 @@
-import axios, { AxiosRequestHeaders, AxiosResponse } from 'axios';
+import axios, { AxiosHeaders, AxiosRequestHeaders, AxiosResponse } from 'axios';
 import config from 'config';
 import JWT from 'jsonwebtoken';
 import mongoose from 'mongoose';
@@ -16,14 +16,20 @@ import logger from 'logger';
 
 export default class OktaApiService {
     private static oktaRequestHeaders(): AxiosRequestHeaders {
-        return {
+        const headers: AxiosHeaders = new AxiosHeaders({
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'Authorization': `SSWS ${config.get('okta.apiKey')}`,
-        };
+        });
+
+
+        return headers;
     }
 
-    static async getOktaUserListPaginatedResult(search: string, limit: number, after: string, before: string): Promise<{ data: OktaUser[], cursor: string }> {
+    static async getOktaUserListPaginatedResult(search: string, limit: number, after: string, before: string): Promise<{
+        data: OktaUser[],
+        cursor: string
+    }> {
         const response: AxiosResponse = await axios.get(`${config.get('okta.url')}/api/v1/users`, {
             headers: OktaApiService.oktaRequestHeaders(),
             params: {

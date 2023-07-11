@@ -7,6 +7,7 @@ import chaiDateTime from 'chai-datetime';
 import request from 'superagent';
 import mongoose, { HydratedDocument } from 'mongoose';
 import { mockValidJWT } from '../okta/okta.mocks';
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -33,8 +34,11 @@ describe('Delete deletion tests', () => {
     it('Delete a deletion while not being logged in should return a 401 \'Unauthorized\' error', async () => {
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
+        mockValidateRequestWithApiKey({});
+
         const response: request.Response = await requester
-            .delete(`/api/v1/deletion/${deletion._id.toString()}`);
+            .delete(`/api/v1/deletion/${deletion._id.toString()}`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -47,8 +51,11 @@ describe('Delete deletion tests', () => {
 
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .delete(`/api/v1/deletion/${deletion._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 
@@ -61,8 +68,11 @@ describe('Delete deletion tests', () => {
     it('Delete a deletion that does not exist while being logged in as ADMIN user should return a 404 \'Deletion not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .patch(`/api/v1/deletion/${new mongoose.Types.ObjectId().toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 
@@ -77,8 +87,11 @@ describe('Delete deletion tests', () => {
 
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .delete(`/api/v1/deletion/${deletion._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({});
 

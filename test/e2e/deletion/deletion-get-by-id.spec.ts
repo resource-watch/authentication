@@ -7,6 +7,7 @@ import { getTestAgent } from '../utils/test-server';
 import { createDeletion } from '../utils/helpers';
 import request from 'superagent';
 import { mockValidJWT } from '../okta/okta.mocks';
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -33,8 +34,11 @@ describe('Get deletion by id tests', () => {
     it('Get deletion by id without being authenticated should return a 401 \'Unauthorized\' error', async () => {
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
+        mockValidateRequestWithApiKey({});
+
         const response: request.Response = await requester
-            .get(`/api/v1/deletion/${deletion._id.toString()}`);
+            .get(`/api/v1/deletion/${deletion._id.toString()}`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array').and.length(1);
@@ -47,8 +51,11 @@ describe('Get deletion by id tests', () => {
 
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/deletion/${deletion._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -62,8 +69,11 @@ describe('Get deletion by id tests', () => {
 
         const deletion: HydratedDocument<IDeletion> = await new DeletionModel(createDeletion()).save() as HydratedDocument<IDeletion>;
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/deletion/${deletion._id.toString()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -97,8 +107,11 @@ describe('Get deletion by id tests', () => {
     it('Get deletion by id for an invalid id should return a 404 \'User not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/deletion/1234`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -110,8 +123,11 @@ describe('Get deletion by id tests', () => {
     it('Get deletion by id for an valid id that does not exist on the database should return a 404 \'User not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/api/v1/deletion/${new mongoose.Types.ObjectId()}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);

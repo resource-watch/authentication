@@ -15,6 +15,7 @@ import { HydratedDocument } from "mongoose";
 import ApplicationUserModel from "models/application-user";
 import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-user";
 import { describe } from "mocha";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 const should: Should = chai.should();
 
@@ -34,8 +35,10 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
     });
 
     it('Updating my profile while not logged in should return a 401', async () => {
+        mockValidateRequestWithApiKey({});
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
             .set('Content-Type', 'application/json');
 
         response.status.should.equal(401);
@@ -55,10 +58,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
 
         mockGetUserById(user);
         mockOktaUpdateUser(user, {});
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -84,10 +89,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             displayName: 'changed name',
             photo: 'http://www.changed-photo.com',
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 email: 'changed-email@example.com',
@@ -134,10 +141,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             role: 'MANAGER',
             apps: ['changed-apps'],
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({
                 email: 'changed-email@example.com',
@@ -179,6 +188,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
 
         mockGetUserById(user);
         mockOktaUpdateUser(user, { displayName: 'changed name' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         // Assert value does not exist in cache before
         const value: OktaUser = await CacheService.get(`okta-user-${user.profile.legacyId}`);
@@ -192,6 +202,7 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
         const response: request.Response = await requester
             .patch(`/auth/user/me`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send({ name: 'changed name' });
 
@@ -224,10 +235,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 });
 
                 mockGetUserById(originalOwnerUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -273,10 +286,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     organization: testOrganization.id,
                     application: testApplication.id
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -331,10 +346,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     displayName: 'changed name',
                     photo: 'https://www.changed-photo.com',
                 });
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -396,10 +413,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 });
 
                 mockGetUserById(originalOwnerUser);
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -445,10 +464,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     organization: testOrganization.id,
                     application: testApplication.id
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -503,10 +524,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     displayName: 'changed name',
                     photo: 'https://www.changed-photo.com',
                 });
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -567,10 +590,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             });
 
             mockGetUserById(originalOwnerUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     applications: [testApplication.id],
@@ -604,10 +629,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
             });
 
             mockGetUserById(originalOwnerUser);
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     applications: [testApplication.id],
@@ -647,10 +674,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -715,10 +744,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -779,10 +810,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -841,10 +874,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -898,10 +933,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     application: testApplication,
                     organization: testOrganization
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -958,10 +995,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     displayName: 'changed name',
                     photo: 'https://www.changed-photo.com',
                 });
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -1019,10 +1058,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     application: testApplication,
                     organization: testOrganization
                 }).save();
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -1079,10 +1120,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                     displayName: 'changed name',
                     photo: 'https://www.changed-photo.com',
                 });
+                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .patch(`/auth/user/me`)
                     .set('Content-Type', 'application/json')
+                    .set('x-api-key', 'api-key-test')
                     .set('Authorization', `Bearer ${token}`)
                     .send({
                         email: 'changed-email@example.com',
@@ -1134,10 +1177,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 application: testApplication,
                 organization: testOrganization
             }).save();
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -1194,10 +1239,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps']
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -1267,10 +1314,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -1342,10 +1391,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -1412,10 +1463,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
@@ -1479,10 +1532,12 @@ describe('[OKTA] Auth endpoints tests - Update user', () => {
                 role: 'MANAGER',
                 apps: ['changed-apps'],
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`)
                 .send({
                     email: 'changed-email@example.com',
