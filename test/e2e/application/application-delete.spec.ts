@@ -14,7 +14,6 @@ import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-u
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
 import { describe } from "mocha";
-import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -40,8 +39,6 @@ describe('Delete application tests', () => {
 
     it('Delete a application while not being logged in should return a 401 \'Unauthorized\' error', async () => {
         const application: HydratedDocument<IApplication> = await createApplication();
-
-        mockValidateRequestWithApiKey({ apiKey: 'api-key-test' });
 
         const response: request.Response = await requester
             .delete(`/api/v1/application/${application._id.toString()}`)
@@ -72,8 +69,6 @@ describe('Delete application tests', () => {
 
             mockGetUserById(testUser);
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
@@ -121,7 +116,6 @@ describe('Delete application tests', () => {
             }).save();
 
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
@@ -167,7 +161,6 @@ describe('Delete application tests', () => {
                 userId: testUser.profile.legacyId,
                 role: ORGANIZATION_ROLES.ORG_MEMBER
             }).save();
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
@@ -197,7 +190,6 @@ describe('Delete application tests', () => {
                 userId: otherUser.profile.legacyId,
                 application: application._id.toString()
             }).save();
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
@@ -231,7 +223,6 @@ describe('Delete application tests', () => {
 
             mockGetUserById(testUser);
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
@@ -279,7 +270,6 @@ describe('Delete application tests', () => {
             }).save();
 
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
@@ -326,8 +316,6 @@ describe('Delete application tests', () => {
                 role: ORGANIZATION_ROLES.ORG_MEMBER
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -357,8 +345,6 @@ describe('Delete application tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${application._id.toString()}`)
                 .set('Authorization', `Bearer ${token}`)
@@ -374,8 +360,6 @@ describe('Delete application tests', () => {
 
     it('Delete a application that does not exist while being logged in as ADMIN user should return a 404 \'Application not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .delete(`/api/v1/application/${new mongoose.Types.ObjectId().toString()}`)
@@ -395,8 +379,6 @@ describe('Delete application tests', () => {
         const application: HydratedDocument<IApplication> = await createApplication();
 
         mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .delete(`/api/v1/application/${application._id.toString()}`)
@@ -433,8 +415,6 @@ describe('Delete application tests', () => {
             }).save();
 
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${testApplication._id.toString()}`)
@@ -480,8 +460,6 @@ describe('Delete application tests', () => {
             }).save();
 
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .delete(`/api/v1/application/${testApplication._id.toString()}`)

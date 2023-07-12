@@ -138,6 +138,15 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                     { method: 'GET', pathRegex: '/auth/generate-token' },
                     { method: 'GET', pathRegex: '/auth/authorization-code/callback' },
                     { method: 'GET', pathRegex: '/auth/sign-up-redirect' },
+                    { method: 'GET', pathRegex: '/api/v1/application' },
+                    { method: 'GET', pathRegex: '/api/v1/application/(.*)' },
+                    { method: 'POST', pathRegex: '/api/v1/application' },
+                    { method: 'PATCH', pathRegex: '/api/v1/application/(.*)' },
+                    { method: 'DELETE', pathRegex: '/api/v1/application/(.*)' },
+                    { method: 'GET', pathRegex: '/api/v1/organization/(.*)' },
+                    { method: 'POST', pathRegex: '/api/v1/organization' },
+                    { method: 'PATCH', pathRegex: '/api/v1/organization/(.*)' },
+                    { method: 'DELETE', pathRegex: '/api/v1/organization/(.*)' },
                 ]
             }));
 

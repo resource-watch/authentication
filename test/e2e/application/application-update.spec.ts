@@ -18,7 +18,7 @@ import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-u
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
 import { describe } from "mocha";
-import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
+import { mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -45,8 +45,6 @@ describe('Update application tests', () => {
     it('Update a application while not being logged in should return a 401 \'Unauthorized\' error', async () => {
         const application: HydratedDocument<IApplication> = await createApplication();
 
-        mockValidateRequestWithApiKey({});
-
         const response: request.Response = await requester
             .patch(`/api/v1/application/${application._id.toString()}`)
             .set('x-api-key', 'api-key-test')
@@ -60,8 +58,6 @@ describe('Update application tests', () => {
 
     it('Update a application that does not exist while being logged in as ADMIN user should return a 404 \'Application not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/api/v1/application/${new mongoose.Types.ObjectId().toString()}`)
@@ -86,8 +82,6 @@ describe('Update application tests', () => {
                 userId: anotherUser.profile.legacyId,
                 application: application._id.toString()
             }).save();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
@@ -119,8 +113,6 @@ describe('Update application tests', () => {
             }).save();
 
             mockGetUserById(testUser, 2);
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
@@ -169,8 +161,6 @@ describe('Update application tests', () => {
                 organization: organization._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -217,8 +207,6 @@ describe('Update application tests', () => {
                 organization: organization._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -255,8 +243,6 @@ describe('Update application tests', () => {
                 application: application._id.toString(),
                 organization: organization._id.toString()
             }).save();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
@@ -295,8 +281,6 @@ describe('Update application tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -327,8 +311,6 @@ describe('Update application tests', () => {
 
             mockGetUserById(testUser, 2);
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -358,8 +340,6 @@ describe('Update application tests', () => {
 
             const application: HydratedDocument<IApplication> = await createApplication();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -380,8 +360,6 @@ describe('Update application tests', () => {
 
             const application: HydratedDocument<IApplication> = await createApplication();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -401,8 +379,6 @@ describe('Update application tests', () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
         const application: HydratedDocument<IApplication> = await createApplication();
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/api/v1/application/${application._id.toString()}`)
@@ -432,8 +408,6 @@ describe('Update application tests', () => {
         const application: HydratedDocument<IApplication> = await createApplication();
 
         mockUpdateAWSAPIGatewayAPIKey(application.apiKeyId, 'new application name');
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/api/v1/application/${application._id.toString()}`)
@@ -475,8 +449,6 @@ describe('Update application tests', () => {
             application: application._id.toString()
         }).save();
 
-        mockValidateRequestWithApiKeyAndUserToken({ token });
-
         const response: request.Response = await requester
             .patch(`/api/v1/application/${application._id.toString()}`)
             .set('x-api-key', 'api-key-test')
@@ -498,8 +470,6 @@ describe('Update application tests', () => {
 
         mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
         mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/api/v1/application/${application._id.toString()}`)
@@ -540,8 +510,6 @@ describe('Update application tests', () => {
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -580,8 +548,6 @@ describe('Update application tests', () => {
 
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
@@ -635,8 +601,6 @@ describe('Update application tests', () => {
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -679,8 +643,6 @@ describe('Update application tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -710,8 +672,6 @@ describe('Update application tests', () => {
 
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)
@@ -774,8 +734,6 @@ describe('Update application tests', () => {
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -821,8 +779,6 @@ describe('Update application tests', () => {
 
             mockDeleteAWSAPIGatewayAPIKey(application.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${application._id.toString()}`)
@@ -877,8 +833,6 @@ describe('Update application tests', () => {
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -927,8 +881,6 @@ describe('Update application tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)
                 .set('x-api-key', 'api-key-test')
@@ -963,8 +915,6 @@ describe('Update application tests', () => {
             mockGetUserById(userTwo);
             mockDeleteAWSAPIGatewayAPIKey(testApplication.apiKeyId);
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/application/${testApplication._id.toString()}`)

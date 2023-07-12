@@ -14,7 +14,7 @@ import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
 import { describe } from "mocha";
 import mongoose from "mongoose";
-import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
+import { mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -45,8 +45,6 @@ describe('Create application tests', () => {
     });
 
     it('Create a application while not being logged in should return a 401 \'Unauthorized\' error', async () => {
-        mockValidateRequestWithApiKey({ apiKey: `api-key-test` });
-
         const response: request.Response = await requester
             .post(`/api/v1/application`)
             .set('x-api-key', `api-key-test`)
@@ -70,8 +68,6 @@ describe('Create application tests', () => {
 
             mockGetUserById(testUser, 2);
             const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await sendCreateApplicationRequest(token, { name: 'my application' });
 
@@ -102,8 +98,6 @@ describe('Create application tests', () => {
             mockGetUserById(testUser, 2);
             const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application', user: testUser.profile.legacyId,
             });
@@ -126,8 +120,6 @@ describe('Create application tests', () => {
         it('Create a application associated with someone else while being logged in as USER should return a 403', async () => {
             const token: string = mockValidJWT({ role: 'USER' });
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
                 user: new mongoose.Types.ObjectId().toString()
@@ -143,8 +135,6 @@ describe('Create application tests', () => {
             const token: string = mockValidJWT({ role: 'USER' });
 
             const testOrganization: IOrganization = await createOrganization();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
@@ -173,8 +163,6 @@ describe('Create application tests', () => {
                 userId: testUser.profile.legacyId,
                 role: ORGANIZATION_ROLES.ORG_MEMBER
             }).save();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
@@ -205,8 +193,6 @@ describe('Create application tests', () => {
             }).save();
 
             const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
@@ -242,8 +228,6 @@ describe('Create application tests', () => {
             mockGetUserById(testUser, 2);
             const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await sendCreateApplicationRequest(token, { name: 'my application' });
 
             response.status.should.equal(200);
@@ -273,8 +257,6 @@ describe('Create application tests', () => {
             mockGetUserById(testUser, 2);
             const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application', user: testUser.profile.legacyId,
             });
@@ -297,8 +279,6 @@ describe('Create application tests', () => {
         it('Create a application associated with someone else while being logged in as MANAGER should return a 403', async () => {
             const token: string = mockValidJWT({ role: 'MANAGER' });
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
                 user: new mongoose.Types.ObjectId().toString()
@@ -314,8 +294,6 @@ describe('Create application tests', () => {
             const token: string = mockValidJWT({ role: 'MANAGER' });
 
             const testOrganization: IOrganization = await createOrganization();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
@@ -344,8 +322,6 @@ describe('Create application tests', () => {
                 userId: testUser.profile.legacyId,
                 role: ORGANIZATION_ROLES.ORG_MEMBER
             }).save();
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
@@ -377,8 +353,6 @@ describe('Create application tests', () => {
 
             const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await sendCreateApplicationRequest(token, {
                 name: 'my application',
                 organization: testOrganization._id.toString()
@@ -404,8 +378,6 @@ describe('Create application tests', () => {
         it('Create a application while being logged in as ADMIN without the required name field should return a 400 error', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const response: request.Response = await sendCreateApplicationRequest(token);
 
             response.status.should.equal(400);
@@ -426,8 +398,6 @@ describe('Create application tests', () => {
 
         mockGetUserById(testUser, 2);
         const apiKey: string = mockCreateAWSAPIGatewayAPIKey();
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await sendCreateApplicationRequest(token, {
             name: "my application",
@@ -460,8 +430,6 @@ describe('Create application tests', () => {
         mockGetUserById(testUser, 2);
         const apiKey = mockCreateAWSAPIGatewayAPIKey();
 
-        mockValidateRequestWithApiKeyAndUserToken({ token });
-
         const response: request.Response = await sendCreateApplicationRequest(token, {
             name: "my application"
         });
@@ -486,8 +454,6 @@ describe('Create application tests', () => {
             const testOrganization: IOrganization = await createOrganization();
 
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .post(`/api/v1/application`)
@@ -531,8 +497,6 @@ describe('Create application tests', () => {
             }).save();
 
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' });
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .post(`/api/v1/application`)
@@ -581,8 +545,6 @@ describe('Create application tests', () => {
             mockGetUserById(testUser, 2);
 
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' });
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .post(`/api/v1/application`)
@@ -633,8 +595,6 @@ describe('Create application tests', () => {
             }).save();
 
             mockCreateAWSAPIGatewayAPIKey({ name: 'new application name' })
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .post(`/api/v1/application`)

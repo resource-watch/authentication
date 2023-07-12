@@ -13,7 +13,6 @@ import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-u
 import ApplicationUserModel from "models/application-user";
 import { describe } from "mocha";
 import { OktaUser } from "services/okta.interfaces";
-import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -40,8 +39,6 @@ describe('Get application by id tests', () => {
     it('Get application by id without being authenticated should return a 401 \'Unauthorized\' error', async () => {
         const application: HydratedDocument<IApplication> = await createApplication();
 
-        mockValidateRequestWithApiKey({});
-
         const response: request.Response = await requester
             .get(`/api/v1/application/${application._id.toString()}`)
             .set('x-api-key', 'api-key-test');
@@ -56,8 +53,6 @@ describe('Get application by id tests', () => {
         const token: string = mockValidJWT({ role: 'USER' });
 
         const application: HydratedDocument<IApplication> = await createApplication();
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/application/${application._id.toString()}`)
@@ -88,7 +83,6 @@ describe('Get application by id tests', () => {
             }).save();
 
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
@@ -130,7 +124,6 @@ describe('Get application by id tests', () => {
                 role: ORGANIZATION_ROLES.ORG_MEMBER
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
@@ -166,7 +159,6 @@ describe('Get application by id tests', () => {
                 application: application._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
@@ -199,7 +191,6 @@ describe('Get application by id tests', () => {
 
             mockGetUserById(testUser);
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
@@ -237,7 +228,6 @@ describe('Get application by id tests', () => {
 
             mockGetUserById(otherUser);
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${application._id.toString()}`)
@@ -262,8 +252,6 @@ describe('Get application by id tests', () => {
 
         const application: HydratedDocument<IApplication> = await createApplication();
 
-        mockValidateRequestWithApiKeyAndUserToken({ token });
-
         const response: request.Response = await requester
             .get(`/api/v1/application/${application._id.toString()}`)
             .set('x-api-key', 'api-key-test')
@@ -286,8 +274,6 @@ describe('Get application by id tests', () => {
     it('Get application by id for an invalid id should return a 404 \'Application not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
 
-        mockValidateRequestWithApiKeyAndUserToken({ token });
-
         const response: request.Response = await requester
             .get(`/api/v1/application/1234`)
             .set('x-api-key', 'api-key-test')
@@ -301,8 +287,6 @@ describe('Get application by id tests', () => {
 
     it('Get application by id for an valid id that does not exist on the database should return a 404 \'Application not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/application/${new mongoose.Types.ObjectId()}`)
@@ -326,7 +310,6 @@ describe('Get application by id tests', () => {
                 organization: testOrganization
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${testApplication._id.toString()}`)
@@ -370,7 +353,6 @@ describe('Get application by id tests', () => {
                 application: testApplication._id.toString()
             }).save();
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application/${testApplication._id.toString()}`)
