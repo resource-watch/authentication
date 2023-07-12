@@ -14,7 +14,6 @@ import OrganizationApplicationModel from "models/organization-application";
 import OrganizationUserModel from "models/organization-user";
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
-import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -39,8 +38,6 @@ describe('Get applications tests', () => {
     });
 
     it('Get applications while not being logged in should return a 401 error', async () => {
-        mockValidateRequestWithApiKey({});
-
         const response: request.Response = await requester
             .get(`/api/v1/application`)
             .set('x-api-key', 'api-key-test');
@@ -75,8 +72,6 @@ describe('Get applications tests', () => {
         }).save();
 
         mockGetUserById(testUser);
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/application`)
@@ -121,8 +116,6 @@ describe('Get applications tests', () => {
 
         mockGetUserById(testUser);
         mockGetUserById(otherUser);
-
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/api/v1/application`)
@@ -175,8 +168,6 @@ describe('Get applications tests', () => {
         mockGetUserById(testUser);
         mockGetUserById(otherUser);
 
-        mockValidateRequestWithApiKeyAndUserToken({ token });
-
         const response: request.Response = await requester
             .get(`/api/v1/application`)
             .set('x-api-key', 'api-key-test')
@@ -224,9 +215,6 @@ describe('Get applications tests', () => {
 
             mockGetUserById(testUser, 13);
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-
             const responsePageOne: request.Response = await requester
                 .get(`/api/v1/application`)
                 .query({ 'page[size]': 10, 'page[number]': 1 })
@@ -264,10 +252,6 @@ describe('Get applications tests', () => {
             }
 
             const token: string = mockValidJWT({ role: 'ADMIN' });
-
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const responsePageOne: request.Response = await requester
                 .get(`/api/v1/application`)
@@ -318,7 +302,6 @@ describe('Get applications tests', () => {
         it('Get paginated applications with over 100 results per page should return a 400', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
 
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/api/v1/application`)
@@ -342,8 +325,6 @@ describe('Get applications tests', () => {
                     organization: testOrganization._id.toString(),
                     application: testApplication._id.toString()
                 }).save();
-
-                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .get(`/api/v1/application`)
@@ -384,8 +365,6 @@ describe('Get applications tests', () => {
                     userId: user.profile.legacyId,
                     application: testApplication._id.toString()
                 }).save();
-
-                mockValidateRequestWithApiKeyAndUserToken({ token });
 
                 const response: request.Response = await requester
                     .get(`/api/v1/application`)

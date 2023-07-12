@@ -19,7 +19,6 @@ import OrganizationUserModel, { ORGANIZATION_ROLES } from "models/organization-u
 import ApplicationUserModel from "models/application-user";
 import { OktaUser } from "services/okta.interfaces";
 import { describe } from "mocha";
-import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 chai.use(chaiDateTime);
@@ -44,7 +43,6 @@ describe('Update organization tests', () => {
     });
 
     it('Update a organization while not being logged in should return a 401 \'Unauthorized\' error', async () => {
-        mockValidateRequestWithApiKey({});
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
         const response: request.Response = await requester
@@ -61,7 +59,6 @@ describe('Update organization tests', () => {
     describe('USER role', () => {
         it('Update a organization while being logged in as USER should return a 403 \'Not authorized\' error', async () => {
             const token: string = mockValidJWT({ role: 'USER' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -85,7 +82,6 @@ describe('Update organization tests', () => {
                 role: testUser.profile.role,
                 extraUserData: { apps: testUser.profile.apps },
             });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -125,7 +121,6 @@ describe('Update organization tests', () => {
             }).save();
 
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -151,7 +146,6 @@ describe('Update organization tests', () => {
     describe('MANAGER role', () => {
         it('Update a organization while being logged in as MANAGER should return a 403 \'Not authorized\' error', async () => {
             const token: string = mockValidJWT({ role: 'MANAGER' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -175,7 +169,6 @@ describe('Update organization tests', () => {
                 role: testUser.profile.role,
                 extraUserData: { apps: testUser.profile.apps },
             });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -215,7 +208,6 @@ describe('Update organization tests', () => {
             }).save();
 
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -240,7 +232,6 @@ describe('Update organization tests', () => {
 
     it('Update a organization that does not exist while being logged in as ADMIN user should return a 404 \'Organization not found\' error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .patch(`/api/v1/organization/${new mongoose.Types.ObjectId().toString()}`)
@@ -256,7 +247,6 @@ describe('Update organization tests', () => {
 
     it('Update a organization while being logged in as ADMIN should return a 200 and the user data (happy case - no user data provided)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -284,7 +274,6 @@ describe('Update organization tests', () => {
 
     it('Update a organization while being logged in should return a 200 and the updated user data (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
-        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -322,7 +311,6 @@ describe('Update organization tests', () => {
                 extraUserData: { apps: testUser.profile.apps },
             });
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -366,7 +354,6 @@ describe('Update organization tests', () => {
             });
 
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -437,7 +424,6 @@ describe('Update organization tests', () => {
             }).save();
 
             mockGetUserById(testUserTwo);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -484,7 +470,6 @@ describe('Update organization tests', () => {
             const testUserTwo: OktaUser = getMockOktaUser();
 
             mockGetUserById(testUserTwo);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
             await new OrganizationUserModel({
@@ -538,7 +523,6 @@ describe('Update organization tests', () => {
             });
 
             mockGetUserById(testUserOne, 2);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -591,7 +575,6 @@ describe('Update organization tests', () => {
                 role: testUserOne.profile.role,
                 extraUserData: { apps: testUserOne.profile.apps },
             });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -630,7 +613,6 @@ describe('Update organization tests', () => {
             });
 
             mockGetUserById(testUserTwo);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -673,7 +655,6 @@ describe('Update organization tests', () => {
             });
 
             mockGetUserById(testUserOne);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
 
@@ -716,7 +697,6 @@ describe('Update organization tests', () => {
     describe('with associated applications', () => {
         it('Update an organization without setting applications should be successful and not modify the associated applications', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
             const testApplication: IApplication = await createApplication();
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -754,7 +734,6 @@ describe('Update organization tests', () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
             const testApplication: IApplication = await createApplication();
             const organization: HydratedDocument<IOrganization> = await createOrganization();
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -793,7 +772,6 @@ describe('Update organization tests', () => {
                 role: user.profile.role,
                 extraUserData: { apps: user.profile.apps },
             });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -835,7 +813,6 @@ describe('Update organization tests', () => {
 
         it('Update an organization and removing applications should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
             const testApplication: IApplication = await createApplication();
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -869,7 +846,6 @@ describe('Update organization tests', () => {
 
         it('Update an organization and overwriting existing applications should be successful', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
             const testApplicationOne: IApplication = await createApplication();
             const testApplicationTwo: IApplication = await createApplication();
 
@@ -917,7 +893,6 @@ describe('Update organization tests', () => {
 
         it('Update a organization with an empty users list should return a 400 error', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -943,7 +918,6 @@ describe('Update organization tests', () => {
                 role: testUser.profile.role,
                 extraUserData: { apps: testUser.profile.apps },
             });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -972,7 +946,6 @@ describe('Update organization tests', () => {
             });
 
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
             await new OrganizationUserModel({ userId: testUser.profile.legacyId, organization, role: 'ADMIN' }).save();
@@ -1016,7 +989,6 @@ describe('Update organization tests', () => {
             });
 
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
 
@@ -1060,7 +1032,6 @@ describe('Update organization tests', () => {
             });
 
             mockGetUserById(testUser);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -1106,7 +1077,6 @@ describe('Update organization tests', () => {
 
         it('Update an organization and removing all users should fail', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
             const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -1136,7 +1106,6 @@ describe('Update organization tests', () => {
 
         it('Update an organization and setting some users but no ADMIN should fail', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
             const testUser: OktaUser = getMockOktaUser({ role: 'ADMIN' });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
@@ -1166,7 +1135,6 @@ describe('Update organization tests', () => {
 
         it('Update an organization and setting more than one ORG_ADMIN should fail', async () => {
             const token: string = mockValidJWT({ role: 'ADMIN' });
-            mockValidateRequestWithApiKeyAndUserToken({ token });
             const testUserOne: OktaUser = getMockOktaUser({ role: 'ADMIN' });
             const testUserTwo: OktaUser = getMockOktaUser({ role: 'ADMIN' });
 
@@ -1216,7 +1184,6 @@ describe('Update organization tests', () => {
             }).save();
 
             mockGetUserById(testUserTwo);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .patch(`/api/v1/organization/${organization._id.toString()}`)
@@ -1259,7 +1226,6 @@ describe('Update organization tests', () => {
 
             mockGetUserById(testUserOne);
             mockGetUserById(testUserTwo);
-            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const organization: HydratedDocument<IOrganization> = await createOrganization();
             await new OrganizationUserModel({
