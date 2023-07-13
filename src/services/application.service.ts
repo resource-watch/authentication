@@ -23,9 +23,11 @@ import ApplicationOrphanedError from "errors/applicationOrphaned.error";
 import OrganizationUserModel, { IOrganizationUser, ORGANIZATION_ROLES } from "models/organization-user";
 import { DeleteResourceResult } from "services/delete-user-resources.service";
 import ApplicationUserModel from "models/application-user";
+import logger from "logger";
 
 export default class ApplicationService {
     static async createApplication(applicationData: Partial<CreateApplicationsDto>, requestUser: IUser): Promise<IApplication> {
+        logger.debug('[createApplication] - Creating application with data: ', applicationData);
         if (!('user' in applicationData)) {
             applicationData.user = requestUser.id;
         }
@@ -45,6 +47,7 @@ export default class ApplicationService {
             }
         }
 
+        logger.debug('[createApplication] - Creating AWS API key with name: ', applicationData.name);
         const apiKeyResponse: CreateApiKeyCommandOutput = await APIGatewayAWSService.createApiKey(applicationData.name);
 
         const application: Partial<IApplication> = new ApplicationModel({
@@ -63,6 +66,7 @@ export default class ApplicationService {
             throw new Error('Application must be associated with either an user or an organization');
         }
 
+        logger.debug('[createApplication] - Saving application and returning');
         return application.save();
     }
 
