@@ -125,7 +125,7 @@ class ApplicationRouter {
                 ctx.throw(403, error.message);
                 return;
             }
-            ctx.throw(500, error.message);
+            ctx.throw(500, error.toString());
         }
     }
 
