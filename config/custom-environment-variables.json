@@ -38,7 +38,8 @@
   "aws": {
     "region": "AWS_REGION",
     "accessKeyId": "AWS_ACCESS_KEY_ID",
-    "secretAccessKey": "AWS_SECRET_ACCESS_KEY"
+    "secretAccessKey": "AWS_SECRET_ACCESS_KEY",
+    "apiKeyUsagePlanId": "AWS_API_KEY_USAGE_PLAN_ID"
   },
   "settings": {
     "thirdParty": {

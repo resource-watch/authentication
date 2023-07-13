@@ -1,8 +1,10 @@
 import nock from "nock";
 import { faker } from "@faker-js/faker";
+import config from "config";
 
 export const mockCreateAWSAPIGatewayAPIKey: (override?: Record<string, any>) => string = (override = {}) => {
     const apiKey: string = faker.datatype.uuid();
+    const apiKeyId: string = faker.datatype.uuid();
 
     nock('https://apigateway.us-east-1.amazonaws.com')
         .post('/apikeys',
@@ -16,12 +18,21 @@ export const mockCreateAWSAPIGatewayAPIKey: (override?: Record<string, any>) => 
         .reply(201, {
             createdDate: 1669793297,
             enabled: true,
-            id: faker.datatype.uuid(),
+            id: apiKeyId,
             lastUpdatedDate: 1669793297,
             name: "my application",
             stageKeys: [],
             value: apiKey
         });
+
+    nock('https://apigateway.us-east-1.amazonaws.com')
+        .post(`/usageplans/${config.get('aws.apiKeyUsagePlanId')}/keys`,
+            {
+                keyId: apiKeyId,
+                keyType: "API_KEY"
+            }
+        )
+        .reply(201, {});
 
     return apiKey;
 };

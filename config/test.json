@@ -13,7 +13,8 @@
   "aws": {
     "region": "us-east-1",
     "accessKeyId": "accessKeyId",
-    "secretAccessKey": "secretAccessKey"
+    "secretAccessKey": "secretAccessKey",
+    "apiKeyUsagePlanId": "apiKeyUsagePlanId"
   },
   "settings": {
     "defaultApp": "rw",

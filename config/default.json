@@ -46,7 +46,8 @@
   "aws": {
     "region": null,
     "accessKeyId": null,
-    "secretAccessKey": null
+    "secretAccessKey": null,
+    "apiKeyUsagePlanId": null
   },
   "settings": {
     "defaultApp": "gfw",

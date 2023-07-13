@@ -2,7 +2,11 @@ import {
     APIGatewayClient,
     CreateApiKeyCommand,
     CreateApiKeyCommandInput,
-    CreateApiKeyCommandOutput, DeleteApiKeyCommand, DeleteApiKeyCommandOutput,
+    CreateApiKeyCommandOutput,
+    CreateUsagePlanKeyCommand,
+    CreateUsagePlanKeyCommandInput, CreateUsagePlanKeyCommandOutput,
+    DeleteApiKeyCommand,
+    DeleteApiKeyCommandOutput,
     PatchOperation,
     UpdateApiKeyCommand,
     UpdateApiKeyCommandOutput
@@ -38,20 +42,38 @@ class APIGatewayAWSService {
 
     static async createApiKey(name: string): Promise<CreateApiKeyCommandOutput> {
         APIGatewayAWSService.init();
+        let createApiKeyCommandResponse: CreateApiKeyCommandOutput;
 
-        const params: CreateApiKeyCommandInput = {
+        const createApiKeyCommandParams: CreateApiKeyCommandInput = {
             name,
             enabled: true,
             value: Math.random().toString(36).substring(32),
         };
-        const command: CreateApiKeyCommand = new CreateApiKeyCommand(params);
+        const createApiKeyCommand: CreateApiKeyCommand = new CreateApiKeyCommand(createApiKeyCommandParams);
 
         try {
-            const data: CreateApiKeyCommandOutput = await this.client.send(command);
-            return data;
-        } catch (error) {
-            logger.error(`[APIGatewayAWSService] - Error creating API key: ${error}`)
-            throw error;
+            createApiKeyCommandResponse = await this.client.send(createApiKeyCommand);
+
+            const createUsagePlanKeyParams: CreateUsagePlanKeyCommandInput = {
+                usagePlanId: config.get('aws.apiKeyUsagePlanId'),
+                keyType: 'API_KEY',
+                keyId: createApiKeyCommandResponse.id,
+            };
+            const createUsagePlanKeyCommand: CreateUsagePlanKeyCommand = new CreateUsagePlanKeyCommand(createUsagePlanKeyParams);
+            await this.client.send(createUsagePlanKeyCommand);
+
+            return createApiKeyCommandResponse;
+        } catch (apiKeyCreationError) {
+            logger.error(`[APIGatewayAWSService] - Error creating API key: ${apiKeyCreationError.toString()}`)
+            if (createApiKeyCommandResponse) {
+                logger.error(`[APIGatewayAWSService] - Deleting API key: ${createApiKeyCommandResponse.id}`)
+                try {
+                    await this.deleteApiKey(createApiKeyCommandResponse.id);
+                } catch (apiKeyDeletionError) {
+                    logger.error(`[APIGatewayAWSService] - Error deleting API key following failed API key creation: ${apiKeyDeletionError.toString()}`)
+                }
+            }
+            throw apiKeyCreationError;
         }
     }
 
