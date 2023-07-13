@@ -41,6 +41,10 @@ class APIGatewayAWSService {
     }
 
     static async createApiKey(name: string): Promise<CreateApiKeyCommandOutput> {
+        if ((config.get('aws.apiKeyUsagePlanId') as string).length === 0) {
+            throw new Error('API Gateway usage plan ID not set');
+        }
+
         APIGatewayAWSService.init();
         let createApiKeyCommandResponse: CreateApiKeyCommandOutput;
 

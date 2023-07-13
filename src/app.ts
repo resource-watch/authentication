@@ -87,7 +87,6 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
 
                     if (ctx.status >= 500) {
                         logger.error(error);
-                        logger.error(error.stack.toString());
                     } else {
                         logger.info(error);
                     }
