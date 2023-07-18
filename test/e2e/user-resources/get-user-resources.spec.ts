@@ -4,9 +4,13 @@ import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { getMockOktaUser, mockGetUserById, mockOktaListUsers, mockValidJWT } from "../okta/okta.mocks";
 import { OktaUser } from "services/okta.interfaces";
 import chai from "chai";
-import { mockGetResourcesCalls } from "../utils/mocks";
+import {
+    mockGetResourcesCalls,
+    mockValidateRequestWithApiKey,
+    mockValidateRequestWithApiKeyAndUserToken
+} from "../utils/mocks";
 import { HydratedDocument } from "mongoose";
-import { IApplication } from "models/application";
+import application, { IApplication } from "models/application";
 import { createApplication, createOrganization } from "../utils/helpers";
 import ApplicationUserModel from "models/application-user";
 import { IOrganization } from "models/organization";
@@ -31,10 +35,12 @@ describe('GET user resources', () => {
     });
 
     it('Get user resources without being logged in returns a 401', async () => {
+        mockValidateRequestWithApiKey({});
         const userId: string = '41224d776a326fb40f000001';
 
         const response: request.Response = await requester
-            .get(`/auth/user/${userId}/resources`);
+            .get(`/auth/user/${userId}/resources`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
     });
@@ -43,8 +49,10 @@ describe('GET user resources', () => {
         const userId: string = '41224d776a326fb40f000001';
 
         const token: string = mockValidJWT();
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user/${userId}/resources`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -73,10 +81,12 @@ describe('GET user resources', () => {
         }).save();
 
         mockGetUserById(user, 2);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/auth/user/${user.profile.legacyId}/resources`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);

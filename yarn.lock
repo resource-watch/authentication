@@ -5220,10 +5220,10 @@ run-parallel@^1.1.9:
   dependencies:
     queue-microtask "^1.2.2"
 
-rw-api-microservice-node@5.0.0-rc.1:
-  version "5.0.0-rc.1"
-  resolved "https://registry.yarnpkg.com/rw-api-microservice-node/-/rw-api-microservice-node-5.0.0-rc.1.tgz#3329ad900cb8f0da01ba100f0ed75805aed1ae86"
-  integrity sha512-Zu9OZlZRPwhJjAMFWRx5n1b/5gGNl330UyTG+9QcEdtvQYZLdy5WQLW6alOB10n6rSBulnblRpRolnYsW3rrrw==
+rw-api-microservice-node@5.0.0-rc.5:
+  version "5.0.0-rc.5"
+  resolved "https://registry.yarnpkg.com/rw-api-microservice-node/-/rw-api-microservice-node-5.0.0-rc.5.tgz#e1eb2eddab34472de9ab638fba9127b5d476631b"
+  integrity sha512-P9F+Q31CMynFTylkKam4y7YpdOCz2096z0M+PNCkCZ2l22wUNfVdaPhODmyHG7KhAGhChRNbywGDhJFRrbmVeg==
   dependencies:
     "@koa/cors" "^3.4.3"
     "@tiagojsag/fastly-promises" "^1.0.1"

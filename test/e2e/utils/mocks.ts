@@ -1,6 +1,6 @@
 import nock from "nock";
 import { IUserLegacyId } from "services/okta.interfaces";
-import { mockCloudWatchLogRequestsSequence, mockValidateRequest } from "rw-api-microservice-node/dist/test-mocks";
+import { mockCloudWatchLogRequest, mockValidateRequest } from "rw-api-microservice-node/dist/test-mocks";
 import config from "config";
 import { ApplicationValidationResponse, UserValidationResponse } from "rw-api-microservice-node/dist/types";
 import * as constants from "constants";
@@ -1011,7 +1011,7 @@ export const mockDeleteResourcesCalls = (userId: IUserLegacyId) => {
         });
 }
 
-const USER: UserValidationResponse = {
+export const USER: UserValidationResponse = {
     id: '1a10d7c6e0a37126611fd7a5',
     name: 'test user',
     role: 'USER',
@@ -1047,21 +1047,6 @@ const APPLICATION: ApplicationValidationResponse = {
 
 const USER_TOKEN: string = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjFhMTBkN2M2ZTBhMzcxMjY2MTFmZDdhNSIsIm5hbWUiOiJ0ZXN0IHVzZXIiLCJyb2xlIjoiVVNFUiIsInByb3ZpZGVyIjoibG9jYWwiLCJlbWFpbCI6InVzZXJAY29udHJvbC10b3dlci5vcmciLCJleHRyYVVzZXJEYXRhIjp7ImFwcHMiOlsicnciLCJnZnciLCJnZnctY2xpbWF0ZSIsInByZXAiLCJhcXVlZHVjdCIsImZvcmVzdC1hdGxhcyIsImRhdGE0c2RncyJdfX0.R_RT47-wVCLtXNmDyfy7KGhSASUayVBW6KKsdxtphPc';
 
-export const mockValidateRequestWithUserToken = (apiKey: string): void => {
-    mockValidateRequest({
-        gatewayUrl: process.env.GATEWAY_URL,
-        microserviceToken: process.env.MICROSERVICE_TOKEN,
-        application: APPLICATION,
-        apiKey
-    });
-    mockCloudWatchLogRequestsSequence({
-        application: APPLICATION,
-        awsRegion: process.env.AWS_REGION,
-        logGroupName: process.env.CLOUDWATCH_LOG_GROUP_NAME,
-        logStreamName: config.get('service.name')
-    });
-};
-
 export const mockValidateRequestWithApiKey = ({
                                                   apiKey = 'api-key-test',
                                                   application = APPLICATION
@@ -1072,7 +1057,7 @@ export const mockValidateRequestWithApiKey = ({
         application,
         apiKey
     });
-    mockCloudWatchLogRequestsSequence({
+    mockCloudWatchLogRequest({
         application,
         awsRegion: process.env.AWS_REGION,
         logGroupName: process.env.CLOUDWATCH_LOG_GROUP_NAME,
@@ -1094,7 +1079,7 @@ export const mockValidateRequestWithApiKeyAndUserToken = ({
         token,
         apiKey
     });
-    mockCloudWatchLogRequestsSequence({
+    mockCloudWatchLogRequest({
         user,
         application,
         awsRegion: process.env.AWS_REGION,

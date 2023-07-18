@@ -156,6 +156,7 @@ export class OktaProvider {
         delete clonedQuery.page;
         delete clonedQuery.ids;
         delete clonedQuery.loggedUser;
+        delete clonedQuery.requestApplication;
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
@@ -270,9 +271,9 @@ export class OktaProvider {
         const userOrganizations: IOrganization[] = await OrganizationService.getOrganizations({}, user.id);
 
         const result: Record<string, any> = {
-            datasets: await GetUserResourcesService.getDatasets(user.id),
-            layers: await GetUserResourcesService.getLayers(user.id),
-            widgets: await GetUserResourcesService.getWidgets(user.id),
+            datasets: await GetUserResourcesService.getDatasets(user.id, ctx.request.headers['x-api-key'] as string),
+            layers: await GetUserResourcesService.getLayers(user.id, ctx.request.headers['x-api-key'] as string),
+            widgets: await GetUserResourcesService.getWidgets(user.id, ctx.request.headers['x-api-key'] as string),
             userAccount: {
                 data: user,
                 count: 1
@@ -285,15 +286,15 @@ export class OktaProvider {
                 data: userOrganizations,
                 count: userOrganizations.length
             },
-            userData: await GetUserResourcesService.getUserData(user.id),
-            collections: await GetUserResourcesService.getCollectionsData(user.id),
-            favourites: await GetUserResourcesService.getFavouritesData(user.id),
-            areas: await GetUserResourcesService.getAreas(user.id),
-            stories: await GetUserResourcesService.getStories(user.id),
-            subscriptions: await GetUserResourcesService.getSubscriptions(user.id),
-            dashboards: await GetUserResourcesService.getDashboards(user.id),
-            profiles: await GetUserResourcesService.getProfile(user.id),
-            topics: await GetUserResourcesService.getTopics(user.id),
+            userData: await GetUserResourcesService.getUserData(user.id, ctx.request.headers['x-api-key'] as string),
+            collections: await GetUserResourcesService.getCollectionsData(user.id, ctx.request.headers['x-api-key'] as string),
+            favourites: await GetUserResourcesService.getFavouritesData(user.id, ctx.request.headers['x-api-key'] as string),
+            areas: await GetUserResourcesService.getAreas(user.id, ctx.request.headers['x-api-key'] as string),
+            stories: await GetUserResourcesService.getStories(user.id, ctx.request.headers['x-api-key'] as string),
+            subscriptions: await GetUserResourcesService.getSubscriptions(user.id, ctx.request.headers['x-api-key'] as string),
+            dashboards: await GetUserResourcesService.getDashboards(user.id, ctx.request.headers['x-api-key'] as string),
+            profiles: await GetUserResourcesService.getProfile(user.id, ctx.request.headers['x-api-key'] as string),
+            topics: await GetUserResourcesService.getTopics(user.id, ctx.request.headers['x-api-key'] as string),
         }
 
         ctx.body = result;
@@ -459,19 +460,19 @@ export class OktaProvider {
         const deletionData: Partial<IDeletion> = {
             userId: ctx.params.id,
             requestorUserId: Utils.getUser(ctx).id,
-            datasetsDeleted: (await DeleteUserResourcesService.deleteDatasets(ctx.params.id)).count >= 0,
-            widgetsDeleted: (await DeleteUserResourcesService.deleteWidgets(ctx.params.id)).count >= 0,
-            layersDeleted: (await DeleteUserResourcesService.deleteLayers(ctx.params.id)).count >= 0,
-            userDataDeleted: (await DeleteUserResourcesService.deleteUserData(ctx.params.id)).count >= 0,
-            collectionsDeleted: (await DeleteUserResourcesService.deleteCollectionsData(ctx.params.id)).count >= 0,
-            favouritesDeleted: (await DeleteUserResourcesService.deleteFavouritesData(ctx.params.id)).count >= 0,
-            areasDeleted: (await DeleteUserResourcesService.deleteAreas(ctx.params.id)).count >= 0,
+            datasetsDeleted: (await DeleteUserResourcesService.deleteDatasets(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            widgetsDeleted: (await DeleteUserResourcesService.deleteWidgets(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            layersDeleted: (await DeleteUserResourcesService.deleteLayers(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            userDataDeleted: (await DeleteUserResourcesService.deleteUserData(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            collectionsDeleted: (await DeleteUserResourcesService.deleteCollectionsData(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            favouritesDeleted: (await DeleteUserResourcesService.deleteFavouritesData(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            areasDeleted: (await DeleteUserResourcesService.deleteAreas(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
             applicationsDeleted: deletedApplications.count >= 0,
-            storiesDeleted: (await DeleteUserResourcesService.deleteStories(ctx.params.id)).count >= 0,
-            dashboardsDeleted: (await DeleteUserResourcesService.deleteSubscriptions(ctx.params.id)).count >= 0,
-            subscriptionsDeleted: (await DeleteUserResourcesService.deleteDashboards(ctx.params.id)).count >= 0,
-            profilesDeleted: (await DeleteUserResourcesService.deleteProfile(ctx.params.id)).count >= 0,
-            topicsDeleted: (await DeleteUserResourcesService.deleteTopics(ctx.params.id)).count >= 0,
+            storiesDeleted: (await DeleteUserResourcesService.deleteStories(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            dashboardsDeleted: (await DeleteUserResourcesService.deleteSubscriptions(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            subscriptionsDeleted: (await DeleteUserResourcesService.deleteDashboards(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            profilesDeleted: (await DeleteUserResourcesService.deleteProfile(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
+            topicsDeleted: (await DeleteUserResourcesService.deleteTopics(ctx.params.id, ctx.request.headers['x-api-key'] as string)).count >= 0,
         };
 
         const allDataDeleted: boolean = (

@@ -15,6 +15,7 @@ import { IApplication } from "models/application";
 import ApplicationUserModel from "models/application-user";
 import { IOrganization } from "models/organization";
 import OrganizationUserModel from "models/organization-user";
+import { mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 
@@ -38,9 +39,12 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
+
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -58,9 +62,11 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         mockOktaListUsers({ limit: 2, search: '((profile.apps eq "rw"))' }, [userOne, userTwo]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?page[size]=2`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -92,9 +98,11 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?page[size]=2&page[number]=2`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -118,9 +126,11 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?strategy=cursor`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -144,9 +154,11 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?strategy=cursor&page[after]=${cursor1}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -169,9 +181,11 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?strategy=cursor&page[before]=${cursor1}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -186,10 +200,12 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [userOne, userTwo]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
+            .set('x-api-key', 'api-key-test')
             .set('x-rw-domain', `potato.com`);
 
         response.status.should.equal(200);
@@ -207,11 +223,13 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [userOne, userTwo]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
             .set('Authorization', `Bearer ${token}`)
             .set('x-rw-domain', `potato.com`)
+            .set('x-api-key', 'api-key-test')
             .set('referer', `https://tomato.com/get-me-all-the-data`);
 
         response.status.should.equal(200);
@@ -227,6 +245,7 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         it('Getting an user with associated applications should be successful and get the association', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
 
@@ -240,6 +259,7 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
             const response: request.Response = await requester
                 .get(`/auth/user`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -262,6 +282,7 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
         it('Getting an user with associated organizations should be successful and get the association', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testOrganization: IOrganization = await createOrganization();
 
@@ -276,6 +297,7 @@ describe('[OKTA] Pagination strategy test suite for list user endpoints', () => 
             const response: request.Response = await requester
                 .get(`/auth/user`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);

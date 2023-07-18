@@ -8,7 +8,7 @@ type ResourceResult = {
 }
 
 export default class GetUserResourcesService {
-    static async getDatasets(userId: IUserLegacyId): Promise<ResourceResult> {
+    static async getDatasets(userId: IUserLegacyId, apiKey: string): Promise<ResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     params: {
@@ -16,7 +16,10 @@ export default class GetUserResourcesService {
                         env: "all"
                     },
                     uri: '/v1/dataset',
-                    method: 'GET'
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -33,7 +36,7 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getLayers(userId: IUserLegacyId): Promise<ResourceResult> {
+    static async getLayers(userId: IUserLegacyId, apiKey: string): Promise<ResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     params: {
@@ -41,7 +44,10 @@ export default class GetUserResourcesService {
                         env: "all"
                     },
                     uri: '/v1/layer',
-                    method: 'GET'
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -58,7 +64,7 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getWidgets(userId: IUserLegacyId): Promise<ResourceResult> {
+    static async getWidgets(userId: IUserLegacyId, apiKey: string): Promise<ResourceResult> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     params: {
@@ -66,7 +72,10 @@ export default class GetUserResourcesService {
                         env: "all"
                     },
                     uri: '/v1/widget',
-                    method: 'GET'
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -83,11 +92,14 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getUserData(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getUserData(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v2/user/${userId}`,
-                    method: 'GET'
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -110,7 +122,7 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getCollectionsData(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getCollectionsData(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     params: {
@@ -119,7 +131,10 @@ export default class GetUserResourcesService {
                         application: "all"
                     },
                     uri: `/v1/collection`,
-                    method: 'GET'
+                    method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -136,7 +151,7 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getFavouritesData(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getFavouritesData(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     params: {
@@ -147,6 +162,9 @@ export default class GetUserResourcesService {
                     body: {
                         application: 'all',
                         userId
+                    },
+                    headers: {
+                        'x-api-key': apiKey,
                     }
                 }
             );
@@ -164,11 +182,14 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getAreas(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getAreas(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v2/area/by-user/${userId}`,
                     method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -185,11 +206,14 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getStories(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getStories(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/story/user/${userId}`,
                     method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -206,12 +230,14 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getSubscriptions(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getSubscriptions(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/subscriptions/user/${userId}`,
                     method: 'GET',
-
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -228,7 +254,7 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getDashboards(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getDashboards(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     params: {
@@ -237,6 +263,9 @@ export default class GetUserResourcesService {
                     },
                     uri: `/v1/dashboard`,
                     method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -253,12 +282,15 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getProfile(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getProfile(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     uri: `/v1/profile/${userId}`,
                     method: 'GET',
-                    resolveWithFullResponse: false
+                    resolveWithFullResponse: false,
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 
@@ -281,7 +313,7 @@ export default class GetUserResourcesService {
         }
     }
 
-    static async getTopics(userId: IUserLegacyId): Promise<Record<string, any>> {
+    static async getTopics(userId: IUserLegacyId, apiKey: string): Promise<Record<string, any>> {
         try {
             const response: Record<string, any> = await RWAPIMicroservice.requestToMicroservice({
                     params: {
@@ -289,6 +321,9 @@ export default class GetUserResourcesService {
                     },
                     uri: `/v1/topic`,
                     method: 'GET',
+                    headers: {
+                        'x-api-key': apiKey,
+                    }
                 }
             );
 

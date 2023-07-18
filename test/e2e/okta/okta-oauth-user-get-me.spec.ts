@@ -10,6 +10,7 @@ import ApplicationUserModel from "models/application-user";
 import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationUserModel from "models/organization-user";
 import OrganizationApplicationModel from "models/organization-application";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 
@@ -29,7 +30,11 @@ describe('[OKTA] GET current user details', () => {
     });
 
     it('Getting my user without being logged in returns a 401', async () => {
-        const response: request.Response = await requester.get(`/auth/user/me`);
+        mockValidateRequestWithApiKey({});
+
+        const response: request.Response = await requester
+            .get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test');
         response.status.should.equal(401);
     });
 
@@ -41,9 +46,12 @@ describe('[OKTA] GET current user details', () => {
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
-        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
         assertOktaTokenInfo(response, user);
     });
 
@@ -55,9 +63,12 @@ describe('[OKTA] GET current user details', () => {
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
-        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
         assertOktaTokenInfo(response, user);
     });
 
@@ -69,9 +80,12 @@ describe('[OKTA] GET current user details', () => {
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
-        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
         assertOktaTokenInfo(response, user);
     });
 
@@ -83,9 +97,12 @@ describe('[OKTA] GET current user details', () => {
             role: user.profile.role,
             extraUserData: { apps: user.profile.apps },
         });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
-        const response: request.Response = await requester.get(`/auth/user/me`).set('Authorization', `Bearer ${token}`);
+        const response: request.Response = await requester.get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
+            .set('Authorization', `Bearer ${token}`);
         assertOktaTokenInfo(response, user);
     });
 
@@ -98,6 +115,7 @@ describe('[OKTA] GET current user details', () => {
                 role: user.profile.role,
                 extraUserData: { apps: user.profile.apps },
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
 
@@ -111,6 +129,7 @@ describe('[OKTA] GET current user details', () => {
             const response: request.Response = await requester
                 .get(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -138,6 +157,7 @@ describe('[OKTA] GET current user details', () => {
                 role: user.profile.role,
                 extraUserData: { apps: user.profile.apps },
             });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testOrganization: IOrganization = await createOrganization();
 
@@ -152,6 +172,7 @@ describe('[OKTA] GET current user details', () => {
             const response: request.Response = await requester
                 .get(`/auth/user/me`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);

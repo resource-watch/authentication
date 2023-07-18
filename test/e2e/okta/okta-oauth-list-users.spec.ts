@@ -11,6 +11,7 @@ import ApplicationUserModel from "models/application-user";
 import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationUserModel from "models/organization-user";
 import OrganizationApplicationModel from "models/organization-application";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 
@@ -35,9 +36,11 @@ describe('[OKTA] List users', () => {
             mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/auth/user`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -54,10 +57,12 @@ describe('[OKTA] List users', () => {
             mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const response: request.Response = await requester
                 .get(`/auth/user`)
                 .set('referer', `https://potato.com/get-me-all-the-data`)
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -71,8 +76,10 @@ describe('[OKTA] List users', () => {
     });
 
     it('Visiting /auth/user while not logged in should return a 401 error', async () => {
+        mockValidateRequestWithApiKey({});
         const response: request.Response = await requester
             .get(`/auth/user`)
+            .set('x-api-key', 'api-key-test')
             .set('Content-Type', 'application/json');
 
         response.status.should.equal(401);
@@ -83,10 +90,12 @@ describe('[OKTA] List users', () => {
 
     it('Visiting /auth/user while logged in as USER should return a 403 error', async () => {
         const token: string = mockValidJWT();
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -97,10 +106,12 @@ describe('[OKTA] List users', () => {
 
     it('Visiting /auth/user while logged in as MANAGER should return a 403 error', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -112,9 +123,11 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -130,9 +143,11 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, [user]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -152,9 +167,11 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10, search: '((profile.apps eq "rw"))' }, users);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -171,9 +188,11 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?email=${user.profile.email}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -187,10 +206,12 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10, search: `(profile.email sw "${user.profile.email}") and ((profile.apps eq "rw"))` }, [user]);
 
         const token: string = mockValidJWT({ role: 'ADMIN', email: 'text+email@vizzuality.com' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user`)
             .query({ email: user.profile.email })
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -209,9 +230,11 @@ describe('[OKTA] List users', () => {
         );
 
         let token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const responseOne: request.Response = await requester
             .get(`/auth/user?provider=local`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         responseOne.status.should.equal(200);
@@ -225,9 +248,11 @@ describe('[OKTA] List users', () => {
         );
 
         token = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const responseTwo: request.Response = await requester
             .get(`/auth/user?provider=google`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         responseTwo.status.should.equal(200);
@@ -246,9 +271,11 @@ describe('[OKTA] List users', () => {
         );
 
         let token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const responseOne: request.Response = await requester
             .get(`/auth/user?name=${userOne.profile.displayName}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         responseOne.status.should.equal(200);
@@ -262,9 +289,11 @@ describe('[OKTA] List users', () => {
         );
 
         token = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const responseTwo: request.Response = await requester
             .get(`/auth/user?name=${userTwo.profile.displayName}`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         responseTwo.status.should.equal(200);
@@ -284,9 +313,11 @@ describe('[OKTA] List users', () => {
         );
 
         let token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const responseOne: request.Response = await requester
             .get(`/auth/user?role=USER`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         responseOne.status.should.equal(200);
@@ -300,9 +331,11 @@ describe('[OKTA] List users', () => {
         );
 
         token = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const responseTwo: request.Response = await requester
             .get(`/auth/user?role=MANAGER`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         responseTwo.status.should.equal(200);
@@ -316,9 +349,11 @@ describe('[OKTA] List users', () => {
         );
 
         token = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const responseThree: request.Response = await requester
             .get(`/auth/user?role=ADMIN`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         responseThree.status.should.equal(200);
@@ -332,9 +367,11 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [user]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?password=%242b%2410%241wDgP5YCStyvZndwDu2GwuC6Ie9wj7yRZ3BNaaI.p9JqV8CnetdPK`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -350,9 +387,11 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10 }, [userOne, userTwo, userThree]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?app=all`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send();
 
@@ -374,9 +413,11 @@ describe('[OKTA] List users', () => {
         );
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?app=fake-app,fake-app-2`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send();
 
@@ -394,9 +435,11 @@ describe('[OKTA] List users', () => {
         mockOktaListUsers({ limit: 10, search: `((profile.apps eq "rw"))` }, [userOne, userTwo]);
 
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user?foo=bar`)
             .set('Content-Type', 'application/json')
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`)
             .send();
 
@@ -409,6 +452,7 @@ describe('[OKTA] List users', () => {
         it('Getting an user with associated applications should be successful and get the association', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
 
@@ -422,6 +466,7 @@ describe('[OKTA] List users', () => {
             const response: request.Response = await requester
                 .get(`/auth/user`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -444,6 +489,7 @@ describe('[OKTA] List users', () => {
         it('Getting an user with associated organizations should be successful and get the association', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testOrganization: IOrganization = await createOrganization();
 
@@ -458,6 +504,7 @@ describe('[OKTA] List users', () => {
             const response: request.Response = await requester
                 .get(`/auth/user`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);

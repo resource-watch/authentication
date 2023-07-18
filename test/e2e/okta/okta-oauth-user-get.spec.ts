@@ -16,6 +16,7 @@ import ApplicationUserModel from "models/application-user";
 import OrganizationModel, { IOrganization } from "models/organization";
 import OrganizationUserModel from "models/organization-user";
 import OrganizationApplicationModel from "models/organization-application";
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 
@@ -35,14 +36,19 @@ describe('[OKTA] GET users by id', () => {
     });
 
     it('Get user without being logged in returns a 401', async () => {
-        const response: request.Response = await requester.get(`/auth/user/41224d776a326fb40f000001`);
+        mockValidateRequestWithApiKey({});
+        const response: request.Response = await requester
+            .get(`/auth/user/41224d776a326fb40f000001`)
+            .set('x-api-key', 'api-key-test');
         response.status.should.equal(401);
     });
 
     it('Get user while being logged in as a regular user returns a 403 error', async () => {
         const token: string = mockValidJWT();
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -52,10 +58,12 @@ describe('[OKTA] GET users by id', () => {
 
     it('Get user with id of a user that does not exist returns a 404', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         mockGetUserByIdNotFound('41224d776a326fb40f000001');
 
         const response: request.Response = await requester
             .get(`/auth/user/41224d776a326fb40f000001`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(404);
@@ -64,11 +72,13 @@ describe('[OKTA] GET users by id', () => {
 
     it('Get user with id of a user that exists returns the requested user (happy case)', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const user: OktaUser = getMockOktaUser();
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
         const response: request.Response = await requester
             .get(`/auth/user/${user.profile.legacyId}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         assertOktaTokenInfo(response, user);
@@ -76,11 +86,13 @@ describe('[OKTA] GET users by id', () => {
 
     it('Get user with id of a user that exists as MICROSERVICE returns the requested user (happy case)', async () => {
         const token: string = mockMicroserviceJWT();
+        mockValidateRequestWithApiKeyAndUserToken({ token });
         const user: OktaUser = getMockOktaUser();
         mockOktaListUsers({ limit: 1, search: `(profile.legacyId eq "${user.profile.legacyId}")` }, [user]);
 
         const response: request.Response = await requester
             .get(`/auth/user/${user.profile.legacyId}`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         assertOktaTokenInfo(response, user);
@@ -90,6 +102,7 @@ describe('[OKTA] GET users by id', () => {
         it('Getting an user with associated applications should be successful and get the association', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testApplication: IApplication = await createApplication();
 
@@ -103,6 +116,7 @@ describe('[OKTA] GET users by id', () => {
             const response: request.Response = await requester
                 .get(`/auth/user/${user.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);
@@ -125,6 +139,7 @@ describe('[OKTA] GET users by id', () => {
         it('Getting an user with associated organizations should be successful and get the association', async () => {
             const user: OktaUser = getMockOktaUser();
             const token: string = mockValidJWT({ role: 'ADMIN' });
+            mockValidateRequestWithApiKeyAndUserToken({ token });
 
             const testOrganization: IOrganization = await createOrganization();
 
@@ -139,6 +154,7 @@ describe('[OKTA] GET users by id', () => {
             const response: request.Response = await requester
                 .get(`/auth/user/${user.profile.legacyId}`)
                 .set('Content-Type', 'application/json')
+                .set('x-api-key', 'api-key-test')
                 .set('Authorization', `Bearer ${token}`);
 
             response.status.should.equal(200);

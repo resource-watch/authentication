@@ -6,6 +6,7 @@ import { OktaUser } from 'services/okta.interfaces';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { TOKENS } from '../utils/test.constants';
 import { getMockOktaUser, mockOktaListUsers, mockValidJWT } from './okta.mocks';
+import { mockValidateRequestWithApiKey, mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 chai.should();
 
@@ -25,15 +26,21 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role without being logged in returns a 401', async () => {
-        const response: request.Response = await requester.get(`/auth/user/ids/USER`);
+        mockValidateRequestWithApiKey({});
+
+        const response: request.Response = await requester
+            .get(`/auth/user/ids/USER`)
+            .set('x-api-key', 'api-key-test');
         response.status.should.equal(401);
     });
 
     it('Get users ids by role while being logged in as a USER returns a 400 error', async () => {
         const token: string = mockValidJWT();
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -43,9 +50,11 @@ describe('[OKTA] GET users ids by role', () => {
 
     it('Get users ids by role while being logged in as a MANAGER returns a 400 error', async () => {
         const token: string = mockValidJWT({ role: 'MANAGER' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -55,9 +64,11 @@ describe('[OKTA] GET users ids by role', () => {
 
     it('Get users ids by role while being logged in as an ADMIN returns a 400 error', async () => {
         const token: string = mockValidJWT({ role: 'ADMIN' });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(403);
@@ -66,8 +77,10 @@ describe('[OKTA] GET users ids by role', () => {
     });
 
     it('Get users ids by role with an invalid role returns a 422', async () => {
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
         const response: request.Response = await requester
             .get(`/auth/user/ids/FOO`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
         response.status.should.equal(422);
@@ -77,9 +90,11 @@ describe('[OKTA] GET users ids by role', () => {
 
     it('Get users ids by role with a valid role and no users on the database returns a 200 response and an empty array', async () => {
         mockOktaListUsers({ limit: 200, search: `(profile.role eq "USER")` }, []);
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
         response.status.should.equal(200);
@@ -89,9 +104,11 @@ describe('[OKTA] GET users ids by role', () => {
     it('Get users ids by role with a valid role returns a 200 response with the users ids (happy case, single user)', async () => {
         const user: OktaUser = getMockOktaUser({ role: 'USER' });
         mockOktaListUsers({ limit: 200, search: `(profile.role eq "USER")` }, [user]);
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
         response.status.should.equal(200);
@@ -103,9 +120,11 @@ describe('[OKTA] GET users ids by role', () => {
         const userOne: OktaUser = getMockOktaUser({ role: 'USER' });
         const userTwo: OktaUser = getMockOktaUser({ role: 'USER' });
         mockOktaListUsers({ limit: 200, search: `(profile.role eq "USER")` }, [userOne, userTwo]);
+        mockValidateRequestWithApiKeyAndUserToken({ token: TOKENS.MICROSERVICE });
 
         const response: request.Response = await requester
             .get(`/auth/user/ids/USER`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${TOKENS.MICROSERVICE}`);
 
         response.status.should.equal(200);

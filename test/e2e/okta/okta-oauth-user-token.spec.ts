@@ -9,6 +9,7 @@ import CacheService from 'services/cache.service';
 import { createTokenForUser } from '../utils/helpers';
 import { closeTestAgent, getTestAgent } from '../utils/test-server';
 import { generateRandomTokenPayload, getMockOktaUser, mockGetUserById, mockOktaGetUserByEmail } from './okta.mocks';
+import { mockValidateRequestWithApiKeyAndUserToken } from "../utils/mocks";
 
 const should: Should = chai.should();
 
@@ -38,12 +39,14 @@ describe('[OKTA] Token validations test suite', () => {
             iat: new Date('01-01-2000').getTime() / 1000,
         });
         const token: string = createTokenForUser(tokenPayload);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         mockOktaGetUserByEmail(user.profile);
 
         const response: request.Response = await requester
             .get(`/auth/user/me`)
-            .set('Authorization', `Bearer ${token}`);
+            .set('Authorization', `Bearer ${token}`)
+            .set('x-api-key', 'api-key-test');
 
         response.status.should.equal(401);
         response.body.should.have.property('errors').and.be.an('array');
@@ -62,6 +65,7 @@ describe('[OKTA] Token validations test suite', () => {
         });
 
         const token: string = createTokenForUser({ ...tokenPayload, extraUserData: { apps: ['gfw', 'rw'] } });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         mockOktaGetUserByEmail({
             legacyId: tokenPayload.id,
@@ -74,6 +78,7 @@ describe('[OKTA] Token validations test suite', () => {
 
         const response: request.Response = await requester
             .get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -90,6 +95,7 @@ describe('[OKTA] Token validations test suite', () => {
             iat: new Date('01-01-2000').getTime() / 1000,
         });
         const token: string = createTokenForUser(tokenPayload);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         nock(config.get('okta.url'))
             .get(`/api/v1/users/${user.profile.email}`)
@@ -97,6 +103,7 @@ describe('[OKTA] Token validations test suite', () => {
 
         const response: request.Response = await requester
             .get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(401);
@@ -115,6 +122,7 @@ describe('[OKTA] Token validations test suite', () => {
             iat: new Date('01-01-2000').getTime() / 1000,
         });
         const token: string = createTokenForUser(tokenPayload);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         nock(config.get('okta.url'))
             .get(`/api/v1/users/${user.profile.email}`)
@@ -122,6 +130,7 @@ describe('[OKTA] Token validations test suite', () => {
 
         const response: request.Response = await requester
             .get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(401);
@@ -140,6 +149,7 @@ describe('[OKTA] Token validations test suite', () => {
             iat: new Date('01-01-2000').getTime() / 1000,
         });
         const token: string = createTokenForUser(tokenPayload);
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         nock(config.get('okta.url'))
             .get(`/api/v1/users/${user.profile.email}`)
@@ -147,6 +157,7 @@ describe('[OKTA] Token validations test suite', () => {
 
         const response: request.Response = await requester
             .get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(401);
@@ -171,6 +182,7 @@ describe('[OKTA] Token validations test suite', () => {
         });
 
         const token: string = createTokenForUser({ ...tokenPayload, extraUserData: { apps: ['gfw', 'rw'] } });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         mockOktaGetUserByEmail({
             legacyId: tokenPayload.id,
@@ -183,6 +195,7 @@ describe('[OKTA] Token validations test suite', () => {
 
         const response: request.Response = await requester
             .get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
@@ -214,11 +227,13 @@ describe('[OKTA] Token validations test suite', () => {
         });
 
         const token: string = createTokenForUser({ ...tokenPayload, extraUserData: { apps: ['gfw', 'rw'] } });
+        mockValidateRequestWithApiKeyAndUserToken({ token });
 
         mockGetUserById(user);
 
         const response: request.Response = await requester
             .get(`/auth/user/me`)
+            .set('x-api-key', 'api-key-test')
             .set('Authorization', `Bearer ${token}`);
 
         response.status.should.equal(200);
