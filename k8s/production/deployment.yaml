@@ -252,6 +252,11 @@ spec:
                 secretKeyRef:
                   key: AWS_REGION
                   name: authorization
+            - name: AWS_API_KEY_USAGE_PLAN_ID
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_API_KEY_USAGE_PLAN_ID
+                  name: authorization
           image: gfwdockerhub/authorization
           imagePullPolicy: Always
           livenessProbe:

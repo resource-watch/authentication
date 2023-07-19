@@ -21,7 +21,6 @@ const getDeletionsConfig: Config = {
     validate: {
         query: {
             loggedUser: Joi.any().optional(),
-            requestApplication: Joi.any().optional(),
             userId: Joi.string().optional(),
             requestorUserId: Joi.string().optional(),
             page: Joi.object({
@@ -41,7 +40,6 @@ const createDeletionConfig: Config = {
         },
         body: {
             loggedUser: Joi.any().optional(),
-            requestApplication: Joi.any().optional(),
             userId: Joi.string().optional(),
             datasetsDeleted: Joi.boolean().optional().default(false),
             layersDeleted: Joi.boolean().optional().default(false),
@@ -72,7 +70,6 @@ const updateDeletionConfig: Config = {
         },
         body: {
             loggedUser: Joi.any().optional(),
-            requestApplication: Joi.any().optional(),
             status: Joi.string().optional().allow(...DELETION_STATUS),
             datasetsDeleted: Joi.boolean().optional(),
             layersDeleted: Joi.boolean().optional(),
@@ -104,7 +101,6 @@ class DeletionRouter {
         const originalQuery: Record<string, any> = { ...ctx.query };
         delete originalQuery.page;
         delete originalQuery.loggedUser;
-        delete originalQuery.requestApplication;
         const serializedQuery: string = Utils.serializeObjToQuery(originalQuery) ? `?${Utils.serializeObjToQuery(originalQuery)}&` : '?';
         const apiVersion: string = ctx.mountPath.split('/')[ctx.mountPath.split('/').length - 1];
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}/${apiVersion}${ctx.request.path}${serializedQuery}`;

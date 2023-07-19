@@ -156,7 +156,6 @@ export class OktaProvider {
         delete clonedQuery.page;
         delete clonedQuery.ids;
         delete clonedQuery.loggedUser;
-        delete clonedQuery.requestApplication;
         const serializedQuery: string = Utils.serializeObjToQuery(clonedQuery) ? `?${Utils.serializeObjToQuery(clonedQuery)}&` : '?';
         const link: string = `${ctx.request.protocol}://${Utils.getHostForPaginationLink(ctx)}${ctx.request.path}${serializedQuery}`;
 
