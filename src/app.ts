@@ -21,6 +21,7 @@ import koaQs from 'koa-qs';
 import logger from 'logger';
 import { loadRoutes } from 'loader';
 import ErrorSerializer from 'serializers/errorSerializer';
+import * as process from "process";
 
 interface IInit {
     server: Server;
@@ -112,6 +113,7 @@ const init: () => Promise<IInit> = async (): Promise<IInit> => {
                 requireAPIKey: process.env.REQUIRE_API_KEY as boolean | 'true' | 'false' || true,
                 awsRegion: process.env.AWS_REGION,
                 awsCloudWatchLogStreamName: config.get('service.name'),
+                awsCloudWatchLoggingEnabled: process.env.AWS_CLOUD_WATCH_LOGGING_ENABLED as boolean | 'true' | 'false' || true,
                 skipAPIKeyRequirementEndpoints: [
                     { method: 'GET', pathRegex: '^/auth/google$' },
                     { method: 'GET', pathRegex: '^/auth/google/callback$' },
