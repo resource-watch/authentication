@@ -230,6 +230,7 @@ export default class ApplicationService {
     static async getApplicationByApiKey(apiKey: string): Promise<IApplication> {
         const application: IApplication = await ApplicationModel.findOne({ apiKeyValue: apiKey });
         if (!application) {
+            logger.warn(`[getApplicationByApiKey] - Application not found for apiKey ${apiKey}`);
             throw new ApplicationNotFoundError();
         }
         return application;
