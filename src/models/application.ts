@@ -13,6 +13,7 @@ import { Id } from "types";
 import OrganizationApplicationModel, { IOrganizationApplication } from "models/organization-application";
 import ApplicationUserModel, { IApplicationUser } from "models/application-user";
 import aggregatePaginate from "mongoose-aggregate-paginate-v2";
+import logger from "logger";
 
 interface IApplicationMethods {
     hydrate(): Promise<(IApplication & Required<{ _id: IApplicationId }>)>
@@ -80,9 +81,11 @@ export const applicationSchema: ISchema<IApplication, ApplicationModel, IApplica
     methods: {
         async hydrate(): Promise<(IApplication & Required<{ _id: IApplicationId }>)> {
             const applicationUser: IApplicationUser = await ApplicationUserModel.findOne({ application: this._id.toString() });
+            logger.debug('[application.hydrate] - applicationUser', JSON.stringify(applicationUser));
             this.user = applicationUser ? await applicationUser.getUser() : null;
 
             const organizationApplication: IOrganizationApplication = await OrganizationApplicationModel.findOne({ application: this._id.toString() }).populate('organization');
+            logger.debug('[application.hydrate] - organizationApplication', JSON.stringify(organizationApplication));
             this.organization = organizationApplication ? organizationApplication.organization : null;
 
             return this;

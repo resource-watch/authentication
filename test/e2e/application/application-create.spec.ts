@@ -1,5 +1,5 @@
 import nock from 'nock';
-import chai, { expect } from 'chai';
+import chai from 'chai';
 import ApplicationModel, { CreateApplicationsDto, IApplication } from 'models/application';
 import chaiDateTime from 'chai-datetime';
 import { getTestAgent } from '../utils/test-server';
@@ -80,9 +80,13 @@ describe('Create application tests', () => {
             response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
             response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
             response.body.data.attributes.should.have.property('createdAt');
+            response.body.data.attributes.should.have.property('organization').and.null;
+            response.body.data.attributes.should.have.property('user').and.not.empty;
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            await assertConnection({ user: testUser, applicationId: response.body.data.id })
         });
 
         it('Create a application associated with myself (explicitly) while being logged in as USER should return a 200', async () => {
@@ -111,9 +115,13 @@ describe('Create application tests', () => {
             response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
             response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
             response.body.data.attributes.should.have.property('createdAt');
+            response.body.data.attributes.should.have.property('organization').and.null;
+            response.body.data.attributes.should.have.property('user').and.not.empty;
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            await assertConnection({ user: testUser, applicationId: response.body.data.id })
         });
 
         it('Create a application associated with someone else while being logged in as USER should return a 403', async () => {
@@ -239,9 +247,13 @@ describe('Create application tests', () => {
             response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
             response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
             response.body.data.attributes.should.have.property('createdAt');
+            response.body.data.attributes.should.have.property('organization').and.null;
+            response.body.data.attributes.should.have.property('user').and.not.empty;
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            await assertConnection({ user: testUser, applicationId: response.body.data.id })
         });
 
         it('Create a application associated with myself (explicitly) while being logged in as MANAGER should return a 200', async () => {
@@ -270,9 +282,13 @@ describe('Create application tests', () => {
             response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
             response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
             response.body.data.attributes.should.have.property('createdAt');
+            response.body.data.attributes.should.have.property('organization').and.null;
+            response.body.data.attributes.should.have.property('user').and.not.empty;
             new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
             response.body.data.attributes.should.have.property('updatedAt');
             new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+            await assertConnection({ user: testUser, applicationId: response.body.data.id })
         });
 
         it('Create a application associated with someone else while being logged in as MANAGER should return a 403', async () => {
@@ -412,9 +428,13 @@ describe('Create application tests', () => {
         response.body.data.attributes.should.have.property('name').and.equal(databaseApplication.name);
         response.body.data.attributes.should.have.property('apiKeyValue').and.equal(apiKey);
         response.body.data.attributes.should.have.property('createdAt');
+        response.body.data.attributes.should.have.property('organization').and.null;
+        response.body.data.attributes.should.have.property('user').and.not.empty;
         new Date(response.body.data.attributes.createdAt).should.equalDate(databaseApplication.createdAt);
         response.body.data.attributes.should.have.property('updatedAt');
         new Date(response.body.data.attributes.updatedAt).should.equalDate(databaseApplication.updatedAt);
+
+        await assertConnection({ user: testUser, applicationId: response.body.data.id })
     });
 
     it('Create a application while being logged in as ADMIN without user or organization should return a 200 and associate the application with the current user', async () => {

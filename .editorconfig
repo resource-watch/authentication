@@ -13,8 +13,8 @@ insert_final_newline = true
 [*.js]
 charset = utf-8
 
-# 2 space indentation
-[**/*.js]
+# 4 space indentation
+[**/*.{js,ts}]
 indent_style = space
 indent_size = 4
 
