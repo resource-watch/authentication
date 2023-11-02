@@ -101,6 +101,9 @@ export const applicationSchema: ISchema<IApplication, ApplicationModel, IApplica
 
             await new ApplicationUserModel({ application: this._id.toString(), userId: user.id }).save();
 
+            const applicationUser: IApplicationUser = await ApplicationUserModel.findOne({ application: this._id.toString() });
+            logger.debug('[application.associateWithUser] - applicationUser', JSON.stringify(applicationUser));
+
             return this;
         },
         async associateWithOrganization(organization: IOrganization): Promise<IApplication> {
