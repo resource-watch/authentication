@@ -99,9 +99,10 @@ export const applicationSchema: ISchema<IApplication, ApplicationModel, IApplica
         async associateWithUser(user: IUser): Promise<IApplication> {
             await this.clearAssociations();
 
-            await new ApplicationUserModel({ application: this._id.toString(), userId: user.id }).save();
+            const savedApplicationUser: IApplicationUser = await new ApplicationUserModel({ application: this._id.toString(), userId: user.id }).save();
 
             const applicationUser: IApplicationUser = await ApplicationUserModel.findOne({ application: this._id.toString() });
+            logger.debug('[application.associateWithUser] - savedApplicationUser', JSON.stringify(savedApplicationUser));
             logger.debug('[application.associateWithUser] - applicationUser', JSON.stringify(applicationUser));
 
             return this;
