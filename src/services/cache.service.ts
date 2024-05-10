@@ -8,9 +8,9 @@ class CacheService {
     private client: RedisClient;
 
     constructor() {
-        logger.debug('[CacheService] Initializing cache service');
-
-        this.client = redis.createClient({ url: config.get('redis.url') as string });
+        const redis_url = config.get('redis.url') as string;
+        logger.debug('[CacheService] Initializing cache service, connecting to', redis_url);
+        this.client = redis.createClient({ url: redis_url });
     }
 
     async get(key: string): Promise<OktaUser> {
