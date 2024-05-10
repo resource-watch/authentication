@@ -12,22 +12,19 @@ RUN addgroup $USER && adduser -s /bin/bash -D -G $USER $USER
 RUN yarn global add --unsafe-perm bunyan
 
 RUN mkdir -p /opt/$NAME
-COPY package.json /opt/$NAME/package.json
-COPY yarn.lock /opt/$NAME/yarn.lock
-RUN cd /opt/$NAME && yarn
-
-COPY entrypoint.sh /opt/$NAME/entrypoint.sh
-COPY tsconfig.json /opt/$NAME/tsconfig.json
-COPY config /opt/$NAME/config
-COPY ./src /opt/$NAME/src
-COPY ./test opt/$NAME/test
-
+RUN chown -R $USER:$USER /opt/$NAME
+USER $USER
 WORKDIR /opt/$NAME
 
-RUN chown -R $USER:$USER /opt/$NAME
+COPY package.json yarn.lock ./
+RUN yarn --pure-lockfile
+
+COPY entrypoint.sh tsconfig.json ./
+COPY config ./config
+COPY test ./test
+COPY src ./src
 
 # Tell Docker we are going to use this ports
 EXPOSE 9000
-USER $USER
 
 ENTRYPOINT ["./entrypoint.sh"]

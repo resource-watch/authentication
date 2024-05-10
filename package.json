@@ -8,10 +8,11 @@
     "coverage": "nyc ts-mocha -b --project tsconfig.json -r tsconfig-paths/register --timeout 20000 'test/**/*.ts' --exit",
     "test": "ts-mocha -b --project tsconfig.json -r tsconfig-paths/register --timeout 20000 'test/**/*.ts' --exit",
     "start": "ts-node --files --project tsconfig.json -r tsconfig-paths/register src/index.ts",
-    "watch": "ts-node-dev --respawn --transpile-only --files --project tsconfig.json -r tsconfig-paths/register src/index.ts",
+    "watch": "nodemon -r tsconfig-paths/register -L src/index.ts",
     "build": "tsc",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "debug": "node --inspect=0.0.0.0:9229 -r ts-node/register -r tsconfig-paths/register src/index.ts"
   },
   "keywords": [
     "authorization",
@@ -105,7 +106,8 @@
     "ts-mocha": "^10.0.0",
     "ts-node": "^10.9.1",
     "ts-node-dev": "^2.0.0",
-    "tsconfig-paths": "^4.1.0"
+    "tsconfig-paths": "^4.1.0",
+    "nodemon": "^3.1.0"
   },
   "dependencies": {
     "@aws-sdk/client-api-gateway": "^3.218.0",
