@@ -1,18 +1,18 @@
 version: "3"
 services:
-  develop:
+  debug:
     build: .
     ports:
       - "9000:9000"
+      - "9229:9229"
     container_name: authorization
     env_file:
       - dev.env
-    command: develop
+    command: debug
     depends_on:
       - redis
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./src:/opt/authorization/src
   redis:
     image: redis
     container_name: authorization-redis
@@ -21,6 +21,6 @@ services:
     restart: always
   mongo:
     image: mongo:3.6
-    container_name: authorization-mongo
+    conatiner_name: authorization-mongo
     ports:
       - "27017"

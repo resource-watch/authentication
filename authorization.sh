@@ -6,14 +6,18 @@ case "$1" in
         ;;
     develop)
         type docker-compose >/dev/null 2>&1 || { echo >&2 "docker-compose is required but it's not installed.  Aborting."; exit 1; }
-        docker-compose -f docker-compose-develop.yml build && docker-compose -f docker-compose-develop.yml up
+        docker-compose -f docker-compose-develop.yml up --build
         ;;
     test)
         type docker-compose >/dev/null 2>&1 || { echo >&2 "docker-compose is required but it's not installed.  Aborting."; exit 1; }
-        docker-compose -f docker-compose-test.yml build && docker-compose -f docker-compose-test.yml up --abort-on-container-exit
+        docker-compose -f docker-compose-test.yml up --build --abort-on-container-exit
+        ;;
+    debug)
+        type docker-compose >/dev/null 2>&1 || { echo >&2 "docker-compose is required but it's not installed.  Aborting."; exit 1; }
+        docker-compose -f docker-compose-debug.yml up --build
         ;;
     *)
-        echo "Usage: authorization.sh {start|test}" >&2
+        echo "Usage: authorization.sh {start|develop|test|debug}" >&2
         exit 1
         ;;
 esac

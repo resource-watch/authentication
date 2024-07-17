@@ -3,7 +3,7 @@
     "name": "authorization"
   },
   "redis": {
-    "url": "redis://localhost:6379",
+    "url": "redis://redis:6379",
     "defaultTTL": 86400
   },
   "logger": {
@@ -23,7 +23,7 @@
   },
   "mongodb": {
     "database": "authorization",
-    "host": "localhost",
+    "host": "mongo",
     "port": 27017
   },
   "application": {
@@ -35,7 +35,7 @@
     "token": ""
   },
   "okta": {
-    "url": "https://wri.okta.com",
+    "url": "https://www.okta.com/",
     "apiKey": null,
     "clientId": null,
     "clientSecret": null,
