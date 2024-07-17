@@ -15,7 +15,7 @@ services:
       PUBLIC_URL: http://127.0.0.1:9000
       REDIS_URL: redis://redis:6379
       ALLOW_CONFIG_MUTATIONS: "true"
-      GATEWAY_URL: http://mymachine:8000
+      GATEWAY_URL: http://127.0.0.1:8000
       MICROSERVICE_TOKEN: cttoken
       LOCAL_URL: http://127.0.0.1:9000
       HOST_IP: 127.0.0.1
@@ -25,7 +25,7 @@ services:
       AWS_ACCESS_KEY_ID: "test"
       AWS_SECRET_ACCESS_KEY: "test"
       MONGO_HOST: mongo
-      REQUIRE_API_KEY: true
+      REQUIRE_API_KEY: 'false'
     command: test
     depends_on:
       - redis
@@ -41,5 +41,6 @@ services:
 
   mongo:
     image: mongo:3.6
+    container_name: authorization-mongo
     ports:
       - "27017"

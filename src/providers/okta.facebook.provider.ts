@@ -54,7 +54,7 @@ export class OktaFacebookProvider {
                 user = OktaService.convertOktaUserToIUser(oktaUser);
             } catch (err) {
                 // User not found, let's create him/her
-                logger.info(`[OktaFacebookProvider] User with email ${email} does not exist`);
+                logger.info(`[OktaFacebookProvider] User with email ${email} does not exist, creating new user.`);
                 user = await OktaService.createUserWithoutPassword({
                     name: profile?.displayName,
                     email,
@@ -92,7 +92,14 @@ export class OktaFacebookProvider {
 
     static async facebookToken(ctx: Context, next: Next): Promise<void> {
         const app: string = Utils.getOriginApp(ctx);
-        await passport.authenticate(`facebook-token:${app}`)((ctx as Context & RouterContext), next);
+        try {
+            await passport.authenticate(`facebook-token:${app}`)((ctx as Context & RouterContext), next);
+        } catch (err) {
+            if (err.oauthError) {
+                logger.error('[OktaFacebookProvider] Error detail:', JSON.parse(err.oauthError.data));
+            }
+            throw err;
+        }
     }
 
     static async facebookCallback(ctx: Context, next: Next): Promise<void> {
